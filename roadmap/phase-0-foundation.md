@@ -1,8 +1,12 @@
 # Phase 0 — Foundation & Knowledge Base
 
 > Part of the [roadmap](./README.md). Delivers the objective in
-> [`../docs/VISION.md`](../docs/VISION.md). **Status: ⬜ Not started** (this documentation
-> scaffolding is the pre-work; application code begins here once Phase 0's spec is authored).
+> [`../docs/VISION.md`](../docs/VISION.md). **Status: ✅ Done** — implemented under specs
+> [`0003`](../specs/0003-project-foundation/spec.md) (toolchain + domain model + CLI +
+> logging + guarded `InstanceFs`), [`0004`](../specs/0004-modrinth-provider/spec.md)
+> (Modrinth provider + contract tests), and [`0005`](../specs/0005-pack-state/spec.md)
+> (packwiz-backed pack state). All exit criteria in §8 are met; `build`/`lint`/`test` are
+> green in CI.
 
 ## 1. Goal / outcome
 
@@ -69,11 +73,12 @@ its prerequisite and is already in place.)
 
 ## 8. Definition of Done / exit criteria
 
-- CI runs build + lint + tests green.
-- Domain types exist and are used by at least one passing test.
-- Modrinth adapter passes contract tests (search/versions/deps/hash) against fixtures.
-- `PackState` can round-trip a tiny sample pack.
-- CLI runs with help + an environment/"doctor" check; no game-instance writes occur.
+- [x] CI runs build + lint + tests green. (`.github/workflows/ci.yml`; `npm run check`.)
+- [x] Domain types exist and are used by at least one passing test. (`MinecraftVersion` +
+      Java mapping, DOMAIN-KNOWLEDGE §2 boundary tests.)
+- [x] Modrinth adapter passes contract tests (search/versions/deps/hash) against fixtures.
+- [x] `PackState` can round-trip a tiny sample pack. (packwiz write→read semantic equality.)
+- [x] CLI runs with help + an environment/"doctor" check; no game-instance writes occur.
 
 ## 9. Success metrics
 

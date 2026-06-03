@@ -58,6 +58,18 @@ prediction).
 README.md                      Front door + doc map
 CLAUDE.md                      ← you are here (operating guide)
 .gitignore                     Node/OS/editor ignores
+package.json · tsconfig*.json · eslint.config.js   TypeScript/Node toolchain (Phase 0)
+.env.example                   Documents optional, env-only API credentials (never committed)
+.github/workflows/ci.yml       CI: build + lint + test on Node 22
+
+src/                           Application code (begins in Phase 0)
+  index.ts                     Library entry (re-exports core + integration)
+  core/                        UI-agnostic core — imports no cli/ or integration/ (enforced)
+    domain/                    Core domain model (MinecraftVersion, Loader, Mod, …, PackState)
+    ports/                     Interfaces the core depends on (Logger, InstanceFs, ModSourceProvider, PackFormat)
+  integration/                 Adapters implementing the ports
+    logging/ · instance-fs/ · modrinth/ · packwiz/
+  cli/                         Thin CLI adapter (help + read-only doctor)
 
 docs/
   VISION.md                    THE objective (single source of truth)
@@ -71,6 +83,7 @@ docs/
     0003-cli-first-form-factor.md
     0004-modrinth-first-data-source.md
     0005-packwiz-and-mrpack-pack-format.md
+    0006-native-packwiz-io.md
 
 memory/
   constitution.md              Supreme gate — non-negotiable principles
@@ -80,6 +93,12 @@ specs/
   0001-modpack-discovery/      Seeded example: conversation → Modpack Brief
     spec.md · plan.md · tasks.md
   0002-system-requirements-prediction/   Seeded (explicit request): predict specs
+    spec.md · plan.md · tasks.md
+  0003-project-foundation/     Phase 0 (done): toolchain + domain model + CLI + logging + InstanceFs
+    spec.md · plan.md · tasks.md
+  0004-modrinth-provider/      Phase 0 (done): ModSourceProvider + Modrinth adapter + contract tests
+    spec.md · plan.md · tasks.md
+  0005-pack-state/             Phase 0 (done): declarative packwiz-backed pack state
     spec.md · plan.md · tasks.md
 
 templates/
@@ -108,8 +127,13 @@ roadmap/
   must be green; external API clients get **contract tests**; generated artifacts (SNBT,
   KubeJS, manifests) must **parse/validate** before being written
   ([Constitution P3](./memory/constitution.md#principle-3--validation-discipline)).
-- **No application code exists yet** — this repo is currently docs/scaffolding. Code begins
-  in [Phase 0](./roadmap/phase-0-foundation.md), after its spec.
+- **Phase 0 is implemented** — the toolchain, core domain model, Modrinth provider, pack
+  state, structured logging, the guarded `InstanceFs`, and the CLI live under `src/` (specs
+  [`0003`](./specs/0003-project-foundation/spec.md)–[`0005`](./specs/0005-pack-state/spec.md)).
+  `npm run check` runs typecheck + lint + build + tests. New capabilities continue under SDD.
+- **Running TS:** dev/test/CLI run TypeScript directly on Node ≥ 22.18 (native type
+  stripping); the build (`tsc`) emits `dist/`. Source uses **`.ts` import extensions**
+  (rewritten to `.js` on build) and **erasable-only syntax** (no enums/parameter-properties).
 
 ---
 
@@ -125,6 +149,7 @@ These are settled. Don't relitigate them without an ADR amendment.
 | MVP form factor | **CLI / terminal agent** (runs by `.minecraft`) | [0003](./docs/decisions/0003-cli-first-form-factor.md) |
 | First mod catalog | **Modrinth** (CurseForge later, behind same interface) | [0004](./docs/decisions/0004-modrinth-first-data-source.md) |
 | Pack format | **packwiz** (dev) + **`.mrpack`** (export) | [0005](./docs/decisions/0005-packwiz-and-mrpack-pack-format.md) |
+| packwiz I/O | **Native in-process TOML** (no CLI shell-out) | [0006](./docs/decisions/0006-native-packwiz-io.md) |
 
 ---
 

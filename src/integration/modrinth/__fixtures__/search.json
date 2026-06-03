@@ -1,0 +1,23 @@
+{
+  "hits": [
+    {
+      "project_id": "AANobbMI",
+      "slug": "sodium",
+      "title": "Sodium",
+      "description": "The fastest and most compatible rendering optimization mod for Minecraft.",
+      "categories": ["optimization", "fabric"],
+      "project_type": "mod"
+    },
+    {
+      "project_id": "P7dR8mSH",
+      "slug": "fabric-api",
+      "title": "Fabric API",
+      "description": "Lightweight and modular API providing common hooks and intercompatibility measures utilized by mods.",
+      "categories": ["library", "fabric"],
+      "project_type": "mod"
+    }
+  ],
+  "offset": 0,
+  "limit": 10,
+  "total_hits": 2
+}

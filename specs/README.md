@@ -64,6 +64,11 @@ remaining phases get their specs when work on them begins (see the
 | --- | --- | --- | --- |
 | [0001](./0001-modpack-discovery/spec.md) | Modpack Discovery — conversation → validated Modpack Brief | 1 | planned |
 | [0002](./0002-system-requirements-prediction/spec.md) | System Requirements Prediction — min/recommended specs | 2 | planned |
+| [0003](./0003-project-foundation/spec.md) | Project Foundation — toolchain, domain model, CLI skeleton, logging, guarded `InstanceFs` | 0 | done |
+| [0004](./0004-modrinth-provider/spec.md) | Modrinth Provider — `ModSourceProvider` interface + Modrinth adapter + contract tests | 0 | done |
+| [0005](./0005-pack-state/spec.md) | Pack State — declarative, packwiz-backed pack state (read/write round-trip) | 0 | done |
 
-> Future specs (e.g. mod orchestration, conflict resolution, crash diagnosis, quests) are
-> listed in their roadmap phases and will be added here as they are authored.
+> Specs `0003`–`0005` are the **Phase 0 foundation** (authored when the phase was picked up,
+> per the constitution). Future specs (e.g. mod orchestration, conflict resolution, crash
+> diagnosis, quests) are listed in their roadmap phases and will be added here as they are
+> authored.

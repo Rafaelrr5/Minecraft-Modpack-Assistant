@@ -33,3 +33,4 @@ This is the middle layer of the project's three-layer memory:
 | [0003](./0003-cli-first-form-factor.md) | CLI-first form factor for the MVP | accepted |
 | [0004](./0004-modrinth-first-data-source.md) | Modrinth as the first mod-catalog data source | accepted |
 | [0005](./0005-packwiz-and-mrpack-pack-format.md) | packwiz (dev) + `.mrpack` (export) as pack formats | accepted |
+| [0006](./0006-native-packwiz-io.md) | Native (in-process) packwiz I/O, no CLI shell-out | accepted |

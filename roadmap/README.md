@@ -39,15 +39,17 @@ Every `phase-N-*.md` follows the same template:
 | 🟡 In progress | Actively being built. |
 | ✅ Done | Exit criteria met. |
 
-> **Current overall status:** **Phase 0 — documentation & scaffolding in place; no
-> application code yet.** Specs `0001` and `0002` are authored as seeds/explicit requests;
-> all phases are otherwise ⬜.
+> **Current overall status:** **Phase 0 — ✅ complete.** The foundation is implemented:
+> TypeScript/Node toolchain (build + lint + tests in CI), the core domain model, a
+> provider-agnostic Modrinth adapter with contract tests, declarative packwiz-backed pack
+> state (round-tripped), structured logging, the guarded `InstanceFs` boundary, and a CLI
+> (`help` + read-only `doctor`). Specs `0003`–`0005` cover it. **Phase 1 is next.**
 
 ## Phase map
 
 | # | Phase | Status | Seeded specs |
 | --- | --- | --- | --- |
-| 0 | [Foundation & Knowledge Base](./phase-0-foundation.md) | ⬜ | — |
+| 0 | [Foundation & Knowledge Base](./phase-0-foundation.md) | ✅ | [`0003`](../specs/0003-project-foundation/spec.md) · [`0004`](../specs/0004-modrinth-provider/spec.md) · [`0005`](../specs/0005-pack-state/spec.md) |
 | 1 | [Discovery & Ideation](./phase-1-discovery-ideation.md) | ⬜ | [`0001`](../specs/0001-modpack-discovery/spec.md) |
 | 2 | [Mod Orchestration & Curation](./phase-2-mod-orchestration.md) | ⬜ | [`0002`](../specs/0002-system-requirements-prediction/spec.md) |
 | 3 | [Conflict Resolution & Pre-flight](./phase-3-conflict-resolution.md) | ⬜ | — |

@@ -4,9 +4,11 @@
 > from idea to a polished, shareable pack — while staying _one step ahead_ of the
 > conflicts, crashes, and compatibility traps that normally make modpack building painful.**
 
-**Status:** 🚧 **Phase 0 — documentation & scaffolding.** No application code yet; this repo
-currently establishes the vision, the methodology, and the plan. → see the
-[roadmap](./roadmap/README.md).
+**Status:** ✅ **Phase 0 — foundation implemented.** The TypeScript/Node toolchain, the core
+domain model, a provider-agnostic **Modrinth** adapter (contract-tested), declarative
+**packwiz**-backed pack state, structured logging, the guarded `InstanceFs` safety boundary,
+and a CLI (`help` + read-only `doctor`) are in place and green in CI. **Phase 1 (Discovery)
+is next.** → see the [roadmap](./roadmap/README.md).
 
 ---
 
@@ -66,6 +68,7 @@ code. *No capability without a spec.* → [why](./docs/decisions/0001-spec-drive
 | **Specs** | [`specs/`](./specs/README.md) | Capability specs (`spec → plan → tasks`). |
 | **Templates** | [`templates/`](./templates/) | Standardized spec/plan/tasks/ADR templates. |
 | **Roadmap** | [`roadmap/`](./roadmap/README.md) | Phased delivery plan (Phase 0 → 8). |
+| **Source** | [`src/`](./src/) | The implementation: `core/` (UI-agnostic domain + ports), `integration/` (adapters), `cli/`. |
 
 ## The roadmap at a glance
 
@@ -93,6 +96,26 @@ code. *No capability without a spec.* → [why](./docs/decisions/0001-spec-drive
   ([ADR 0004](./docs/decisions/0004-modrinth-first-data-source.md)).
 - **Pack format:** packwiz (dev) + `.mrpack` (export)
   ([ADR 0005](./docs/decisions/0005-packwiz-and-mrpack-pack-format.md)).
+
+## Develop
+
+Requires **Node.js ≥ 22.18** (the CLI and tests run TypeScript directly; the build emits to
+`dist/`). No external services are needed — the Modrinth adapter is exercised by contract
+tests against recorded fixtures.
+
+```bash
+npm install        # install dependencies
+npm run typecheck  # tsc, no emit
+npm run lint       # eslint (incl. the core → cli/integration import boundary)
+npm test           # node --test over src/**/*.test.ts
+npm run build      # emit dist/
+npm run check      # all of the above
+npm run cli -- doctor   # run the CLI (read-only environment check)
+```
+
+Optional API credentials (e.g. a Modrinth token for higher rate limits) are read **only**
+from the environment — copy [`.env.example`](./.env.example) to `.env` (git-ignored) and fill
+it in. Secrets are never hard-coded or committed.
 
 ## Contributing / working on this repo
 

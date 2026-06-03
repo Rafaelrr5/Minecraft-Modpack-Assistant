@@ -4,11 +4,12 @@
 > from idea to a polished, shareable pack — while staying _one step ahead_ of the
 > conflicts, crashes, and compatibility traps that normally make modpack building painful.**
 
-**Status:** ✅ **Phase 0 — foundation implemented.** The TypeScript/Node toolchain, the core
+**Status:** ✅ **Phases 0–1 implemented.** Phase 0 — the TypeScript/Node toolchain, the core
 domain model, a provider-agnostic **Modrinth** adapter (contract-tested), declarative
-**packwiz**-backed pack state, structured logging, the guarded `InstanceFs` safety boundary,
-and a CLI (`help` + read-only `doctor`) are in place and green in CI. **Phase 1 (Discovery)
-is next.** → see the [roadmap](./roadmap/README.md).
+**packwiz**-backed pack state, structured logging, and the guarded `InstanceFs` safety
+boundary. Phase 1 — **Discovery** (spec `0001`): an interactive, read-only `discover` command
+turns an idea into a **validated Modpack Brief** via a deterministic slot-filling core. All
+green in CI. **Phase 2 (Mod Orchestration) is next.** → see the [roadmap](./roadmap/README.md).
 
 ---
 
@@ -111,6 +112,7 @@ npm test           # node --test over src/**/*.test.ts
 npm run build      # emit dist/
 npm run check      # all of the above
 npm run cli -- doctor   # run the CLI (read-only environment check)
+npm run cli -- discover # interactive discovery → a validated Modpack Brief (read-only)
 ```
 
 Optional API credentials (e.g. a Modrinth token for higher rate limits) are read **only**

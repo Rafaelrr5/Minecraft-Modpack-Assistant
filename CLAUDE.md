@@ -65,11 +65,12 @@ package.json · tsconfig*.json · eslint.config.js   TypeScript/Node toolchain (
 src/                           Application code (begins in Phase 0)
   index.ts                     Library entry (re-exports core + integration)
   core/                        UI-agnostic core — imports no cli/ or integration/ (enforced)
-    domain/                    Core domain model (MinecraftVersion, Loader, Mod, …, PackState)
+    domain/                    Core domain model (MinecraftVersion, Loader, loader-compat, Mod, …, PackState)
     ports/                     Interfaces the core depends on (Logger, InstanceFs, ModSourceProvider, PackFormat)
+    discovery/                 Phase 1 capability (spec 0001): slot-filling → validated ModpackBrief
   integration/                 Adapters implementing the ports
     logging/ · instance-fs/ · modrinth/ · packwiz/
-  cli/                         Thin CLI adapter (help + read-only doctor)
+  cli/                         Thin CLI adapter (help · read-only doctor · interactive discover)
 
 docs/
   VISION.md                    THE objective (single source of truth)
@@ -90,7 +91,7 @@ memory/
 
 specs/
   README.md                    SDD flow, numbering, lifecycle, index
-  0001-modpack-discovery/      Seeded example: conversation → Modpack Brief
+  0001-modpack-discovery/      Phase 1 (done): conversation → validated Modpack Brief
     spec.md · plan.md · tasks.md
   0002-system-requirements-prediction/   Seeded (explicit request): predict specs
     spec.md · plan.md · tasks.md
@@ -127,10 +128,13 @@ roadmap/
   must be green; external API clients get **contract tests**; generated artifacts (SNBT,
   KubeJS, manifests) must **parse/validate** before being written
   ([Constitution P3](./memory/constitution.md#principle-3--validation-discipline)).
-- **Phase 0 is implemented** — the toolchain, core domain model, Modrinth provider, pack
-  state, structured logging, the guarded `InstanceFs`, and the CLI live under `src/` (specs
-  [`0003`](./specs/0003-project-foundation/spec.md)–[`0005`](./specs/0005-pack-state/spec.md)).
+- **Phases 0–1 are implemented.** Phase 0 — the toolchain, core domain model, Modrinth
+  provider, pack state, structured logging, the guarded `InstanceFs`, and the CLI live under
+  `src/` (specs [`0003`](./specs/0003-project-foundation/spec.md)–[`0005`](./specs/0005-pack-state/spec.md)).
+  Phase 1 — the `discovery` capability (`src/core/discovery/`) and the `discover` CLI command
+  turn an idea into a validated `ModpackBrief` (spec [`0001`](./specs/0001-modpack-discovery/spec.md)).
   `npm run check` runs typecheck + lint + build + tests. New capabilities continue under SDD.
+  **Phase 2 (Mod Orchestration & Curation) is next.**
 - **Running TS:** dev/test/CLI run TypeScript directly on Node ≥ 22.18 (native type
   stripping); the build (`tsc`) emits `dist/`. Source uses **`.ts` import extensions**
   (rewritten to `.js` on build) and **erasable-only syntax** (no enums/parameter-properties).

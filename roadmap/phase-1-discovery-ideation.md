@@ -1,8 +1,9 @@
 # Phase 1 — Discovery & Ideation
 
 > Part of the [roadmap](./README.md). Delivers the objective in
-> [`../docs/VISION.md`](../docs/VISION.md). **Status: ⬜ Not started.**
-> **Seeded spec:** [`0001-modpack-discovery`](../specs/0001-modpack-discovery/spec.md) (planned).
+> [`../docs/VISION.md`](../docs/VISION.md). **Status: ✅ Done.**
+> **Spec:** [`0001-modpack-discovery`](../specs/0001-modpack-discovery/spec.md) (done) —
+> implemented in `src/core/discovery/` with the `discover` CLI command.
 
 ## 1. Goal / outcome
 

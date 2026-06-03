@@ -8,6 +8,7 @@ import { parseArgs } from 'node:util';
 
 import { CLI_VERSION, runHelp } from './commands/help.ts';
 import { renderDoctor, runDoctor } from './commands/doctor.ts';
+import { runDiscoverCli } from './commands/discover.ts';
 
 export async function run(argv: readonly string[]): Promise<number> {
   const [command, ...rest] = argv;
@@ -36,6 +37,17 @@ export async function run(argv: readonly string[]): Promise<number> {
     );
     process.stdout.write(renderDoctor(report, { json: values.json === true }));
     return report.checks.some((check) => check.status === 'fail') ? 1 : 0;
+  }
+
+  if (command === 'discover') {
+    const { values } = parseArgs({
+      args: [...rest],
+      options: {
+        expert: { type: 'boolean', default: false },
+      },
+      allowPositionals: false,
+    });
+    return runDiscoverCli({ audienceLevel: values.expert === true ? 'expert' : 'beginner' });
   }
 
   runHelp();

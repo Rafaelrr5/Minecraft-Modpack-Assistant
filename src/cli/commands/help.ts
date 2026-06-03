@@ -11,9 +11,13 @@ Usage:
   mpa <command> [options]
 
 Commands:
+  discover          Turn your idea into a validated modpack brief (interactive) — read-only.
   doctor            Check your environment (Node, Java, game instance) — read-only.
   help              Show this overview.
   version           Print the version.
+
+Options for 'discover':
+  --expert          Terse, expert-mode prompts (skip beginner explanations).
 
 Options for 'doctor':
   --instance <dir>  Path to a Minecraft instance / .minecraft folder to inspect.

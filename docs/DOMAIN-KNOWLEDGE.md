@@ -35,6 +35,12 @@ loader does **not** run on another without a bridge. The major loaders today:
 | **Fabric** | Lightweight / performance | Minimal loader; pairs with the **Fabric API** library that most Fabric mods depend on. Metadata in `fabric.mod.json`. [S3] |
 | **Quilt** | Fabric-compatible fork | Aims for compatibility with most Fabric mods; adds its own hooks. Metadata `quilt.mod.json` (can also read `fabric.mod.json`). [S4] |
 
+**Minimum Minecraft versions (load-bearing for the loader×version check).** **NeoForge**
+targets **Minecraft 1.20.2 and newer** (it forked from Forge in 2023); there is no NeoForge
+build for older versions, so a "NeoForge 1.19" brief is a *deterministic* dead-end Discovery
+rejects (spec `0001`). Forge, Fabric, and Quilt span wide ranges we do **not** bound here
+without a source — treat an unbounded family as "supported" rather than guessing. [S1][S2]
+
 **Bridging.** **Sinytra Connector** lets many **Fabric** mods run on **NeoForge** (it is
 not a universal guarantee and is version-sensitive). This matters for orchestration: a
 "NeoForge pack" can sometimes include a Fabric-only mod via Connector, but it must be

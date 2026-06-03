@@ -6,7 +6,7 @@
 | | |
 | --- | --- |
 | **Spec ID** | `0001` |
-| **Status** | `planned` |
+| **Status** | `done` |
 | **Roadmap phase** | [Phase 1 — Discovery & Ideation](../../roadmap/phase-1-discovery-ideation.md) |
 | **Author / date** | Project owner + Claude · 2026-06-03 |
 | **Related specs** | Feeds `0002` (requirements), Phase 2 orchestration |

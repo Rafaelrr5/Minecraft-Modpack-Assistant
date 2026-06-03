@@ -62,7 +62,7 @@ remaining phases get their specs when work on them begins (see the
 
 | Spec | Capability | Phase | Status |
 | --- | --- | --- | --- |
-| [0001](./0001-modpack-discovery/spec.md) | Modpack Discovery — conversation → validated Modpack Brief | 1 | planned |
+| [0001](./0001-modpack-discovery/spec.md) | Modpack Discovery — conversation → validated Modpack Brief | 1 | done |
 | [0002](./0002-system-requirements-prediction/spec.md) | System Requirements Prediction — min/recommended specs | 2 | planned |
 | [0003](./0003-project-foundation/spec.md) | Project Foundation — toolchain, domain model, CLI skeleton, logging, guarded `InstanceFs` | 0 | done |
 | [0004](./0004-modrinth-provider/spec.md) | Modrinth Provider — `ModSourceProvider` interface + Modrinth adapter + contract tests | 0 | done |

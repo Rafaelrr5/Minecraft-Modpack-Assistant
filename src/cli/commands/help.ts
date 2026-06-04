@@ -12,12 +12,21 @@ Usage:
 
 Commands:
   discover          Turn your idea into a validated modpack brief (interactive) — read-only.
+  orchestrate       Resolve a mod list (+ dependencies) into a pinned set — read-only.
   doctor            Check your environment (Node, Java, game instance) — read-only.
   help              Show this overview.
   version           Print the version.
 
 Options for 'discover':
   --expert          Terse, expert-mode prompts (skip beginner explanations).
+
+Options for 'orchestrate':
+  --loader <name>   Loader family: neoforge | forge | fabric | quilt (required).
+  --mc <version>    Target Minecraft version, e.g. 1.21.1 (required).
+  --mods <a,b,c>    Comma-separated mod slugs / project ids to include.
+  --recommend       Seed a starter set from the theme/playstyle.
+  --playstyle <s>   Playstyle hint for recommendations (e.g. tech, magic).
+  --theme <s>       Pack theme/name.
 
 Options for 'doctor':
   --instance <dir>  Path to a Minecraft instance / .minecraft folder to inspect.

@@ -6,9 +6,11 @@
  */
 import { parseArgs } from 'node:util';
 
+import { isLoaderFamily } from '../core/index.ts';
 import { CLI_VERSION, runHelp } from './commands/help.ts';
 import { renderDoctor, runDoctor } from './commands/doctor.ts';
 import { runDiscoverCli } from './commands/discover.ts';
+import { type OrchestrateOptions, runOrchestrateCli } from './commands/orchestrate.ts';
 
 export async function run(argv: readonly string[]): Promise<number> {
   const [command, ...rest] = argv;
@@ -48,6 +50,48 @@ export async function run(argv: readonly string[]): Promise<number> {
       allowPositionals: false,
     });
     return runDiscoverCli({ audienceLevel: values.expert === true ? 'expert' : 'beginner' });
+  }
+
+  if (command === 'orchestrate') {
+    const { values } = parseArgs({
+      args: [...rest],
+      options: {
+        loader: { type: 'string' },
+        mc: { type: 'string' },
+        mods: { type: 'string' },
+        recommend: { type: 'boolean', default: false },
+        'recommend-limit': { type: 'string' },
+        playstyle: { type: 'string' },
+        theme: { type: 'string' },
+      },
+      allowPositionals: false,
+    });
+
+    if (values.loader === undefined || !isLoaderFamily(values.loader)) {
+      process.stderr.write('orchestrate: --loader <neoforge|forge|fabric|quilt> is required.\n');
+      return 2;
+    }
+    if (values.mc === undefined) {
+      process.stderr.write('orchestrate: --mc <minecraft-version> is required (e.g. 1.21.1).\n');
+      return 2;
+    }
+    const include = (values.mods ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+
+    const options: OrchestrateOptions = {
+      loader: values.loader,
+      minecraft: values.mc,
+      include,
+      recommend: values.recommend === true,
+      ...(values['recommend-limit'] !== undefined
+        ? { recommendLimit: Number(values['recommend-limit']) }
+        : {}),
+      ...(values.playstyle !== undefined ? { playstyle: values.playstyle } : {}),
+      ...(values.theme !== undefined ? { theme: values.theme } : {}),
+    };
+    return runOrchestrateCli(options);
   }
 
   runHelp();

@@ -7,3 +7,4 @@
 export * from './domain/index.ts';
 export * from './ports/index.ts';
 export * from './discovery/index.ts';
+export * from './orchestration/index.ts';

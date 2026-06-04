@@ -5,4 +5,5 @@ export * from './loader-compat.ts';
 export * from './mod.ts';
 export * from './conflict.ts';
 export * from './modpack-brief.ts';
+export * from './modpack.ts';
 export * from './pack-state.ts';

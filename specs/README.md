@@ -67,6 +67,7 @@ remaining phases get their specs when work on them begins (see the
 | [0003](./0003-project-foundation/spec.md) | Project Foundation — toolchain, domain model, CLI skeleton, logging, guarded `InstanceFs` | 0 | done |
 | [0004](./0004-modrinth-provider/spec.md) | Modrinth Provider — `ModSourceProvider` interface + Modrinth adapter + contract tests | 0 | done |
 | [0005](./0005-pack-state/spec.md) | Pack State — declarative, packwiz-backed pack state (read/write round-trip) | 0 | done |
+| [0006](./0006-mod-orchestration/spec.md) | Mod Orchestration — list intake, dependency resolution, categorization → pinned `PackState` | 2 | done |
 
 > Specs `0003`–`0005` are the **Phase 0 foundation** (authored when the phase was picked up,
 > per the constitution). Future specs (e.g. mod orchestration, conflict resolution, crash

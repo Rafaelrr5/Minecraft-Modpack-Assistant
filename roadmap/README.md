@@ -39,12 +39,13 @@ Every `phase-N-*.md` follows the same template:
 | 🟡 In progress | Actively being built. |
 | ✅ Done | Exit criteria met. |
 
-> **Current overall status:** **Phase 1 — ✅ complete** (on the Phase 0 foundation). Discovery
-> (spec `0001`) ships: the UI-agnostic `discovery` module turns a vague or terse idea into a
-> **validated `ModpackBrief`** via deterministic slot-filling — completeness + sourced
-> consistency checks (loader×version, client-only-on-server, RAM floor), a transparent defaults
-> engine, audience-adaptive prompts, and a confirmation gate — surfaced through an interactive,
-> read-only `discover` CLI command. **Phase 2 (Mod Orchestration & Curation) is next.**
+> **Current overall status:** **Phase 2 — 🟡 in progress** (Phases 0–1 ✅). The
+> `orchestration` capability (spec `0006`) ships: from a confirmed `ModpackBrief` it resolves a
+> user list (or theme-seeded recommendations) to compatible files, walks **required
+> dependencies** transitively, surfaces unresolved/incompatible cases as issues, categorizes the
+> set, and pins it into a declarative `PackState` — all behind the `ModSourceProvider` port and
+> exposed via a read-only `orchestrate` CLI command. **Remaining in Phase 2:** System
+> Requirements Prediction (spec `0002`), which consumes the resolved set.
 
 ## Phase map
 
@@ -52,7 +53,7 @@ Every `phase-N-*.md` follows the same template:
 | --- | --- | --- | --- |
 | 0 | [Foundation & Knowledge Base](./phase-0-foundation.md) | ✅ | [`0003`](../specs/0003-project-foundation/spec.md) · [`0004`](../specs/0004-modrinth-provider/spec.md) · [`0005`](../specs/0005-pack-state/spec.md) |
 | 1 | [Discovery & Ideation](./phase-1-discovery-ideation.md) | ✅ | [`0001`](../specs/0001-modpack-discovery/spec.md) |
-| 2 | [Mod Orchestration & Curation](./phase-2-mod-orchestration.md) | ⬜ | [`0002`](../specs/0002-system-requirements-prediction/spec.md) |
+| 2 | [Mod Orchestration & Curation](./phase-2-mod-orchestration.md) | 🟡 | [`0006`](../specs/0006-mod-orchestration/spec.md) ✅ · [`0002`](../specs/0002-system-requirements-prediction/spec.md) |
 | 3 | [Conflict Resolution & Pre-flight](./phase-3-conflict-resolution.md) | ⬜ | — |
 | 4 | [Build, Launch & Crash Diagnosis](./phase-4-build-launch-crash-diagnosis.md) | ⬜ | — |
 | 5 | [Quests & Scripting Automation](./phase-5-quests-scripting-automation.md) | ⬜ | — |

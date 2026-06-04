@@ -10,3 +10,4 @@ export * from './discovery/index.ts';
 export * from './orchestration/index.ts';
 export * from './requirements/index.ts';
 export * from './conflicts/index.ts';
+export * from './build/index.ts';

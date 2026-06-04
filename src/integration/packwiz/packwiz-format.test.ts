@@ -85,3 +85,25 @@ test('writePack writes only under the given workspace directory (AC-4)', async (
   const top = (await readdir(dir)).sort();
   assert.deepEqual(top, ['index.toml', 'mods', 'pack.toml']);
 });
+
+test('assemble returns the validated tree in memory; every file parses as TOML (spec 0008 AC-1)', () => {
+  const files = new PackwizFormat().assemble(samplePack());
+  assert.deepEqual([...files.map((f) => f.relPath)].sort(), [
+    'index.toml',
+    'mods/sodium.pw.toml',
+    'pack.toml',
+  ]);
+  for (const f of files) assert.doesNotThrow(() => parse(f.contents), `${f.relPath} must parse`);
+});
+
+test('writePack === assemble + write: same files, same bytes (spec 0008 regression)', async () => {
+  const dir = await workspace();
+  const fmt = new PackwizFormat();
+  const pack = samplePack();
+  const assembled = fmt.assemble(pack);
+  await fmt.writePack(pack, dir);
+  for (const f of assembled) {
+    const onDisk = await readFile(path.join(dir, f.relPath), 'utf8');
+    assert.equal(onDisk, f.contents, `${f.relPath} on disk must match the assembled bytes`);
+  }
+});

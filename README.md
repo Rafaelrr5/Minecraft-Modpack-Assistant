@@ -4,13 +4,17 @@
 > from idea to a polished, shareable pack — while staying _one step ahead_ of the
 > conflicts, crashes, and compatibility traps that normally make modpack building painful.**
 
-**Status:** ✅ **Phases 0–2 implemented.** Phase 0 — toolchain, core domain model, a
-provider-agnostic **Modrinth** adapter (contract-tested), **packwiz**-backed pack state,
+**Status:** ✅ **Phases 0–3 implemented; Phase 4 in progress.** Phase 0 — toolchain, core domain
+model, a provider-agnostic **Modrinth** adapter (contract-tested), **packwiz**-backed pack state,
 logging, the guarded `InstanceFs`. Phase 1 — **Discovery** (`0001`): `discover` turns an idea
 into a **validated Modpack Brief**. Phase 2 — **Orchestration** (`0006`): `orchestrate` resolves
 a mod list **and its dependencies** into a pinned `PackState`; **Requirements** (`0002`):
-`--requirements` predicts RAM/Java/disk/CPU/GPU with confidence + rationale. All read-only,
-green in CI. **Next:** Conflict Resolution & Pre-flight (Phase 3). → see the
+`--requirements` predicts RAM/Java/disk/CPU/GPU with confidence + rationale. Phase 3 —
+**Conflict Pre-flight** (`0007`): `--preflight` flags duplicate ids, declared incompatibilities,
+version/side mismatches, known-bad combos, and keybinding collisions (read-only, proposes fixes).
+Phase 4 — **Build** (`0008`): `build` assembles a packwiz tree + a launch profile (predicted
+**Java + `-Xmx`**) and writes it **only** through the guarded `InstanceFs` (dry-run default,
+backup, `--force` to overwrite). **Next:** Crash Diagnosis (`0009`). → see the
 [roadmap](./roadmap/README.md).
 
 ---
@@ -116,6 +120,9 @@ npm run check      # all of the above
 npm run cli -- doctor   # run the CLI (read-only environment check)
 npm run cli -- discover # interactive discovery → a validated Modpack Brief (read-only)
 npm run cli -- orchestrate --loader neoforge --mc 1.21.1 --mods create --requirements  # resolve + predict (read-only)
+npm run cli -- orchestrate --loader neoforge --mc 1.21.1 --mods optifine,sodium --preflight  # conflict pre-flight (read-only)
+npm run cli -- build --loader neoforge --mc 1.21.1 --mods create --instance ./my-pack          # dry-run a build plan
+npm run cli -- build --loader neoforge --mc 1.21.1 --mods create --instance ./my-pack --apply  # write it (backup taken first)
 ```
 
 Optional API credentials (e.g. a Modrinth token for higher rate limits) are read **only**

@@ -69,6 +69,7 @@ remaining phases get their specs when work on them begins (see the
 | [0005](./0005-pack-state/spec.md) | Pack State — declarative, packwiz-backed pack state (read/write round-trip) | 0 | done |
 | [0006](./0006-mod-orchestration/spec.md) | Mod Orchestration — list intake, dependency resolution, categorization → pinned `PackState` | 2 | done |
 | [0007](./0007-conflict-preflight/spec.md) | Conflict Detection & Pre-flight — static conflict + keybinding detection over the resolved set → report with proposed fixes | 3 | done |
+| [0008](./0008-build-instance/spec.md) | Pack Build & Launch Configuration — pinned `PackState` + `RequirementsReport` → packwiz workspace + launch profile, materialized through the guarded `InstanceFs` | 4 | done |
 
 > Specs `0003`–`0005` are the **Phase 0 foundation** (authored when the phase was picked up,
 > per the constitution). Future specs (e.g. mod orchestration, conflict resolution, crash

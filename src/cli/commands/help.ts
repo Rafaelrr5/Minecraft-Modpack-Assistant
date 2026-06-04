@@ -13,6 +13,8 @@ Usage:
 Commands:
   discover          Turn your idea into a validated modpack brief (interactive) — read-only.
   orchestrate       Resolve a mod list (+ dependencies) into a pinned set — read-only.
+  build             Assemble the pack into an importable instance with the right Java + RAM.
+                    Dry-run by default; writes only with --apply (backup taken first).
   doctor            Check your environment (Node, Java, game instance) — read-only.
   help              Show this overview.
   version           Print the version.
@@ -35,6 +37,20 @@ Options for 'orchestrate':
                     incompatibilities, version/side mismatches, known-bad combos,
                     keybinding collisions) — read-only, proposes fixes, applies nothing.
   --instance <dir>  With --preflight: read options.txt to refine keybinding remaps.
+
+Options for 'build':
+  --loader <name>   Loader family: neoforge | forge | fabric | quilt (required).
+  --mc <version>    Target Minecraft version, e.g. 1.21.1 (required).
+  --mods <a,b,c>    Comma-separated mod slugs / project ids to include.
+  --recommend       Seed a starter set from the theme/playstyle.
+  --playstyle <s>   Playstyle hint for recommendations (e.g. tech, magic).
+  --theme <s>       Pack theme/name.
+  --side <s>        Size Java/RAM for 'client' (default) or 'server'.
+  --shaders         Flag shaders (affects the predicted GPU/RAM).
+  --hd-textures     Flag HD textures (affects the predicted GPU/RAM).
+  --instance <dir>  Where to build the instance (required).
+  --apply           Write the plan (otherwise dry-run, the default).
+  --force           Required with --apply when the plan overwrites existing files.
 
 Options for 'doctor':
   --instance <dir>  Path to a Minecraft instance / .minecraft folder to inspect.

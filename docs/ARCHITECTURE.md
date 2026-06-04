@@ -114,7 +114,7 @@ expose a typed contract the agent layer and CLI call.
 | **orchestration** | 2 | Accept/recommend mods, resolve loader+MC, resolve deps, categorize | resolved `Modpack` / `PackState` |
 | **requirements** | 2 | Predict min/recommended system requirements | `RequirementsReport` |
 | **conflicts** | 3 | Static + heuristic conflict & keybinding pre-flight | `Conflict[]` |
-| **build** | 4 | Assemble packwiz workspace → installable instance | instance + launch config |
+| **build** | 4 | Assemble packwiz tree + launch profile (numeric Java/`-Xmx` from `0002`), materialize via guarded `InstanceFs` (spec `0008`) | `BuildArtifacts` / `BuildPlan` → instance |
 | **crash-diagnosis** | 4 | Ingest & categorize logs, drive remediation loop | `CrashDiagnosis` |
 | **quests / scripting** | 5 | Generate validated FTB Quests SNBT & KubeJS scripts | `.snbt`, `.js` artifacts |
 | **updates** | 6 | Track updates, diff, re-check compatibility, migrate | update plan / diff |
@@ -129,8 +129,10 @@ expose a typed contract the agent layer and CLI call.
   interface. (Domain §3.)
 - **`MetadataParser`** — read `fabric.mod.json` / `mods.toml` from a jar into the domain's
   `Dependency`/`side`/`modId` shape. (Domain §4.)
-- **`PackFormat`** — read/write **packwiz** (source of truth) and **export** `.mrpack` /
-  CurseForge `manifest.json`. (Domain §8.)
+- **`PackFormat`** — `assemble` a `PackState` into in-memory pack files (pure, validated) and
+  read/write **packwiz** (source of truth); **export** `.mrpack` / CurseForge `manifest.json`
+  later behind the same seam. The pure `assemble` (spec `0008`) lets the `build` capability fold
+  the whole tree into one guarded `InstanceFs` change plan. (Domain §8.)
 - **`CrashAnalyzer`** — our deterministic heuristics first; **mclo.gs** as an optional
   second opinion. (Domain §6.)
 - **`ArtifactSerializer`** — a **real SNBT serializer** for FTB Quests and a KubeJS script

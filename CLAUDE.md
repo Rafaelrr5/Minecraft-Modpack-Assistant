@@ -71,9 +71,10 @@ src/                           Application code (begins in Phase 0)
     orchestration/             Phase 2 capability (spec 0006): list + deps → pinned PackState
     requirements/              Phase 2 capability (spec 0002): resolved set → RequirementsReport
     conflicts/                 Phase 3 capability (spec 0007): resolved set → read-only pre-flight report (+ proposed fixes)
+    build/                     Phase 4 capability (spec 0008): PackState + RequirementsReport → packwiz tree + launch profile → guarded InstanceFs change plan
   integration/                 Adapters implementing the ports
-    logging/ · instance-fs/ · modrinth/ · packwiz/
-  cli/                         Thin CLI adapter (help · doctor · discover · orchestrate [--requirements|--preflight])
+    logging/ · instance-fs/ · modrinth/ · packwiz/ (PackFormat: + pure assemble)
+  cli/                         Thin CLI adapter (help · doctor · discover · orchestrate [--requirements|--preflight] · build [--apply|--force])
 
 docs/
   VISION.md                    THE objective (single source of truth)
@@ -108,6 +109,8 @@ specs/
     spec.md · plan.md · tasks.md
   0007-conflict-preflight/     Phase 3 (done): resolved set → read-only pre-flight conflict report
     spec.md · plan.md · tasks.md
+  0008-build-instance/         Phase 4 (done): pinned PackState + RequirementsReport → packwiz workspace + launch profile via guarded InstanceFs
+    spec.md · plan.md · tasks.md
 
 templates/
   spec-template.md · plan-template.md · tasks-template.md · adr-template.md
@@ -135,7 +138,7 @@ roadmap/
   must be green; external API clients get **contract tests**; generated artifacts (SNBT,
   KubeJS, manifests) must **parse/validate** before being written
   ([Constitution P3](./memory/constitution.md#principle-3--validation-discipline)).
-- **Phases 0–3 are implemented.** Phase 0 — toolchain, core domain model, Modrinth provider,
+- **Phases 0–3 are implemented; Phase 4 is in progress (build done).** Phase 0 — toolchain, core domain model, Modrinth provider,
   pack state, logging, guarded `InstanceFs`, CLI (specs
   [`0003`](./specs/0003-project-foundation/spec.md)–[`0005`](./specs/0005-pack-state/spec.md)).
   Phase 1 — `discovery` + `discover` CLI turn an idea into a validated `ModpackBrief` (spec
@@ -148,9 +151,14 @@ roadmap/
   **pre-flight** over the resolved set (duplicate mod ids, declared incompatibilities, Maven
   version-range mismatches, side mismatches, curated known-bad combos, keybinding collisions),
   each finding marked certain/suspected with a proposed fix — applied to nothing — via
-  `orchestrate --preflight` (spec [`0007`](./specs/0007-conflict-preflight/spec.md)).
+  `orchestrate --preflight` (spec [`0007`](./specs/0007-conflict-preflight/spec.md)). Phase 4 —
+  `build` (`src/core/build/`) assembles the pinned `PackState` into a packwiz tree plus a launch
+  profile carrying the **predicted numeric Java + `-Xmx`** (spec `0002`), and materializes it
+  **only** through the guarded `InstanceFs` (dry-run default, backup before write, overwrites gated
+  behind `--force`); the `PackFormat` port gained a pure in-memory `assemble`; surfaced via the
+  `build` CLI command (spec [`0008`](./specs/0008-build-instance/spec.md)).
   `npm run check` runs typecheck + lint + build + tests. New capabilities continue under SDD.
-  **Phase 4 (Build, Launch & Crash Diagnosis) is next.**
+  **Phase 4 continues with `0009` crash diagnosis (log ingestion + categorization + remediation).**
 - **Running TS:** dev/test/CLI run TypeScript directly on Node ≥ 22.18 (native type
   stripping); the build (`tsc`) emits `dist/`. Source uses **`.ts` import extensions**
   (rewritten to `.js` on build) and **erasable-only syntax** (no enums/parameter-properties).

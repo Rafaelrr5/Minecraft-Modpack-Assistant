@@ -48,7 +48,7 @@ export interface OrchestrateDeps {
 }
 
 /** Build the minimal brief orchestration needs from CLI flags (expert, no explanations). */
-function briefFromOptions(options: OrchestrateOptions): ModpackBrief {
+export function briefFromOptions(options: OrchestrateOptions): ModpackBrief {
   return {
     theme: options.theme ?? 'modpack',
     ...(options.playstyle ? { playstyle: options.playstyle } : {}),

@@ -1,7 +1,11 @@
 # Phase 4 — Build, Launch & Crash Diagnosis
 
 > Part of the [roadmap](./README.md). Delivers the objective in
-> [`../docs/VISION.md`](../docs/VISION.md). **Status: ⬜ Not started.**
+> [`../docs/VISION.md`](../docs/VISION.md). **Status: 🟡 In progress.**
+> **Build sub-capability ✅ done** — spec [`0008-build-instance`](../specs/0008-build-instance/spec.md):
+> pinned `PackState` + `RequirementsReport` → packwiz workspace + launch profile (numeric Java +
+> `-Xmx`), materialized only through the guarded `InstanceFs` (dry-run default, backup, `--force` for
+> overwrites), via the `build` CLI command. **Crash diagnosis (`0009`) is the remaining sub-capability.**
 
 ## 1. Goal / outcome
 
@@ -49,11 +53,10 @@ runners (Phase 8). Local build/launch only here.
 
 ## 5. Specs to be written
 
-- `NNNN-build-instance`: packwiz assembly + installable instance + applying Java/`-Xmx`.
-- `NNNN-crash-diagnosis`: log ingestion, categorization, mclo.gs integration, remediation
-  loop.
-
-(Authored when the phase starts.)
+- ✅ [`0008-build-instance`](../specs/0008-build-instance/spec.md): packwiz assembly + installable
+  instance + applying Java/`-Xmx`. **Done.**
+- ⬜ `NNNN-crash-diagnosis`: log ingestion, categorization, mclo.gs integration, remediation
+  loop. *(Authored when picked up.)*
 
 ## 6. Dependencies
 

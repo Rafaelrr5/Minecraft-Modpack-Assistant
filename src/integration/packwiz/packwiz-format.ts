@@ -12,7 +12,7 @@ import * as path from 'node:path';
 
 import type { PackState, PackStateMod } from '../../core/domain/pack-state.ts';
 import type { Logger } from '../../core/ports/logger.ts';
-import type { PackFormat, WrittenPack } from '../../core/ports/pack-format.ts';
+import type { PackFile, PackFormat, WrittenPack } from '../../core/ports/pack-format.ts';
 import { noopLogger } from '../logging/console-logger.ts';
 import type { IndexFileEntry } from './packwiz-files.ts';
 import {
@@ -46,9 +46,13 @@ export class PackwizFormat implements PackFormat {
     this.#log = options.logger ?? noopLogger;
   }
 
-  async writePack(state: PackState, dir: string): Promise<WrittenPack> {
-    const written: string[] = [];
-    await mkdir(path.join(dir, 'mods'), { recursive: true });
+  /**
+   * Assemble the full packwiz tree **in memory** (spec 0008) — pure, no I/O. Every file is
+   * re-parsed (`validateToml`) before it is returned, so callers can write it verbatim. Returned
+   * in write order: per-mod metafiles, then `index.toml`, then `pack.toml`.
+   */
+  assemble(state: PackState): readonly PackFile[] {
+    const files: PackFile[] = [];
 
     // 1. Per-mod metafiles, collecting index entries with their content hashes.
     const indexEntries: IndexFileEntry[] = [];
@@ -56,16 +60,14 @@ export class PackwizFormat implements PackFormat {
       const relPath = modMetafilePath(mod);
       const toml = buildModToml(mod);
       validateToml(toml, relPath);
-      await writeFile(path.join(dir, relPath), toml, 'utf8');
-      written.push(relPath);
+      files.push({ relPath, contents: toml });
       indexEntries.push({ file: relPath, hash: sha256Hex(toml), metafile: true });
     }
 
     // 2. index.toml — every metafile listed with its hash (spec 0005 FR-5 / AC-3).
     const indexToml = buildIndexToml(indexEntries, INDEX_HASH_FORMAT);
     validateToml(indexToml, 'index.toml');
-    await writeFile(path.join(dir, 'index.toml'), indexToml, 'utf8');
-    written.push('index.toml');
+    files.push({ relPath: 'index.toml', contents: indexToml });
 
     // 3. pack.toml — references index.toml by hash.
     const packToml = buildPackToml({
@@ -77,8 +79,23 @@ export class PackwizFormat implements PackFormat {
       index: { file: 'index.toml', hashFormat: INDEX_HASH_FORMAT, hash: sha256Hex(indexToml) },
     });
     validateToml(packToml, 'pack.toml');
-    await writeFile(path.join(dir, 'pack.toml'), packToml, 'utf8');
-    written.push('pack.toml');
+    files.push({ relPath: 'pack.toml', contents: packToml });
+
+    return files;
+  }
+
+  async writePack(state: PackState, dir: string): Promise<WrittenPack> {
+    // Assemble in memory (validated), then write — one source of truth for the tree (spec 0008).
+    const files = this.assemble(state);
+    await mkdir(path.join(dir, 'mods'), { recursive: true });
+
+    const written: string[] = [];
+    for (const file of files) {
+      const target = path.join(dir, file.relPath);
+      await mkdir(path.dirname(target), { recursive: true });
+      await writeFile(target, file.contents, 'utf8');
+      written.push(file.relPath);
+    }
 
     this.#log.info('wrote packwiz pack', { dir, name: state.name, mods: state.mods.length });
     return { dir, files: written };

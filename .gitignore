@@ -6,11 +6,11 @@ yarn-error.log*
 pnpm-debug.log*
 .pnpm-store/
 
-# Build output
-dist/
-build/
-out/
-lib/
+# Build output (root-anchored: these are output dirs, not source — e.g. src/core/build/ is a module)
+/dist/
+/build/
+/out/
+/lib/
 *.tsbuildinfo
 
 # Test / coverage

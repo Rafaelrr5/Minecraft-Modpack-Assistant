@@ -63,6 +63,10 @@ export async function run(argv: readonly string[]): Promise<number> {
         'recommend-limit': { type: 'string' },
         playstyle: { type: 'string' },
         theme: { type: 'string' },
+        requirements: { type: 'boolean', default: false },
+        side: { type: 'string' },
+        shaders: { type: 'boolean', default: false },
+        'hd-textures': { type: 'boolean', default: false },
       },
       allowPositionals: false,
     });
@@ -90,6 +94,10 @@ export async function run(argv: readonly string[]): Promise<number> {
         : {}),
       ...(values.playstyle !== undefined ? { playstyle: values.playstyle } : {}),
       ...(values.theme !== undefined ? { theme: values.theme } : {}),
+      requirements: values.requirements === true,
+      ...(values.side === 'server' || values.side === 'client' ? { side: values.side } : {}),
+      shaders: values.shaders === true,
+      hdTextures: values['hd-textures'] === true,
     };
     return runOrchestrateCli(options);
   }

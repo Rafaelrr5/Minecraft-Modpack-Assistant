@@ -9,7 +9,10 @@ import {
   type ModpackBrief,
   type ModSourceProvider,
   type OrchestrationResult,
+  type RequirementsTarget,
   parseMinecraftVersion,
+  predictRequirements,
+  renderRequirements,
   resolveModpack,
 } from '../../core/index.ts';
 import { createModrinthProvider } from '../../integration/modrinth/index.ts';
@@ -22,6 +25,11 @@ export interface OrchestrateOptions {
   readonly recommendLimit?: number;
   readonly playstyle?: string;
   readonly theme?: string;
+  /** Also predict system requirements for the resolved set (spec 0002, T-0002-12). */
+  readonly requirements?: boolean;
+  readonly side?: RequirementsTarget;
+  readonly shaders?: boolean;
+  readonly hdTextures?: boolean;
 }
 
 /** Build the minimal brief orchestration needs from CLI flags (expert, no explanations). */
@@ -55,6 +63,15 @@ export async function runOrchestrate(
     provider,
   );
   write(renderResult(result));
+
+  // Optional follow-on step: predict requirements for the resolved set (spec 0002).
+  if (options.requirements) {
+    const report = predictRequirements(result.modpack, {
+      ...(options.side ? { target: options.side } : {}),
+      flags: { shaders: options.shaders === true, hdTextures: options.hdTextures === true },
+    });
+    write(`\n${renderRequirements(report)}`);
+  }
   return result;
 }
 

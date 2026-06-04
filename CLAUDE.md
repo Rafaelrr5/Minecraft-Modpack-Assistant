@@ -69,6 +69,7 @@ src/                           Application code (begins in Phase 0)
     ports/                     Interfaces the core depends on (Logger, InstanceFs, ModSourceProvider, PackFormat)
     discovery/                 Phase 1 capability (spec 0001): slot-filling → validated ModpackBrief
     orchestration/             Phase 2 capability (spec 0006): list + deps → pinned PackState
+    requirements/              Phase 2 capability (spec 0002): resolved set → RequirementsReport
   integration/                 Adapters implementing the ports
     logging/ · instance-fs/ · modrinth/ · packwiz/
   cli/                         Thin CLI adapter (help · doctor · discover · orchestrate)
@@ -94,7 +95,7 @@ specs/
   README.md                    SDD flow, numbering, lifecycle, index
   0001-modpack-discovery/      Phase 1 (done): conversation → validated Modpack Brief
     spec.md · plan.md · tasks.md
-  0002-system-requirements-prediction/   Seeded (explicit request): predict specs
+  0002-system-requirements-prediction/   Phase 2 (done): resolved set → RequirementsReport
     spec.md · plan.md · tasks.md
   0003-project-foundation/     Phase 0 (done): toolchain + domain model + CLI + logging + InstanceFs
     spec.md · plan.md · tasks.md
@@ -131,15 +132,17 @@ roadmap/
   must be green; external API clients get **contract tests**; generated artifacts (SNBT,
   KubeJS, manifests) must **parse/validate** before being written
   ([Constitution P3](./memory/constitution.md#principle-3--validation-discipline)).
-- **Phases 0–1 are done; Phase 2 is in progress.** Phase 0 — toolchain, core domain model,
-  Modrinth provider, pack state, logging, guarded `InstanceFs`, CLI (specs
+- **Phases 0–2 are implemented.** Phase 0 — toolchain, core domain model, Modrinth provider,
+  pack state, logging, guarded `InstanceFs`, CLI (specs
   [`0003`](./specs/0003-project-foundation/spec.md)–[`0005`](./specs/0005-pack-state/spec.md)).
-  Phase 1 — the `discovery` capability + `discover` CLI turn an idea into a validated
-  `ModpackBrief` (spec [`0001`](./specs/0001-modpack-discovery/spec.md)). Phase 2 — the
-  `orchestration` capability (`src/core/orchestration/`) + `orchestrate` CLI resolve a list and
-  its dependencies into a pinned `PackState` (spec [`0006`](./specs/0006-mod-orchestration/spec.md));
-  **remaining: System Requirements Prediction (spec [`0002`](./specs/0002-system-requirements-prediction/spec.md))**.
-  `npm run check` runs typecheck + lint + build + tests. New capabilities continue under SDD.
+  Phase 1 — `discovery` + `discover` CLI turn an idea into a validated `ModpackBrief` (spec
+  [`0001`](./specs/0001-modpack-discovery/spec.md)). Phase 2 — `orchestration`
+  (`src/core/orchestration/`) resolves a list + dependencies into a pinned `PackState` (spec
+  [`0006`](./specs/0006-mod-orchestration/spec.md)), and `requirements`
+  (`src/core/requirements/`) predicts a `RequirementsReport` from the resolved set (spec
+  [`0002`](./specs/0002-system-requirements-prediction/spec.md)); both surface via
+  `orchestrate [--requirements]`. `npm run check` runs typecheck + lint + build + tests. New
+  capabilities continue under SDD. **Phase 3 (Conflict Resolution & Pre-flight) is next.**
 - **Running TS:** dev/test/CLI run TypeScript directly on Node ≥ 22.18 (native type
   stripping); the build (`tsc`) emits `dist/`. Source uses **`.ts` import extensions**
   (rewritten to `.js` on build) and **erasable-only syntax** (no enums/parameter-properties).

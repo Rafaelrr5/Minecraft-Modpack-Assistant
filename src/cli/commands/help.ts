@@ -27,6 +27,10 @@ Options for 'orchestrate':
   --recommend       Seed a starter set from the theme/playstyle.
   --playstyle <s>   Playstyle hint for recommendations (e.g. tech, magic).
   --theme <s>       Pack theme/name.
+  --requirements    Also predict system requirements (RAM/Java/disk/CPU/GPU).
+  --side <s>        Size requirements for 'client' (default) or 'server'.
+  --shaders         Flag shaders (affects the GPU requirement).
+  --hd-textures     Flag HD textures (affects the GPU requirement).
 
 Options for 'doctor':
   --instance <dir>  Path to a Minecraft instance / .minecraft folder to inspect.

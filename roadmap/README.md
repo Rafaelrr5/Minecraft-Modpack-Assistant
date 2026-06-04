@@ -39,13 +39,15 @@ Every `phase-N-*.md` follows the same template:
 | 🟡 In progress | Actively being built. |
 | ✅ Done | Exit criteria met. |
 
-> **Current overall status:** **Phase 2 — 🟡 in progress** (Phases 0–1 ✅). The
-> `orchestration` capability (spec `0006`) ships: from a confirmed `ModpackBrief` it resolves a
-> user list (or theme-seeded recommendations) to compatible files, walks **required
-> dependencies** transitively, surfaces unresolved/incompatible cases as issues, categorizes the
-> set, and pins it into a declarative `PackState` — all behind the `ModSourceProvider` port and
-> exposed via a read-only `orchestrate` CLI command. **Remaining in Phase 2:** System
-> Requirements Prediction (spec `0002`), which consumes the resolved set.
+> **Current overall status:** **Phase 2 — ✅ complete** (Phases 0–1 ✅). The `orchestration`
+> capability (spec `0006`) resolves a confirmed `ModpackBrief` + a mod list (or theme-seeded
+> recommendations) into a dependency-complete, pinned `PackState`, surfacing
+> unresolved/incompatible cases as issues. The `requirements` capability (spec `0002`) consumes
+> that resolved set and predicts **min/recommended RAM (+`-Xmx`), Java, disk, CPU, and GPU** —
+> deterministic where it claims to be, honestly heuristic elsewhere, every figure with a
+> confidence + rationale. Both are behind the provider port and exposed via the read-only
+> `orchestrate` (`--requirements`) CLI command. **Phase 3 (Conflict Resolution & Pre-flight) is
+> next.**
 
 ## Phase map
 
@@ -53,7 +55,7 @@ Every `phase-N-*.md` follows the same template:
 | --- | --- | --- | --- |
 | 0 | [Foundation & Knowledge Base](./phase-0-foundation.md) | ✅ | [`0003`](../specs/0003-project-foundation/spec.md) · [`0004`](../specs/0004-modrinth-provider/spec.md) · [`0005`](../specs/0005-pack-state/spec.md) |
 | 1 | [Discovery & Ideation](./phase-1-discovery-ideation.md) | ✅ | [`0001`](../specs/0001-modpack-discovery/spec.md) |
-| 2 | [Mod Orchestration & Curation](./phase-2-mod-orchestration.md) | 🟡 | [`0006`](../specs/0006-mod-orchestration/spec.md) ✅ · [`0002`](../specs/0002-system-requirements-prediction/spec.md) |
+| 2 | [Mod Orchestration & Curation](./phase-2-mod-orchestration.md) | ✅ | [`0006`](../specs/0006-mod-orchestration/spec.md) · [`0002`](../specs/0002-system-requirements-prediction/spec.md) |
 | 3 | [Conflict Resolution & Pre-flight](./phase-3-conflict-resolution.md) | ⬜ | — |
 | 4 | [Build, Launch & Crash Diagnosis](./phase-4-build-launch-crash-diagnosis.md) | ⬜ | — |
 | 5 | [Quests & Scripting Automation](./phase-5-quests-scripting-automation.md) | ⬜ | — |

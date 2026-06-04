@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | **Spec ID** | `0002` |
-| **Status** | `planned` |
+| **Status** | `done` |
 | **Implements** | [`spec.md`](./spec.md) |
 
 ---

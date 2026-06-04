@@ -1,11 +1,12 @@
 # Phase 2 — Mod Orchestration & Curation
 
 > Part of the [roadmap](./README.md). Delivers the objective in
-> [`../docs/VISION.md`](../docs/VISION.md). **Status: 🟡 In progress.**
-> **Specs:** [`0006-mod-orchestration`](../specs/0006-mod-orchestration/spec.md) (✅ done —
+> [`../docs/VISION.md`](../docs/VISION.md). **Status: ✅ Done.**
+> **Specs:** [`0006-mod-orchestration`](../specs/0006-mod-orchestration/spec.md) (done —
 > resolver, dependency resolution, categorization, pinned `PackState`, `orchestrate` CLI) ·
 > [`0002-system-requirements-prediction`](../specs/0002-system-requirements-prediction/spec.md)
-> (planned — consumes the resolved set; remaining Phase 2 work).
+> (done — `RequirementsReport`: RAM/Java/disk/CPU/GPU with confidence + rationale, via
+> `orchestrate --requirements`).
 
 ## 1. Goal / outcome
 

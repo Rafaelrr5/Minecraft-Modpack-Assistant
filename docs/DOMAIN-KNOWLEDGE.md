@@ -309,6 +309,23 @@ Prediction**:
 > the estimate. Every output carries a **confidence level and rationale**
 > ([Constitution P9 / flag uncertainty](../memory/constitution.md#principle-9--simplicity-yagni--observability)).
 
+### 9.1 The v1 category-weights table (implemented in code)
+
+The concrete weights live in **`src/core/requirements/weights.ts`** as the single versioned
+source (per spec `0002`'s open question), grounded in the guidance above and kept honest with a
+confidence + rationale on every figure. They are a **conservative v1 heuristic**, *not* measured
+facts, and are meant to be **calibrated** later against known public packs. Current shape:
+
+- **Per-category heap (MB):** worldgen 40 (heaviest) → adventure 30 → magic/technology/mobs
+  ~24–26 → storage/equipment/decoration/food/utility ~12–20 → library 4 → optimization 0.
+  Unknown categories fall back to a neutral 15 MB **and lower the confidence**. [S22]
+- **Performance-mod credit:** a known performance mod (Sodium/Embeddium, Lithium, FerriteCore,
+  ModernFix, …) contributes **0** and multiplies the content score by **0.8** (credit). [S25]
+- **Clamps:** recommended heap floored at ~2 GB and ceilinged at 16 GB (over-allocation hurts
+  GC); minimum tier ≈ 66% of recommended; disk headroom 2 GB for world/caches/logs. [S22]
+
+When these numbers change, update `weights.ts` and this note together (doc-map discipline).
+
 ---
 
 ## Sources

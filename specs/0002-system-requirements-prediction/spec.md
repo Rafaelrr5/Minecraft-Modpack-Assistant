@@ -6,7 +6,7 @@
 | | |
 | --- | --- |
 | **Spec ID** | `0002` |
-| **Status** | `planned` |
+| **Status** | `done` |
 | **Roadmap phase** | [Phase 2 — Mod Orchestration & Curation](../../roadmap/phase-2-mod-orchestration.md) |
 | **Author / date** | Project owner + Claude · 2026-06-03 |
 | **Related specs** | Consumes the resolved set from Phase 2 orchestration; its output is applied at build time (Phase 4) |

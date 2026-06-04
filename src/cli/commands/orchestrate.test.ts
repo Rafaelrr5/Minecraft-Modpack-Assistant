@@ -40,3 +40,18 @@ test('runOrchestrate reports a clean set with no issues', async () => {
   });
   assert.match(out, /No issues/);
 });
+
+test('runOrchestrate --requirements appends a requirements report (T-0002-12)', async () => {
+  const provider = new FakeProvider([{ slug: 'create', projectId: 'pC', categories: ['technology'] }]);
+  let out = '';
+  await runOrchestrate(
+    { loader: 'neoforge', minecraft: '1.21.1', include: ['create'], requirements: true },
+    provider,
+    (t) => {
+      out += t;
+    },
+  );
+  assert.match(out, /System requirements/);
+  assert.match(out, /Java:\s*21/);
+  assert.match(out, /RAM:/);
+});

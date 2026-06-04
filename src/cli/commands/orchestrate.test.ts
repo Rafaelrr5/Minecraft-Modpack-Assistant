@@ -55,3 +55,22 @@ test('runOrchestrate --requirements appends a requirements report (T-0002-12)', 
   assert.match(out, /Java:\s*21/);
   assert.match(out, /RAM:/);
 });
+
+test('runOrchestrate --preflight appends a read-only conflict report (spec 0007, AC-9)', async () => {
+  // A known-bad pair (OptiFine + Sodium) should be flagged by pre-flight.
+  const provider = new FakeProvider([
+    { slug: 'optifine', projectId: 'pO' },
+    { slug: 'sodium', projectId: 'pS', categories: ['optimization'] },
+  ]);
+  let out = '';
+  await runOrchestrate(
+    { loader: 'neoforge', minecraft: '1.21.1', include: ['optifine', 'sodium'], preflight: true },
+    provider,
+    (t) => {
+      out += t;
+    },
+  );
+  assert.match(out, /Pre-flight conflict report/);
+  assert.match(out, /optifine \+ sodium|sodium \+ optifine|optifine, sodium/);
+  assert.match(out, /read-only report/); // nothing applied (Constitution P4)
+});

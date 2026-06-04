@@ -65,14 +65,15 @@ package.json · tsconfig*.json · eslint.config.js   TypeScript/Node toolchain (
 src/                           Application code (begins in Phase 0)
   index.ts                     Library entry (re-exports core + integration)
   core/                        UI-agnostic core — imports no cli/ or integration/ (enforced)
-    domain/                    Core domain model (MinecraftVersion, Loader, loader-compat, Mod, Modpack, …, PackState)
-    ports/                     Interfaces the core depends on (Logger, InstanceFs, ModSourceProvider, PackFormat)
+    domain/                    Core domain model (MinecraftVersion, version-range, Loader, loader-compat, Mod, Modpack, Conflict, …, PackState)
+    ports/                     Interfaces the core depends on (Logger, InstanceFs[+readText], ModSourceProvider, PackFormat)
     discovery/                 Phase 1 capability (spec 0001): slot-filling → validated ModpackBrief
     orchestration/             Phase 2 capability (spec 0006): list + deps → pinned PackState
     requirements/              Phase 2 capability (spec 0002): resolved set → RequirementsReport
+    conflicts/                 Phase 3 capability (spec 0007): resolved set → read-only pre-flight report (+ proposed fixes)
   integration/                 Adapters implementing the ports
     logging/ · instance-fs/ · modrinth/ · packwiz/
-  cli/                         Thin CLI adapter (help · doctor · discover · orchestrate)
+  cli/                         Thin CLI adapter (help · doctor · discover · orchestrate [--requirements|--preflight])
 
 docs/
   VISION.md                    THE objective (single source of truth)
@@ -105,6 +106,8 @@ specs/
     spec.md · plan.md · tasks.md
   0006-mod-orchestration/      Phase 2 (done): list intake + dependency resolution → pinned PackState
     spec.md · plan.md · tasks.md
+  0007-conflict-preflight/     Phase 3 (done): resolved set → read-only pre-flight conflict report
+    spec.md · plan.md · tasks.md
 
 templates/
   spec-template.md · plan-template.md · tasks-template.md · adr-template.md
@@ -132,7 +135,7 @@ roadmap/
   must be green; external API clients get **contract tests**; generated artifacts (SNBT,
   KubeJS, manifests) must **parse/validate** before being written
   ([Constitution P3](./memory/constitution.md#principle-3--validation-discipline)).
-- **Phases 0–2 are implemented.** Phase 0 — toolchain, core domain model, Modrinth provider,
+- **Phases 0–3 are implemented.** Phase 0 — toolchain, core domain model, Modrinth provider,
   pack state, logging, guarded `InstanceFs`, CLI (specs
   [`0003`](./specs/0003-project-foundation/spec.md)–[`0005`](./specs/0005-pack-state/spec.md)).
   Phase 1 — `discovery` + `discover` CLI turn an idea into a validated `ModpackBrief` (spec
@@ -141,8 +144,13 @@ roadmap/
   [`0006`](./specs/0006-mod-orchestration/spec.md)), and `requirements`
   (`src/core/requirements/`) predicts a `RequirementsReport` from the resolved set (spec
   [`0002`](./specs/0002-system-requirements-prediction/spec.md)); both surface via
-  `orchestrate [--requirements]`. `npm run check` runs typecheck + lint + build + tests. New
-  capabilities continue under SDD. **Phase 3 (Conflict Resolution & Pre-flight) is next.**
+  `orchestrate [--requirements]`. Phase 3 — `conflicts` (`src/core/conflicts/`) runs a read-only
+  **pre-flight** over the resolved set (duplicate mod ids, declared incompatibilities, Maven
+  version-range mismatches, side mismatches, curated known-bad combos, keybinding collisions),
+  each finding marked certain/suspected with a proposed fix — applied to nothing — via
+  `orchestrate --preflight` (spec [`0007`](./specs/0007-conflict-preflight/spec.md)).
+  `npm run check` runs typecheck + lint + build + tests. New capabilities continue under SDD.
+  **Phase 4 (Build, Launch & Crash Diagnosis) is next.**
 - **Running TS:** dev/test/CLI run TypeScript directly on Node ≥ 22.18 (native type
   stripping); the build (`tsc`) emits `dist/`. Source uses **`.ts` import extensions**
   (rewritten to `.js` on build) and **erasable-only syntax** (no enums/parameter-properties).

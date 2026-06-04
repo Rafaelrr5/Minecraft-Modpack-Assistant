@@ -10,12 +10,17 @@ import {
   type ModSourceProvider,
   type OrchestrationResult,
   type RequirementsTarget,
+  type TargetEnvironment,
   parseMinecraftVersion,
+  parseOptionsKeybinds,
   predictRequirements,
+  renderPreflight,
   renderRequirements,
   resolveModpack,
+  runPreflight,
 } from '../../core/index.ts';
 import { createModrinthProvider } from '../../integration/modrinth/index.ts';
+import { GuardedInstanceFs } from '../../integration/instance-fs/index.ts';
 
 export interface OrchestrateOptions {
   readonly loader: LoaderFamily;
@@ -30,6 +35,16 @@ export interface OrchestrateOptions {
   readonly side?: RequirementsTarget;
   readonly shaders?: boolean;
   readonly hdTextures?: boolean;
+  /** Also run conflict pre-flight over the resolved set (spec 0007, read-only). */
+  readonly preflight?: boolean;
+  /** Optional game-instance path; when given with `--preflight`, `options.txt` informs remaps. */
+  readonly instancePath?: string;
+}
+
+/** Injected dependencies for the optional pre-flight step (keeps the core read free of I/O). */
+export interface OrchestrateDeps {
+  /** Keys already bound in the instance's `options.txt`, `bindingId → key` (spec 0007 FR-7). */
+  readonly currentKeybinds?: Readonly<Record<string, string>>;
 }
 
 /** Build the minimal brief orchestration needs from CLI flags (expert, no explanations). */
@@ -51,6 +66,7 @@ export async function runOrchestrate(
   options: OrchestrateOptions,
   provider: ModSourceProvider,
   write: (text: string) => void,
+  deps: OrchestrateDeps = {},
 ): Promise<OrchestrationResult> {
   const brief = briefFromOptions(options);
   const result = await resolveModpack(
@@ -71,6 +87,17 @@ export async function runOrchestrate(
       flags: { shaders: options.shaders === true, hdTextures: options.hdTextures === true },
     });
     write(`\n${renderRequirements(report)}`);
+  }
+
+  // Optional follow-on step: conflict pre-flight over the resolved set (spec 0007). Read-only.
+  if (options.preflight) {
+    const environment: TargetEnvironment = options.side === 'server' ? 'server' : 'client';
+    const report = runPreflight({
+      modpack: result.modpack,
+      environment,
+      ...(deps.currentKeybinds ? { currentKeybinds: deps.currentKeybinds } : {}),
+    });
+    write(`\n${renderPreflight(report)}`);
   }
   return result;
 }
@@ -105,7 +132,17 @@ export function renderResult(result: OrchestrationResult): string {
 /** Wire to the real Modrinth provider for terminal use. */
 export async function runOrchestrateCli(options: OrchestrateOptions): Promise<number> {
   const provider = createModrinthProvider();
-  const result = await runOrchestrate(options, provider, (text) => process.stdout.write(text));
+
+  // For pre-flight, read the instance's options.txt (read-only, via the guarded boundary) so the
+  // keybinding remap proposals avoid keys the user already bound (spec 0007 FR-7 / Constitution P4).
+  const deps: OrchestrateDeps = {};
+  if (options.preflight && options.instancePath) {
+    const fs = new GuardedInstanceFs();
+    const optionsTxt = await fs.readText(options.instancePath, 'options.txt');
+    if (optionsTxt) Object.assign(deps, { currentKeybinds: parseOptionsKeybinds(optionsTxt) });
+  }
+
+  const result = await runOrchestrate(options, provider, (text) => process.stdout.write(text), deps);
   // Unresolved/incompatible/provider issues mean the set isn't clean — signal via exit code.
   return result.issues.length > 0 ? 1 : 0;
 }

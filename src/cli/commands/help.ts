@@ -31,6 +31,10 @@ Options for 'orchestrate':
   --side <s>        Size requirements for 'client' (default) or 'server'.
   --shaders         Flag shaders (affects the GPU requirement).
   --hd-textures     Flag HD textures (affects the GPU requirement).
+  --preflight       Also scan for conflicts before launch (duplicate ids, declared
+                    incompatibilities, version/side mismatches, known-bad combos,
+                    keybinding collisions) — read-only, proposes fixes, applies nothing.
+  --instance <dir>  With --preflight: read options.txt to refine keybinding remaps.
 
 Options for 'doctor':
   --instance <dir>  Path to a Minecraft instance / .minecraft folder to inspect.

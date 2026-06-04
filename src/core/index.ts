@@ -9,3 +9,4 @@ export * from './ports/index.ts';
 export * from './discovery/index.ts';
 export * from './orchestration/index.ts';
 export * from './requirements/index.ts';
+export * from './conflicts/index.ts';

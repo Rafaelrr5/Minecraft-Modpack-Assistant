@@ -142,6 +142,15 @@ A TOML manifest under `META-INF/`. Mods are declared in `[[mods]]` (with `modId`
 - `side` — `CLIENT`, `SERVER`, or `BOTH`.
 - `ordering` — `BEFORE` / `AFTER` / `NONE` (load order, not a hard dependency).
 
+#### Maven version-range semantics (load-bearing — feeds the `version-mismatch` check, spec 0007)
+
+Both loaders express dependency bounds as **Maven version ranges**, interpreted as: `[` / `]` =
+inclusive bound, `(` / `)` = exclusive bound; a missing side = unbounded (`[1.20,)` = "1.20 or
+newer"); a bare `1.20` = a **soft minimum** (`>= 1.20`), not an exact pin; `[1.20]` = exactly
+`1.20`. Comparison is segment-by-segment numeric, ignoring semver build metadata (`0.5.8+1.20.1`
+≈ `0.5.8`). The assistant parses these deterministically and, when a range can't be parsed, **skips
+the check rather than over-claiming a conflict** (Constitution P5). [S11] (`src/core/domain/version-range.ts`.)
+
 ### 4.3 Conflict categories (taxonomy)
 
 The conflict engine (Phase 3) classifies problems into these categories — the taxonomy is

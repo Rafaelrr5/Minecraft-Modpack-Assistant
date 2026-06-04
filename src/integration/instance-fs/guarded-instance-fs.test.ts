@@ -79,3 +79,13 @@ test('apply refuses a change that escapes the instance directory', async () => {
     /outside the instance/,
   );
 });
+
+test('readText returns file contents, null when absent, and refuses path escape (spec 0007)', async () => {
+  const dir = await tmp();
+  await writeFile(path.join(dir, 'options.txt'), 'key_key.jump:key.keyboard.space');
+  const fs = new GuardedInstanceFs();
+
+  assert.match((await fs.readText(dir, 'options.txt')) ?? '', /key\.keyboard\.space/);
+  assert.equal(await fs.readText(dir, 'nope.txt'), null);
+  await assert.rejects(fs.readText(dir, '../secret.txt'), /outside the instance/);
+});

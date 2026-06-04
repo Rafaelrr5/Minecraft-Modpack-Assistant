@@ -1,7 +1,10 @@
 # Phase 3 — Conflict Resolution & Pre-flight ("one step ahead")
 
 > Part of the [roadmap](./README.md). Delivers the objective in
-> [`../docs/VISION.md`](../docs/VISION.md). **Status: ⬜ Not started.**
+> [`../docs/VISION.md`](../docs/VISION.md). **Status: ✅ Done.**
+> **Spec:** [`0007-conflict-preflight`](../specs/0007-conflict-preflight/spec.md) (done —
+> the `conflicts` capability: static conflict + keybinding detection over the resolved set →
+> a read-only pre-flight report with proposed fixes, via `orchestrate --preflight`).
 
 ## 1. Goal / outcome
 

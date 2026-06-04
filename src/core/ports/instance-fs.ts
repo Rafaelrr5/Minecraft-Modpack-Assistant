@@ -49,6 +49,11 @@ export interface ApplyResult {
 export interface InstanceFs {
   /** Read-only probe; returns `null` when `dir` does not exist. */
   detectInstance(dir: string): Promise<InstanceInfo | null>;
+  /**
+   * Read-only: return a UTF-8 text file's contents relative to the instance, or `null` if it does
+   * not exist. Refuses to read outside the instance directory. Never writes (Constitution P4).
+   */
+  readText(instanceDir: string, relPath: string): Promise<string | null>;
   /** Build a dry-run plan. Performs no filesystem writes. */
   plan(instanceDir: string, changes: readonly FileChange[]): ChangePlan;
   /** Apply a plan — refuses without `confirm`; backs up before writing when confirmed. */

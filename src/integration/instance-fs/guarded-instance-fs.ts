@@ -13,7 +13,7 @@
  * Nothing in Phase 0 wires a feature through this; it exists so the contract is enforced in
  * one place the moment a feature needs to write.
  */
-import { access, copyFile, mkdir, rm, stat, writeFile } from 'node:fs/promises';
+import { access, copyFile, mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import * as path from 'node:path';
 
 import type {
@@ -74,6 +74,19 @@ export class GuardedInstanceFs implements InstanceFs {
       hasVersions,
       looksLikeInstance,
     };
+  }
+
+  async readText(instanceDir: string, relPath: string): Promise<string | null> {
+    const base = path.resolve(instanceDir);
+    const target = path.resolve(base, relPath);
+    if (target !== base && !target.startsWith(base + path.sep)) {
+      throw new Error(`Refusing to read outside the instance directory: ${relPath}`);
+    }
+    try {
+      return await readFile(target, 'utf8');
+    } catch {
+      return null; // absent or unreadable — caller treats as "no data"
+    }
   }
 
   plan(instanceDir: string, changes: readonly FileChange[]): ChangePlan {

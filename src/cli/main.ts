@@ -67,6 +67,8 @@ export async function run(argv: readonly string[]): Promise<number> {
         side: { type: 'string' },
         shaders: { type: 'boolean', default: false },
         'hd-textures': { type: 'boolean', default: false },
+        preflight: { type: 'boolean', default: false },
+        instance: { type: 'string' },
       },
       allowPositionals: false,
     });
@@ -98,6 +100,8 @@ export async function run(argv: readonly string[]): Promise<number> {
       ...(values.side === 'server' || values.side === 'client' ? { side: values.side } : {}),
       shaders: values.shaders === true,
       hdTextures: values['hd-textures'] === true,
+      preflight: values.preflight === true,
+      ...(values.instance !== undefined ? { instancePath: values.instance } : {}),
     };
     return runOrchestrateCli(options);
   }

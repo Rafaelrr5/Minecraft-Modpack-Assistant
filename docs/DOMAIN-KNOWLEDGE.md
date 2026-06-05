@@ -1,56 +1,56 @@
 # Domain Knowledge Base
 
 > The **single technical reference** for the project. Specs and plans cite *this* document
-> rather than re-researching the ecosystem. Per
+> instead of re-researching the ecosystem. Per
 > [Constitution Principle 5](../memory/constitution.md#principle-5--sourced--version-pinned-domain-knowledge),
 > every factual claim here should be **source-cited** and **version-aware**.
 >
-> **Maintenance:** when a fact changes upstream (a new loader version scheme, an API
-> change, a new format), update it here first, note the date, and let dependent specs
-> follow. Treat anything without a source as *unverified* until confirmed.
+> **Maintenance:** fact change upstream (new loader version scheme, API
+> change, new format) → update here first, note date, let dependent specs
+> follow. No source = *unverified* until confirmed.
 >
-> **Last reviewed:** 2026-06-03. Minecraft and its ecosystem move quickly; re-verify
-> version-specific claims before relying on them in code.
+> **Last reviewed:** 2026-06-03. Minecraft + ecosystem move fast; re-verify
+> version-specific claims before trusting them in code.
 
 ---
 
 ## How to read this document
 
-Each section is a self-contained topic. Claims that drive product behavior (e.g. the
-Java-version-by-MC-version mapping, RAM heuristics) are called out because downstream
-features depend on them. Sources are listed per section as `[S#]` and collected in
-**Sources** at the end.
+Each section self-contained topic. Claims that drive product behavior (e.g. the
+Java-version-by-MC-version mapping, RAM heuristics) called out — downstream
+features depend on them. Sources listed per section as `[S#]`, collected in
+**Sources** at end.
 
 ---
 
 ## 1. Mod loaders
 
-A *loader* is the framework that lets mods run on top of Minecraft. A mod built for one
-loader does **not** run on another without a bridge. The major loaders today:
+A *loader* = framework that lets mods run on Minecraft. Mod built for one
+loader does **not** run on another without bridge. Major loaders today:
 
 | Loader | Niche | Notes |
 | --- | --- | --- |
-| **NeoForge** | Tech / "kitchen-sink", successor to Forge | Community-governed fork of Forge that became the de-facto large-pack loader for MC 1.20.2+; metadata in `neoforge.mods.toml` (newer) or `mods.toml`. [S1] |
-| **Forge** | Legacy tech / large packs | The long-standing loader; many older packs and mods target it. NeoForge diverged from it in 2023. [S1][S2] |
-| **Fabric** | Lightweight / performance | Minimal loader; pairs with the **Fabric API** library that most Fabric mods depend on. Metadata in `fabric.mod.json`. [S3] |
-| **Quilt** | Fabric-compatible fork | Aims for compatibility with most Fabric mods; adds its own hooks. Metadata `quilt.mod.json` (can also read `fabric.mod.json`). [S4] |
+| **NeoForge** | Tech / "kitchen-sink", successor to Forge | Community-governed Forge fork, now de-facto large-pack loader for MC 1.20.2+; metadata in `neoforge.mods.toml` (newer) or `mods.toml`. [S1] |
+| **Forge** | Legacy tech / large packs | Long-standing loader; many older packs and mods target it. NeoForge diverged in 2023. [S1][S2] |
+| **Fabric** | Lightweight / performance | Minimal loader; pairs with the **Fabric API** library most Fabric mods need. Metadata in `fabric.mod.json`. [S3] |
+| **Quilt** | Fabric-compatible fork | Aims for compat with most Fabric mods; adds own hooks. Metadata `quilt.mod.json` (also reads `fabric.mod.json`). [S4] |
 
 **Minimum Minecraft versions (load-bearing for the loader×version check).** **NeoForge**
-targets **Minecraft 1.20.2 and newer** (it forked from Forge in 2023); there is no NeoForge
-build for older versions, so a "NeoForge 1.19" brief is a *deterministic* dead-end Discovery
+targets **Minecraft 1.20.2 and newer** (forked from Forge 2023); no NeoForge
+build for older versions, so a "NeoForge 1.19" brief = *deterministic* dead-end Discovery
 rejects (spec `0001`). Forge, Fabric, and Quilt span wide ranges we do **not** bound here
-without a source — treat an unbounded family as "supported" rather than guessing. [S1][S2]
+without a source — treat an unbounded family as "supported", no guessing. [S1][S2]
 
-**Bridging.** **Sinytra Connector** lets many **Fabric** mods run on **NeoForge** (it is
-not a universal guarantee and is version-sensitive). This matters for orchestration: a
-"NeoForge pack" can sometimes include a Fabric-only mod via Connector, but it must be
-treated as a special, validated case, not a default. [S5]
+**Bridging.** **Sinytra Connector** lets many **Fabric** mods run on **NeoForge** (not
+universal guarantee, version-sensitive). Matters for orchestration: a
+"NeoForge pack" can sometimes include a Fabric-only mod via Connector, but
+treat as a special, validated case, not a default. [S5]
 
 **Versioning cadence.** Mojang's release cadence in the 1.20.x/1.21.x era moved toward
-**quarterly "drop" updates**, which changes how often loaders/mods must be re-targeted and
-why version-pinning matters. Re-verify the current cadence before encoding assumptions. [S6]
+**quarterly "drop" updates** — changes how often loaders/mods must be re-targeted, why
+version-pinning matters. Re-verify current cadence before encoding assumptions. [S6]
 
-> **Product implication.** Loader + Minecraft version is the **primary compatibility key**
+> **Product implication.** Loader + Minecraft version = **primary compatibility key**
 > for every mod in a pack. Resolution (Phase 2) and conflict pre-flight (Phase 3) start
 > here.
 
@@ -58,8 +58,8 @@ why version-pinning matters. Re-verify the current cadence before encoding assum
 
 ## 2. Java version by Minecraft version
 
-Minecraft bundles/needs a specific **Java (JRE) major version**. Using the wrong Java is a
-common, *predictable* crash class — which is exactly what the assistant should prevent
+Minecraft bundles/needs a specific **Java (JRE) major version**. Wrong Java = common
+*predictable* crash class — exactly what the assistant should prevent
 (see [VISION: "one step ahead"](./VISION.md#what-one-step-ahead-means)) and what feeds the
 **System Requirements Prediction** feature (spec `0002`).
 
@@ -70,8 +70,8 @@ common, *predictable* crash class — which is exactly what the assistant should
 | 1.18 – 1.20.4 | Java 17 |
 | 1.20.5 – 1.21.x | Java 21 |
 
-The jump points are tied to Mojang raising the bundled runtime (Java 17 at 1.18, Java 21
-at 1.20.5). [S7] **This table is load-bearing for spec `0002` (deterministic Java-version
+Jump points tied to Mojang raising the bundled runtime (Java 17 at 1.18, Java 21
+at 1.20.5). [S7] **This table load-bearing for spec `0002` (deterministic Java-version
 rule); keep it current and pinned.** Always confirm the exact boundary for a specific
 version before encoding it.
 
@@ -79,7 +79,7 @@ version before encoding it.
 
 ## 3. Mod-catalog APIs
 
-The assistant reads mod metadata (versions, dependencies, files, hashes) from catalog
+Assistant reads mod metadata (versions, dependencies, files, hashes) from catalog
 APIs through a **provider-agnostic abstraction**
 ([Constitution P6](../memory/constitution.md#principle-6--provider-agnostic--licensing-aware)).
 
@@ -89,54 +89,54 @@ APIs through a **provider-agnostic abstraction**
 - **Key endpoints:** project search with **facets** (filter by loader, MC version,
   categories, project type); get project; list project **versions**; get version (carries
   **dependencies**, files with hashes, supported loaders & game versions); **version file
-  by hash** lookup (`/version_file/{hash}`, sha1/sha512) for identifying local jars. [S8]
+  by hash** lookup (`/version_file/{hash}`, sha1/sha512) to identify local jars. [S8]
 - **Rate limit:** **300 requests/minute**; a descriptive **`User-Agent`** is **required**
-  (Modrinth asks for a contact/project identifier). Exceeding limits returns `429`. [S8][S9]
-- **Licensing posture:** open, documented, and commercial-friendly, which is why it is the
+  (Modrinth wants a contact/project identifier). Over limit returns `429`. [S8][S9]
+- **Licensing posture:** open, documented, commercial-friendly — why it's the
   first data source. [S8]
 
 ### 3.2 CurseForge (later phase)
 
-- **Base:** `https://api.curseforge.com`. Requires an **API key** sent as the
-  **`x-api-key`** header; key issuance requires **approval**, and **commercial use may
-  require a separate license/agreement**. [S10]
+- **Base:** `https://api.curseforge.com`. Needs an **API key** sent as the
+  **`x-api-key`** header; key issuance needs **approval**, and **commercial use may
+  need a separate license/agreement**. [S10]
 - Mod files may set flags affecting whether third parties can distribute/download them
-  programmatically; these must be respected. [S10]
+  programmatically; must be respected. [S10]
 
-> **Product implication.** Because of the key/approval/licensing friction, CurseForge is
-> deferred to a later phase (Phase 7+/8) behind the same provider interface; Modrinth
+> **Product implication.** Key/approval/licensing friction → CurseForge deferred
+> to a later phase (Phase 7+/8) behind the same provider interface; Modrinth
 > carries the MVP. [ADR 0004]
 
 ---
 
 ## 4. Mod metadata & dependency declarations
 
-Dependencies and incompatibilities are declared **inside the mod jar's metadata**. Parsing
-these is how the assistant resolves dependencies and detects conflicts *statically*,
+Dependencies + incompatibilities declared **inside the mod jar's metadata**. Parsing
+these = how the assistant resolves dependencies and detects conflicts *statically*,
 before launch.
 
 ### 4.1 Fabric / Quilt — `fabric.mod.json`
 
-A JSON manifest at the jar root. Relevant fields: `id` (the **modId**), `version`,
+JSON manifest at the jar root. Relevant fields: `id` (the **modId**), `version`,
 `depends`, `recommends`, `suggests`, `conflicts`, `breaks`, and `provides`. Values map a
 modId to a version range. [S3]
 
 - `depends` → hard requirement (missing ⇒ won't load).
 - `recommends` / `suggests` → soft.
-- `conflicts` → should not be loaded together (warn).
-- `breaks` → **must not** be loaded together (hard incompatibility).
+- `conflicts` → should not load together (warn).
+- `breaks` → **must not** load together (hard incompatibility).
 
-Quilt's `quilt.mod.json` expresses similar relationships and can interoperate with Fabric
+Quilt's `quilt.mod.json` expresses similar relationships, interoperates with Fabric
 metadata. [S4]
 
 ### 4.2 Forge / NeoForge — `mods.toml` / `neoforge.mods.toml`
 
-A TOML manifest under `META-INF/`. Mods are declared in `[[mods]]` (with `modId`,
-`version`, …) and relationships in `[[dependencies.<modId>]]` blocks. Relevant fields: [S11]
+TOML manifest under `META-INF/`. Mods declared in `[[mods]]` (with `modId`,
+`version`, …); relationships in `[[dependencies.<modId>]]` blocks. Relevant fields: [S11]
 
 - `modId` — the dependency's id.
-- `type` / `mandatory` — `required`, `optional`, `incompatible`, `discouraged` (the exact
-  spelling differs between the older boolean `mandatory` and newer `type` field — verify
+- `type` / `mandatory` — `required`, `optional`, `incompatible`, `discouraged` (exact
+  spelling differs between older boolean `mandatory` and newer `type` field — verify
   per loader version). [S11]
 - `versionRange` — Maven-style version range (e.g. `[1.20.1,1.21)`).
 - `side` — `CLIENT`, `SERVER`, or `BOTH`.
@@ -144,32 +144,32 @@ A TOML manifest under `META-INF/`. Mods are declared in `[[mods]]` (with `modId`
 
 #### Maven version-range semantics (load-bearing — feeds the `version-mismatch` check, spec 0007)
 
-Both loaders express dependency bounds as **Maven version ranges**, interpreted as: `[` / `]` =
-inclusive bound, `(` / `)` = exclusive bound; a missing side = unbounded (`[1.20,)` = "1.20 or
+Both loaders express dependency bounds as **Maven version ranges**: `[` / `]` =
+inclusive bound, `(` / `)` = exclusive bound; missing side = unbounded (`[1.20,)` = "1.20 or
 newer"); a bare `1.20` = a **soft minimum** (`>= 1.20`), not an exact pin; `[1.20]` = exactly
-`1.20`. Comparison is segment-by-segment numeric, ignoring semver build metadata (`0.5.8+1.20.1`
-≈ `0.5.8`). The assistant parses these deterministically and, when a range can't be parsed, **skips
+`1.20`. Comparison segment-by-segment numeric, ignoring semver build metadata (`0.5.8+1.20.1`
+≈ `0.5.8`). Assistant parses these deterministically; when a range can't parse, **skips
 the check rather than over-claiming a conflict** (Constitution P5). [S11] (`src/core/domain/version-range.ts`.)
 
 ### 4.3 Conflict categories (taxonomy)
 
-The conflict engine (Phase 3) classifies problems into these categories — the taxonomy is
+Conflict engine (Phase 3) classifies problems into these categories — taxonomy
 shared by specs that touch conflicts:
 
 1. **Duplicate `modId`** — two jars declare the same id; only one can load.
 2. **Registry conflict** — two mods register the same block/item/registry id.
 3. **Mixin conflict** — two mods inject into the same target in incompatible ways
    (surfaces as a mixin apply failure at runtime).
-4. **Version mismatch** — a dependency is present but outside the required `versionRange`,
+4. **Version mismatch** — a dependency present but outside the required `versionRange`,
    or a mod targets a different MC/loader version.
 5. **Declared incompatibility** — `breaks`/`conflicts` (Fabric) or
    `incompatible`/`discouraged` (Forge/NeoForge).
 6. **Client/server-side mismatch** — a client-only mod required on a server (or vice
    versa) per the `side`/`environment` field.
 
-> **Product implication.** Categories 1, 4, 5, 6 are detectable **statically** from
+> **Product implication.** Categories 1, 4, 5, 6 detectable **statically** from
 > metadata (strongest "one step ahead" wins). Categories 2 and 3 often need heuristics or
-> a launch to confirm; treat them as *suspected* until validated.
+> a launch to confirm; treat as *suspected* until validated.
 
 ---
 
@@ -178,7 +178,7 @@ shared by specs that touch conflicts:
 Minecraft stores key assignments in `options.txt` (lines like `key_key.jump:key.keyboard.space`).
 Mods register their own keybinds (Fabric via `KeyBindingHelper`, Forge/NeoForge via key
 mapping registration), and **default bindings frequently collide** (e.g. multiple mods
-defaulting to `R`, `G`, `V`, or `K`). Collisions are silent in-game until the user notices
+defaulting to `R`, `G`, `V`, or `K`). Collisions silent in-game until the user notices
 two actions on one key. [S12]
 
 > **Product implication.** Keybinding-collision detection (Phase 3) cross-references the
@@ -194,11 +194,11 @@ two actions on one key. [S12]
 - `crash-reports/crash-*.txt` — generated on a hard crash; includes the description, stack
   trace, and a "system details" block (MC version, loader, mod list, Java, memory). [S13]
 - `logs/latest.log` — the rolling current log; `logs/debug.log` — more verbose. Earlier
-  runs are gzip-archived as `logs/<date>-<n>.log.gz`. [S13]
+  runs gzip-archived as `logs/<date>-<n>.log.gz`. [S13]
 
 ### 6.2 Crash categories (taxonomy)
 
-The diagnosis engine (Phase 4) classifies a crash into at least:
+Diagnosis engine (Phase 4) classifies a crash into at least:
 
 1. **Missing dependency** — "requires X which is missing" / unmet dependency screens.
 2. **Mixin apply failure** — `Mixin apply failed` / `Mixin transformation … failed`.
@@ -211,7 +211,7 @@ The diagnosis engine (Phase 4) classifies a crash into at least:
 
 ### 6.3 mclo.gs analyse API
 
-[mclo.gs](https://mclo.gs) is a log-paste service with an analysis endpoint. Posting a log
+[mclo.gs](https://mclo.gs) = log-paste service with an analysis endpoint. Posting a log
 returns a structured analysis (detected problems with line references). Relevant endpoints:
 `POST https://api.mclo.gs/1/log` (upload) and `POST https://api.mclo.gs/1/analyse`
 (analyse). Useful as a **second opinion** alongside our own heuristics, never the sole
@@ -241,31 +241,31 @@ config/ftbquests/quests/
 ```
 
 (Exact paths vary by FTB Quests version; verify against the target version.) Quests,
-tasks, rewards, and dependencies are nodes within these SNBT files. [S15]
+tasks, rewards, and dependencies = nodes within these SNBT files. [S15]
 
 ### 7.2 Generating quests = generating SNBT
 
-There is **no API that creates quests at runtime** — quest *content* is the SNBT on disk.
-Therefore **programmatic quest creation means generating valid SNBT** with a **real SNBT
+**No API creates quests at runtime** — quest *content* = the SNBT on disk.
+So **programmatic quest creation means generating valid SNBT** with a **real SNBT
 serializer** (preserving NBT typing: byte/int/long/float/double suffixes, lists, compound
-tags), **never** string templating or regex. This is a hard requirement from
+tags), **never** string templating or regex. Hard requirement from
 [Constitution P3](../memory/constitution.md#principle-3--validation-discipline). [S15]
 
 ### 7.3 KubeJS and the limits of `FTBQuestsEvents`
 
-**KubeJS** is a scripting mod using the **Rhino** JavaScript engine (ES6-ish), with scripts
+**KubeJS** = scripting mod using the **Rhino** JavaScript engine (ES6-ish), with scripts
 organized into `kubejs/startup_scripts/`, `kubejs/server_scripts/`, and
-`kubejs/client_scripts/` (each running at a different lifecycle stage). It is used for
+`kubejs/client_scripts/` (each runs at a different lifecycle stage). Used for
 custom recipes, items, and event handling. [S16]
 
 KubeJS integrates with FTB Quests **only through the add-on "FTB XMod Compat"**, which
 exposes **reactive** `FTBQuestsEvents` — e.g. `completed`, `started`, `customTask`,
-`customReward`. Crucially, these events let scripts **react to** quest progress and define
+`customReward`. These events let scripts **react to** quest progress and define
 custom task/reward behavior; they **do not create the quest structure**. [S17]
 
 > **Product implication.** Quest *authoring* (Phase 5) = **SNBT generation**. KubeJS is for
 > the **dynamic behavior** layered on top (custom tasks/rewards, reacting to completion),
-> via FTB XMod Compat. The two are complementary, not interchangeable.
+> via FTB XMod Compat. The two complementary, not interchangeable.
 
 ---
 
@@ -275,12 +275,12 @@ A pack must ultimately be expressed in a format a launcher can install.
 
 | Format | What it is | Role here |
 | --- | --- | --- |
-| **packwiz** | A TOML-based, **git-friendly** pack definition: an `index.toml` plus per-mod `.pw.toml` files with source URLs, hashes, side, and version pins. Has a CLI and an HTTP "bootstrap" installer. [S18] | **Development source of truth** — the declarative, reproducible pack state ([Constitution P7](../memory/constitution.md#principle-7--declarative-reproducible-pack-state), [ADR 0005](./decisions/0005-packwiz-and-mrpack-pack-format.md)). |
+| **packwiz** | TOML-based, **git-friendly** pack definition: an `index.toml` plus per-mod `.pw.toml` files with source URLs, hashes, side, and version pins. Has a CLI and an HTTP "bootstrap" installer. [S18] | **Development source of truth** — the declarative, reproducible pack state ([Constitution P7](../memory/constitution.md#principle-7--declarative-reproducible-pack-state), [ADR 0005](./decisions/0005-packwiz-and-mrpack-pack-format.md)). |
 | **`.mrpack`** | **Modrinth's** modpack format: a zip containing `modrinth.index.json` (files with hashes, env client/server, download URLs) plus an `overrides/` tree for configs. [S19] | **Primary export**; broad launcher support. |
 | **CurseForge `manifest.json`** | CurseForge's modpack format: a zip with `manifest.json` referencing project+file IDs, plus an `overrides/` tree. [S20] | **Secondary export** (later phase; tied to CurseForge API/licensing). |
 
 **Launchers.** **Prism Launcher** and the **Modrinth App** have the broadest interoperability
-(both import `.mrpack`; Prism also imports CurseForge packs), making them the primary
+(both import `.mrpack`; Prism also imports CurseForge packs) — primary
 targets for "produce an installable instance". [S21]
 
 > **Product implication.** Dev in **packwiz** → **export** to `.mrpack` (and later
@@ -291,26 +291,26 @@ targets for "produce an installable instance". [S21]
 
 ## 9. RAM & "heaviness" heuristics (feeds spec `0002`)
 
-Modded Minecraft performance and memory characteristics that inform **System Requirements
+Modded Minecraft performance + memory characteristics that inform **System Requirements
 Prediction**:
 
 - **RAM scales with content, not just mod count.** A light Fabric performance pack may run
   in ~2–3 GB; a large kitchen-sink/tech pack commonly wants **6–8 GB+** of heap (`-Xmx`).
   Worldgen-heavy mods (biome/structure/dimension mods) and large content mods raise the
-  budget the most. [S22]
+  budget most. [S22]
 - **Don't over-allocate.** Setting `-Xmx` too high can *hurt* via longer garbage-collection
-  pauses; the recommendation is "enough headroom, not the whole machine." [S22]
-- **Modded MC is largely single-thread-bound.** Tick/worldgen work is dominated by a few
-  threads, so **single-core clock** matters more than core count for TPS — the basis for
+  pauses; recommendation = "enough headroom, not the whole machine." [S22]
+- **Modded MC largely single-thread-bound.** Tick/worldgen work dominated by a few
+  threads, so **single-core clock** matters more than core count for TPS — basis for
   the CPU hint. [S23]
 - **GPU/VRAM mostly matters with shaders or HD textures.** Vanilla-ish rendering is light;
-  **shaders (Iris/OptiFine) and high-resolution texture packs** are what drive GPU/VRAM
-  needs — so a GPU note is only emitted when those are present. [S24]
+  **shaders (Iris/OptiFine) and high-resolution texture packs** drive GPU/VRAM
+  needs — so a GPU note only emitted when those present. [S24]
 - **Performance mods lower the budget.** **Sodium/Embeddium** (rendering), **Lithium**
   (general logic), **FerriteCore** (memory), **ModernFix**, etc. reduce CPU/RAM pressure;
   the heuristic should *credit* their presence. [S25]
-- **Disk** ≈ sum of mod file sizes (available from catalog metadata) + headroom for the
-  world, caches, and logs. This part is **deterministic** from the resolved file list. [S22]
+- **Disk** ≈ sum of mod file sizes (from catalog metadata) + headroom for the
+  world, caches, and logs. This part **deterministic** from the resolved file list. [S22]
 
 > **Product implication.** spec `0002` uses **deterministic rules** for Java version
 > (§2) and disk (sum of file sizes + headroom), and a **weighted heuristic** for
@@ -320,10 +320,10 @@ Prediction**:
 
 ### 9.1 The v1 category-weights table (implemented in code)
 
-The concrete weights live in **`src/core/requirements/weights.ts`** as the single versioned
+Concrete weights live in **`src/core/requirements/weights.ts`** as the single versioned
 source (per spec `0002`'s open question), grounded in the guidance above and kept honest with a
 confidence + rationale on every figure. They are a **conservative v1 heuristic**, *not* measured
-facts, and are meant to be **calibrated** later against known public packs. Current shape:
+facts, meant to be **calibrated** later against known public packs. Current shape:
 
 - **Per-category heap (MB):** worldgen 40 (heaviest) → adventure 30 → magic/technology/mobs
   ~24–26 → storage/equipment/decoration/food/utility ~12–20 → library 4 → optimization 0.
@@ -339,7 +339,7 @@ When these numbers change, update `weights.ts` and this note together (doc-map d
 
 ## Sources
 
-> Links are provided as a research trail. Per the maintenance note, **re-verify
+> Links = research trail. Per the maintenance note, **re-verify
 > version-specific facts** before encoding them in code; the ecosystem changes frequently
 > and some pages track "latest."
 

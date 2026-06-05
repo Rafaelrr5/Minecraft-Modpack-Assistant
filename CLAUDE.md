@@ -1,23 +1,22 @@
 # CLAUDE.md — Operating guide for Claude Code
 
-> This file is **auto-loaded every session**. It is the persistent operating contract for
-> working on this repository: the north star, the mandatory workflow, the map, the
-> conventions, the **project memory**, and the **safety guardrails**. Read it first, every
-> time.
+> **Auto-loaded every session**. Persistent operating contract for this repo: north star,
+> mandatory workflow, map, conventions, **project memory**, **safety guardrails**. Read
+> first, every time.
 
 ---
 
 ## North star (one line)
 
-Build an AI assistant that guides anyone — beginner or expert — through the **entire**
-Minecraft modpack lifecycle, staying **one step ahead** of conflicts and crashes, from a
-local CLI today to a paid SaaS tomorrow. → Full statement: [`docs/VISION.md`](./docs/VISION.md).
+Build AI assistant guiding anyone — beginner or expert — through **entire** Minecraft
+modpack lifecycle, staying **one step ahead** of conflicts + crashes, from local CLI today
+to paid SaaS tomorrow. → Full statement: [`docs/VISION.md`](./docs/VISION.md).
 
 ---
 
 ## Mandatory workflow — Spec-Driven Development (SDD)
 
-This project runs on SDD. The flow is **non-negotiable**
+Project runs on SDD. Flow **non-negotiable**
 ([Constitution P1](./memory/constitution.md#principle-1--spec-first-no-capability-without-a-spec)):
 
 ```
@@ -26,28 +25,27 @@ Constitution → Spec (what/why) → Plan (how) → Tasks → Implement → Veri
 
 **Before writing any feature code:**
 
-1. **Locate or author the spec.** Find the capability under `specs/NNNN-*/`. If it doesn't
-   exist, author `spec.md` → `plan.md` → `tasks.md` (use [`templates/`](./templates/)) and
-   get it agreed **before** coding. *No capability without a spec.*
-2. **Check the Constitution Gate** in the spec against
-   [`memory/constitution.md`](./memory/constitution.md). Unjustified gate failures block the
+1. **Locate or author the spec.** Find capability under `specs/NNNN-*/`. If absent, author
+   `spec.md` → `plan.md` → `tasks.md` (use [`templates/`](./templates/)), agree it
+   **before** coding. *No capability without a spec.*
+2. **Check the Constitution Gate** in spec against
+   [`memory/constitution.md`](./memory/constitution.md). Unjustified gate failures block
    spec.
-3. **Implement against tasks**, keeping the deterministic core honest and UI-agnostic.
-4. **Verify** against the spec's acceptance criteria; keep docs in sync **in the same
-   change** (spec status, roadmap status, `DOMAIN-KNOWLEDGE.md` for any new fact).
+3. **Implement against tasks**, keep deterministic core honest + UI-agnostic.
+4. **Verify** against spec's acceptance criteria; keep docs in sync **in the same change**
+   (spec status, roadmap status, `DOMAIN-KNOWLEDGE.md` for any new fact).
 
-Specs for future phases are authored **when the phase is picked up**, not front-loaded
-(YAGNI). The seeded examples are `0001` (discovery) and `0002` (system-requirements
-prediction).
+Future-phase specs authored **when the phase is picked up**, not front-loaded (YAGNI).
+Seeded examples: `0001` (discovery), `0002` (system-requirements prediction).
 
 ---
 
 ## How to pick up work
 
-1. Read [`docs/VISION.md`](./docs/VISION.md) (the objective) and this file.
-2. Open [`roadmap/README.md`](./roadmap/README.md) → find the **current phase**.
-3. Read that `roadmap/phase-N-*.md` → it lists the **specs to write**.
-4. Author/continue the spec under `specs/` using the templates; pass the Constitution Gate.
+1. Read [`docs/VISION.md`](./docs/VISION.md) (objective) + this file.
+2. Open [`roadmap/README.md`](./roadmap/README.md) → find **current phase**.
+3. Read that `roadmap/phase-N-*.md` → lists **specs to write**.
+4. Author/continue spec under `specs/` using templates; pass Constitution Gate.
 5. Implement per `tasks.md`; verify; update statuses.
 
 ---
@@ -120,54 +118,54 @@ roadmap/
   phase-0-foundation.md … phase-8-productization-saas.md
 ```
 
-> **Doc-map discipline:** if you add or remove a file, update this map **and** the one in
+> **Doc-map discipline:** add/remove a file → update this map **and** the one in
 > [`README.md`](./README.md) in the same change.
 
 ---
 
 ## Stack & conventions
 
-- **Language/runtime:** TypeScript on Node.js — one stack from CLI to SaaS
+- **Language/runtime:** TypeScript on Node.js — one stack CLI → SaaS
   ([ADR 0002](./docs/decisions/0002-tech-stack-typescript-node.md)).
-- **Form factor:** CLI-first; the **core is UI-agnostic** — no CLI (or future web) specifics
-  in domain logic ([ADR 0003](./docs/decisions/0003-cli-first-form-factor.md),
+- **Form factor:** CLI-first; **core is UI-agnostic** — no CLI (or future web) specifics in
+  domain logic ([ADR 0003](./docs/decisions/0003-cli-first-form-factor.md),
   [Constitution P2](./memory/constitution.md#principle-2--module-first-cli-first-ui-agnostic-core)).
 - **Docs language:** English.
 - **Naming:** spec folders `NNNN-kebab-name/`; ADRs `NNNN-kebab-title.md`; tasks `T-NNNN-XX`.
-- **Lint/test expectations (when code lands in Phase 0):** build + lint + tests run in CI and
+- **Lint/test expectations (when code lands in Phase 0):** build + lint + tests run in CI,
   must be green; external API clients get **contract tests**; generated artifacts (SNBT,
-  KubeJS, manifests) must **parse/validate** before being written
+  KubeJS, manifests) must **parse/validate** before write
   ([Constitution P3](./memory/constitution.md#principle-3--validation-discipline)).
-- **Phases 0–3 are implemented; Phase 4 is in progress (build done).** Phase 0 — toolchain, core domain model, Modrinth provider,
+- **Phases 0–3 implemented; Phase 4 in progress (build done).** Phase 0 — toolchain, core domain model, Modrinth provider,
   pack state, logging, guarded `InstanceFs`, CLI (specs
   [`0003`](./specs/0003-project-foundation/spec.md)–[`0005`](./specs/0005-pack-state/spec.md)).
-  Phase 1 — `discovery` + `discover` CLI turn an idea into a validated `ModpackBrief` (spec
+  Phase 1 — `discovery` + `discover` CLI turn an idea into validated `ModpackBrief` (spec
   [`0001`](./specs/0001-modpack-discovery/spec.md)). Phase 2 — `orchestration`
-  (`src/core/orchestration/`) resolves a list + dependencies into a pinned `PackState` (spec
-  [`0006`](./specs/0006-mod-orchestration/spec.md)), and `requirements`
-  (`src/core/requirements/`) predicts a `RequirementsReport` from the resolved set (spec
+  (`src/core/orchestration/`) resolves list + dependencies into pinned `PackState` (spec
+  [`0006`](./specs/0006-mod-orchestration/spec.md)); `requirements`
+  (`src/core/requirements/`) predicts a `RequirementsReport` from resolved set (spec
   [`0002`](./specs/0002-system-requirements-prediction/spec.md)); both surface via
-  `orchestrate [--requirements]`. Phase 3 — `conflicts` (`src/core/conflicts/`) runs a read-only
-  **pre-flight** over the resolved set (duplicate mod ids, declared incompatibilities, Maven
+  `orchestrate [--requirements]`. Phase 3 — `conflicts` (`src/core/conflicts/`) runs read-only
+  **pre-flight** over resolved set (duplicate mod ids, declared incompatibilities, Maven
   version-range mismatches, side mismatches, curated known-bad combos, keybinding collisions),
   each finding marked certain/suspected with a proposed fix — applied to nothing — via
   `orchestrate --preflight` (spec [`0007`](./specs/0007-conflict-preflight/spec.md)). Phase 4 —
-  `build` (`src/core/build/`) assembles the pinned `PackState` into a packwiz tree plus a launch
-  profile carrying the **predicted numeric Java + `-Xmx`** (spec `0002`), and materializes it
-  **only** through the guarded `InstanceFs` (dry-run default, backup before write, overwrites gated
-  behind `--force`); the `PackFormat` port gained a pure in-memory `assemble`; surfaced via the
+  `build` (`src/core/build/`) assembles pinned `PackState` into a packwiz tree plus a launch
+  profile carrying **predicted numeric Java + `-Xmx`** (spec `0002`), materializes it
+  **only** through guarded `InstanceFs` (dry-run default, backup before write, overwrites gated
+  behind `--force`); `PackFormat` port gained a pure in-memory `assemble`; surfaced via the
   `build` CLI command (spec [`0008`](./specs/0008-build-instance/spec.md)).
   `npm run check` runs typecheck + lint + build + tests. New capabilities continue under SDD.
   **Phase 4 continues with `0009` crash diagnosis (log ingestion + categorization + remediation).**
 - **Running TS:** dev/test/CLI run TypeScript directly on Node ≥ 22.18 (native type
-  stripping); the build (`tsc`) emits `dist/`. Source uses **`.ts` import extensions**
-  (rewritten to `.js` on build) and **erasable-only syntax** (no enums/parameter-properties).
+  stripping); build (`tsc`) emits `dist/`. Source uses **`.ts` import extensions**
+  (rewritten to `.js` on build) + **erasable-only syntax** (no enums/parameter-properties).
 
 ---
 
 ## 🧠 Project memory — Confirmed Decisions (load every session)
 
-These are settled. Don't relitigate them without an ADR amendment.
+Settled. Don't relitigate without an ADR amendment.
 
 | Decision | Choice | Why (ADR) |
 | --- | --- | --- |
@@ -183,13 +181,13 @@ These are settled. Don't relitigate them without an ADR amendment.
 
 ## 🧠 Project memory — Key Domain Facts (quick reference)
 
-Grounding for everyday work. **Authoritative, source-cited detail is in
+Grounding for everyday work. **Authoritative, source-cited detail in
 [`docs/DOMAIN-KNOWLEDGE.md`](./docs/DOMAIN-KNOWLEDGE.md) — cite it, don't guess**
 ([Constitution P5](./memory/constitution.md#principle-5--sourced--version-pinned-domain-knowledge)).
 
 - **Loaders:** NeoForge (tech/kitchen-sink, Forge successor), Forge (legacy), Fabric/Quilt
   (light/perf). **Sinytra Connector** can bridge Fabric→NeoForge. Loader **+** MC version is
-  the primary compatibility key. → [§1](./docs/DOMAIN-KNOWLEDGE.md#1-mod-loaders)
+  primary compatibility key. → [§1](./docs/DOMAIN-KNOWLEDGE.md#1-mod-loaders)
 - **Java by MC version:** ≤1.16.5→**8**, 1.17.x→**16**, 1.18–1.20.4→**17**,
   1.20.5–1.21.x→**21**. (Deterministic input to spec `0002`.) →
   [§2](./docs/DOMAIN-KNOWLEDGE.md#2-java-version-by-minecraft-version)
@@ -204,10 +202,10 @@ Grounding for everyday work. **Authoritative, source-cited detail is in
 - **Conflict categories:** duplicate `modId`, registry, mixin, version mismatch, declared
   incompatibility, client/server side. (Static-certain vs. suspected.) →
   [§4.3](./docs/DOMAIN-KNOWLEDGE.md#43-conflict-categories-taxonomy)
-- **Keybindings:** `options.txt` + per-mod defaults; collisions are common and detectable. →
+- **Keybindings:** `options.txt` + per-mod defaults; collisions common + detectable. →
   [§5](./docs/DOMAIN-KNOWLEDGE.md#5-keybindings)
 - **Crashes:** evidence in `crash-reports/` + `logs/latest.log`/`debug.log`; categories
-  (missing dep, mixin apply, OOM, wrong Java, invalid side). **mclo.gs** analyse API is a
+  (missing dep, mixin apply, OOM, wrong Java, invalid side). **mclo.gs** analyse API =
   second opinion. → [§6](./docs/DOMAIN-KNOWLEDGE.md#6-crash--log-diagnosis)
 - **Quests:** FTB Quests = **SNBT** under `config/ftbquests/quests/…`. Generating quests =
   **generating valid SNBT with a real serializer** (never regex). **KubeJS** (Rhino/ES6,
@@ -215,10 +213,10 @@ Grounding for everyday work. **Authoritative, source-cited detail is in
   `FTBQuestsEvents` but **does not create them**. →
   [§7](./docs/DOMAIN-KNOWLEDGE.md#7-quests--ftb-quests)
 - **Packaging:** **packwiz** (dev source of truth) → export **`.mrpack`** / CurseForge
-  `manifest.json`; **Prism** / **Modrinth App** have broadest interop. →
+  `manifest.json`; **Prism** / **Modrinth App** = broadest interop. →
   [§8](./docs/DOMAIN-KNOWLEDGE.md#8-packaging--distribution-formats)
 - **RAM/heaviness:** scales with content (not just count); don't over-allocate (GC); modded
-  MC is single-thread-bound; GPU/VRAM matters mainly with shaders/HD; perf mods (Sodium/
+  MC single-thread-bound; GPU/VRAM matters mainly with shaders/HD; perf mods (Sodium/
   Lithium/FerriteCore) lower the budget. (Feeds spec `0002`.) →
   [§9](./docs/DOMAIN-KNOWLEDGE.md#9-ram--heaviness-heuristics-feeds-spec-0002)
 
@@ -227,11 +225,11 @@ Grounding for everyday work. **Authoritative, source-cited detail is in
 ## 🛡️ Safety guardrails (always)
 
 From [Constitution P4](./memory/constitution.md#principle-4--user-data-safety-backup-consent-dry-run-by-default)
-and P3/P5. These are not optional:
+and P3/P5. Not optional:
 
 1. **Never mutate a user's game instance without (a) a backup and (b) explicit
-   confirmation.** Worlds/configs are sacred.
-2. **Dry-run by default.** Show the planned change set; require an explicit opt-in to apply.
+   confirmation.** Worlds/configs sacred.
+2. **Dry-run by default.** Show planned change set; require explicit opt-in to apply.
    Extra confirmation for destructive/irreversible actions.
 3. **Validate before writing.** Generated SNBT/KubeJS/manifests must **parse/validate**
    first; SNBT via a real serializer, never string/regex.
@@ -241,21 +239,21 @@ and P3/P5. These are not optional:
    flag uncertainty instead of bluffing.
 6. **Respect catalog ToS & licensing** (Modrinth-first; CurseForge keys/licensing when
    added).
-7. **Keep the core UI-agnostic** so the CLI→SaaS path stays open.
+7. **Keep core UI-agnostic** so CLI→SaaS path stays open.
 
 ---
 
 ## The three-layer memory (how decisions & findings persist)
 
-So the objective and rationale survive across sessions and contributors:
+So objective + rationale survive across sessions + contributors:
 
 1. **This file (`CLAUDE.md`)** — *working memory*: confirmed decisions + key facts, loaded
    every session.
 2. **[`docs/decisions/`](./docs/decisions/README.md) (ADRs)** — *the why*: rationale behind
    each decision.
-3. **[`docs/DOMAIN-KNOWLEDGE.md`](./docs/DOMAIN-KNOWLEDGE.md)** — *the findings*: the
+3. **[`docs/DOMAIN-KNOWLEDGE.md`](./docs/DOMAIN-KNOWLEDGE.md)** — *the findings*:
    source-cited technical reference.
 
-When you make a significant decision, write an **ADR**. When you learn a durable domain
-fact, add it to **DOMAIN-KNOWLEDGE.md** (with a source). When either changes the day-to-day,
-update the memory blocks above.
+Significant decision → write an **ADR**. Durable domain fact → add to
+**DOMAIN-KNOWLEDGE.md** (with a source). Either changes the day-to-day → update the memory
+blocks above.

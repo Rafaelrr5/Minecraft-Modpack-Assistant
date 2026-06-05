@@ -1,120 +1,120 @@
 # Glossary
 
-Short, practical definitions of the recurring domain and project terms. For deeper, sourced
-detail see [`DOMAIN-KNOWLEDGE.md`](./DOMAIN-KNOWLEDGE.md). Terms are grouped by area and
-alphabetized within each group.
+Short practical definitions of recurring domain and project terms. Deeper sourced
+detail see [`DOMAIN-KNOWLEDGE.md`](./DOMAIN-KNOWLEDGE.md). Terms grouped by area,
+alphabetized within group.
 
 ---
 
 ## Loaders & versions
 
-- **Loader** — The framework that allows mods to run on Minecraft (NeoForge, Forge,
-  Fabric, Quilt). A mod targets exactly one loader family. See
+- **Loader** — Framework let mods run on Minecraft (NeoForge, Forge,
+  Fabric, Quilt). Mod targets exactly one loader family. See
   [Domain §1](./DOMAIN-KNOWLEDGE.md#1-mod-loaders).
-- **NeoForge** — Community fork of Forge that became the standard loader for large
+- **NeoForge** — Community fork of Forge. Became standard loader for big
   "kitchen-sink"/tech packs on modern Minecraft versions.
-- **Forge** — The long-established loader; many older packs/mods target it. NeoForge
-  diverged from it in 2023.
-- **Fabric** — A lightweight loader popular for performance and small mods; most Fabric
-  mods also need the **Fabric API** library.
-- **Quilt** — A Fabric-compatible fork that can load most Fabric mods and adds its own
+- **Forge** — Long-established loader. Many older packs/mods target it. NeoForge
+  diverged 2023.
+- **Fabric** — Lightweight loader, popular for performance and small mods. Most Fabric
+  mods also need **Fabric API** library.
+- **Quilt** — Fabric-compatible fork. Loads most Fabric mods, adds own
   hooks.
-- **Fabric API** — A shared library mod that most Fabric mods depend on; not a loader
-  itself.
-- **Sinytra Connector** — A compatibility layer that lets many Fabric mods run on
+- **Fabric API** — Shared library mod most Fabric mods depend on. Not
+  loader itself.
+- **Sinytra Connector** — Compatibility layer. Let many Fabric mods run on
   NeoForge.
-- **Minecraft version (MC version)** — The game version (e.g. `1.21.1`) a mod/pack
-  targets. Combined with the loader, it is the **primary compatibility key**.
+- **Minecraft version (MC version)** — Game version (e.g. `1.21.1`) mod/pack
+  targets. Plus loader = **primary compatibility key**.
 
 ## Mods & metadata
 
-- **Mod** — A package that modifies or extends Minecraft, distributed as a `.jar`.
-- **`modId`** — The unique identifier a mod declares for itself. Two mods sharing a
-  `modId` cannot load together (a **duplicate `modId`** conflict).
-- **ModFile / mod jar** — A specific downloadable build of a mod (a version + file, with a
+- **Mod** — Package that modifies or extends Minecraft. Distributed as `.jar`.
+- **`modId`** — Unique identifier mod declares for itself. Two mods sharing
+  `modId` cannot load together (**duplicate `modId`** conflict).
+- **ModFile / mod jar** — Specific downloadable build of mod (version + file, with
   size and hash).
-- **`fabric.mod.json`** — The metadata file inside a Fabric mod jar declaring its `id`,
-  version, and relationships (`depends`, `recommends`, `suggests`, `conflicts`, `breaks`).
-- **`mods.toml` / `neoforge.mods.toml`** — The metadata file inside a Forge/NeoForge mod
-  jar declaring mods and `[[dependencies]]` (with `type`/`mandatory`, `versionRange`,
+- **`fabric.mod.json`** — Metadata file inside Fabric mod jar. Declares `id`,
+  version, relationships (`depends`, `recommends`, `suggests`, `conflicts`, `breaks`).
+- **`mods.toml` / `neoforge.mods.toml`** — Metadata file inside Forge/NeoForge mod
+  jar. Declares mods and `[[dependencies]]` (with `type`/`mandatory`, `versionRange`,
   `side`, `ordering`).
-- **Dependency** — Another mod (often at a specific version range) that a mod needs. May be
-  required, optional, or a soft recommendation.
-- **`versionRange`** — A Maven-style range (e.g. `[1.20.1,1.21)`) constraining an
+- **Dependency** — Another mod (often specific version range) mod needs. May be
+  required, optional, or soft recommendation.
+- **`versionRange`** — Maven-style range (e.g. `[1.20.1,1.21)`) constraining
   acceptable dependency version.
-- **Side / environment** — Whether a mod runs on the **client**, the **server**, or
-  **both**. A side mismatch is a conflict class.
+- **Side / environment** — Whether mod runs on **client**, **server**, or
+  **both**. Side mismatch = conflict class.
 
 ## Conflicts & crashes
 
-- **Conflict** — A reason two or more mods cannot safely coexist. Categories: duplicate
+- **Conflict** — Reason two or more mods cannot safely coexist. Categories: duplicate
   `modId`, registry, mixin, version mismatch, declared incompatibility, client/server-side
   mismatch. See [Domain §4.3](./DOMAIN-KNOWLEDGE.md#43-conflict-categories-taxonomy).
-- **Mixin** — A bytecode-injection mechanism mods use to patch Minecraft (or other mods).
-  Two mods patching the same target incompatibly cause a **mixin apply failure**.
-- **Registry** — Minecraft's tables of blocks/items/etc.; two mods claiming the same id is
-  a registry conflict.
-- **Keybinding** — A key assigned to an action, stored in `options.txt`. Mods ship default
+- **Mixin** — Bytecode-injection mechanism mods use to patch Minecraft (or other mods).
+  Two mods patching same target incompatibly = **mixin apply failure**.
+- **Registry** — Minecraft's tables of blocks/items/etc. Two mods claiming same id =
+  registry conflict.
+- **Keybinding** — Key assigned to action, stored in `options.txt`. Mods ship default
   binds that frequently **collide**.
-- **Crash report** — A `crash-reports/crash-*.txt` file produced on a hard crash, with the
-  stack trace and a system-details block.
-- **`latest.log` / `debug.log`** — Rolling run logs under `logs/`; the primary evidence for
+- **Crash report** — A `crash-reports/crash-*.txt` file produced on hard crash. Has
+  stack trace and system-details block.
+- **`latest.log` / `debug.log`** — Rolling run logs under `logs/`. Primary evidence for
   diagnosis alongside crash reports.
-- **OOM (Out Of Memory)** — `OutOfMemoryError: Java heap space`; the pack needed more RAM
+- **OOM (Out Of Memory)** — `OutOfMemoryError: Java heap space`. Pack needed more RAM
   than `-Xmx` allowed.
-- **mclo.gs** — A log-paste service with an analysis API used as a second opinion during
+- **mclo.gs** — Log-paste service with analysis API. Used as second opinion during
   crash diagnosis.
 
 ## Content authoring
 
-- **SNBT** — *Stringified NBT*: the text form of Minecraft's named-binary-tag format.
-  **FTB Quests** stores quests as SNBT files; generating quests means generating valid
-  SNBT with a real serializer.
-- **NBT** — *Named Binary Tag*, Minecraft's typed data format (bytes, ints, longs, floats,
+- **SNBT** — *Stringified NBT*: text form of Minecraft's named-binary-tag format.
+  **FTB Quests** stores quests as SNBT files. Generating quests = generating valid
+  SNBT with real serializer.
+- **NBT** — *Named Binary Tag*. Minecraft's typed data format (bytes, ints, longs, floats,
   doubles, lists, compounds).
-- **FTB Quests** — A quest-book mod storing chapters/quests/tasks/rewards as SNBT under
+- **FTB Quests** — Quest-book mod. Stores chapters/quests/tasks/rewards as SNBT under
   `config/ftbquests/`.
-- **KubeJS** — A scripting mod (Rhino/ES6) for custom recipes, items, and events; scripts
+- **KubeJS** — Scripting mod (Rhino/ES6) for custom recipes, items, events. Scripts
   live in `startup_scripts/`, `server_scripts/`, `client_scripts/`.
-- **FTB XMod Compat** — An add-on exposing reactive `FTBQuestsEvents` to KubeJS; it lets
+- **FTB XMod Compat** — Add-on exposing reactive `FTBQuestsEvents` to KubeJS. Lets
   scripts *react to* quests but does **not** create them.
 
 ## Packaging & distribution
 
-- **packwiz** — A TOML-based, git-friendly pack definition (`index.toml` + per-mod
-  `.pw.toml`); the project's **development source of truth** for pack state.
-- **`.mrpack`** — Modrinth's modpack format (zip with `modrinth.index.json` + `overrides/`);
-  the primary export target.
+- **packwiz** — TOML-based, git-friendly pack definition (`index.toml` + per-mod
+  `.pw.toml`). Project's **development source of truth** for pack state.
+- **`.mrpack`** — Modrinth's modpack format (zip with `modrinth.index.json` + `overrides/`).
+  Primary export target.
 - **CurseForge `manifest.json`** — CurseForge's modpack format (zip with project/file IDs +
-  `overrides/`); a later export target.
-- **Lockfile / pack state** — The declarative, version-pinned description of a pack that
-  makes builds reproducible.
-- **Launcher** — An app that installs and runs an instance (e.g. **Prism Launcher**,
+  `overrides/`). Later export target.
+- **Lockfile / pack state** — Declarative, version-pinned description of pack. Makes
+  builds reproducible.
+- **Launcher** — App that installs and runs instance (e.g. **Prism Launcher**,
   **Modrinth App**).
-- **Instance** — An installed, launchable copy of a pack (its own mods, configs, saves).
-- **`-Xmx`** — The JVM flag setting maximum heap size (the pack's RAM budget).
+- **Instance** — Installed, launchable copy of pack (own mods, configs, saves).
+- **`-Xmx`** — JVM flag setting maximum heap size (pack's RAM budget).
 
 ## Catalogs & APIs
 
-- **Modrinth** — An open mod catalog with a documented API (`api.modrinth.com`); the
-  project's **first** data source.
-- **CurseForge** — A large mod catalog whose API needs a key and approval; integrated in a
+- **Modrinth** — Open mod catalog with documented API (`api.modrinth.com`). Project's
+  **first** data source.
+- **CurseForge** — Large mod catalog. API needs key and approval. Integrated
   later phase.
 - **Facets** — Modrinth's search filters (by loader, MC version, category, project type).
-- **Hash lookup** — Identifying a local jar by its file hash via the catalog API.
+- **Hash lookup** — Identify local jar by file hash via catalog API.
 
 ## Project & process
 
-- **SDD (Spec-Driven Development)** — The project's method:
+- **SDD (Spec-Driven Development)** — Project's method:
   **Constitution → Spec → Plan → Tasks → Implement → Verify**. See
   [`../specs/README.md`](../specs/README.md).
-- **Constitution** — The non-negotiable principles gating all work
+- **Constitution** — Non-negotiable principles gating all work
   ([`../memory/constitution.md`](../memory/constitution.md)).
-- **Spec / Plan / Tasks** — The three artifacts per capability: *what & why* / *how* /
+- **Spec / Plan / Tasks** — Three artifacts per capability: *what & why* / *how* /
   *ordered work*.
-- **ADR (Architecture/Any Decision Record)** — A short record of one decision and its
-  rationale, under [`./decisions/`](./decisions/README.md).
-- **Modpack Brief** — The validated output of the Discovery feature (spec `0001`): the
-  agreed theme, version, loader, performance budget, and must-have mechanics for a pack.
-- **RequirementsReport** — The output of System Requirements Prediction (spec `0002`):
+- **ADR (Architecture/Any Decision Record)** — Short record of one decision and its
+  rationale. Under [`./decisions/`](./decisions/README.md).
+- **Modpack Brief** — Validated output of Discovery feature (spec `0001`): agreed
+  theme, version, loader, performance budget, must-have mechanics for pack.
+- **RequirementsReport** — Output of System Requirements Prediction (spec `0002`):
   minimum & recommended RAM/Java/disk/CPU/GPU with confidence and rationale.

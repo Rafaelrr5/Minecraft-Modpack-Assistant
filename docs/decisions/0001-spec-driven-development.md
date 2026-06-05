@@ -11,53 +11,43 @@
 
 ## Context
 
-This is an ambitious, long-horizon project: an assistant that owns the **entire** modpack
-lifecycle and is meant to grow from a CLI into a SaaS (see [`VISION.md`](../VISION.md)). The
-biggest risk for a project like this is **objective drift** — over many sessions and
-possibly many contributors (including AI agents), the original intent erodes, features are
-built without a clear reason, and the rationale behind past choices is lost.
+Ambitious long-horizon project: assistant own **entire** modpack lifecycle, grow from CLI into SaaS (see [`VISION.md`](../VISION.md)). Biggest risk: **objective drift** — over many sessions and many contributors (including AI agents), original intent erode, features built without clear reason, rationale behind past choices lost.
 
-We need a development methodology that:
+Need development methodology that:
 
-- keeps the long-term objective intact across sessions,
-- forces clarity on *what/why* before *how*,
-- produces durable, reviewable artifacts, and
-- works well with AI agents doing much of the authoring.
+- keep long-term objective intact across sessions,
+- force clarity on *what/why* before *how*,
+- produce durable, reviewable artifacts, and
+- work well with AI agents doing much of authoring.
 
 ## Decision
 
-**We will use Spec-Driven Development (SDD)** as the project's methodology, with the flow
-**Constitution → Spec → Plan → Tasks → Implement → Verify**. A
-[constitution](../../memory/constitution.md) of non-negotiable principles is the supreme
-gate; every capability is authored as a numbered spec under `specs/NNNN-*/` (`spec.md` →
-`plan.md` → `tasks.md`) **before** any implementation. Templates standardize the artifacts,
-and `CLAUDE.md` enforces "no code without a spec."
+**Use Spec-Driven Development (SDD)** as project methodology, flow **Constitution → Spec → Plan → Tasks → Implement → Verify**. A [constitution](../../memory/constitution.md) of non-negotiable principles = supreme gate; every capability authored as numbered spec under `specs/NNNN-*/` (`spec.md` → `plan.md` → `tasks.md`) **before** any implementation. Templates standardize artifacts, `CLAUDE.md` enforce "no code without a spec."
 
-Our flavor is **Spec-Kit–inspired but tool-agnostic** — we borrow the structure (a
-constitution, specs/plans/tasks, gates) without binding to any specific tool or generator.
+Flavor: **Spec-Kit–inspired but tool-agnostic** — borrow structure (constitution, specs/plans/tasks, gates) without binding to specific tool or generator.
 
 ## Options considered
 
 - **Option A — Spec-Driven Development (chosen).** Heavy up-front clarity; durable
-  artifacts; strong fit for AI-agent authoring and for preserving intent.
+  artifacts; strong fit for AI-agent authoring and preserving intent.
   *Cons:* ceremony overhead, especially for tiny changes.
 - **Option B — Ad-hoc / code-first.** Fastest to start. *Cons:* highest drift risk; intent
-  and rationale live only in code and memory; poor fit for a multi-session AI workflow.
+  and rationale live only in code and memory; poor fit for multi-session AI workflow.
 - **Option C — Heavy traditional up-front design (waterfall-ish PRDs).** Thorough.
-  *Cons:* rigid, slow to adapt, and not structured for incremental, agent-driven delivery.
+  *Cons:* rigid, slow to adapt, not structured for incremental agent-driven delivery.
 
 ## Consequences
 
-- **Positive:** the objective is anchored in `VISION.md` + constitution; every feature has
-  a traceable *why*; reviews have something concrete to gate on; new contributors/agents can
-  onboard by reading specs; AI authoring is constrained and checkable.
+- **Positive:** objective anchored in `VISION.md` + constitution; every feature has
+  traceable *why*; reviews have concrete thing to gate on; new contributors/agents
+  onboard by reading specs; AI authoring constrained and checkable.
 - **Negative / trade-offs:** overhead for small tasks; discipline required to keep docs in
-  sync. We mitigate by keeping templates lightweight and applying YAGNI (Constitution P9).
-- **Follow-ups:** seed the practice with worked example specs (`0001-modpack-discovery`,
+  sync. Mitigate by keeping templates lightweight and applying YAGNI (Constitution P9).
+- **Follow-ups:** seed practice with worked example specs (`0001-modpack-discovery`,
   `0002-system-requirements-prediction`); author later specs only when their phase begins.
 
 ## Relationship to the constitution / vision
 
-This ADR establishes the very process the [constitution](../../memory/constitution.md)
-encodes (Principle 1 — Spec-first). It directly serves the vision's need to keep the
-end-to-end objective intact as the project grows from CLI to SaaS.
+This ADR establish the very process [constitution](../../memory/constitution.md)
+encode (Principle 1 — Spec-first). Directly serve vision's need to keep end-to-end
+objective intact as project grow from CLI to SaaS.

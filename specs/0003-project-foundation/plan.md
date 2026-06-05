@@ -1,6 +1,6 @@
 # Plan 0003 — Project Foundation
 
-> **Artifact:** `plan.md` — the **HOW** for [`spec.md`](./spec.md).
+> **Artifact:** `plan.md` — **HOW** for [`spec.md`](./spec.md).
 
 | | |
 | --- | --- |
@@ -12,18 +12,17 @@
 
 ## 1. Approach overview
 
-Stand up a conventional, minimal TypeScript/Node project and express the architecture's
-**dependency rule** in the folder layout: a UI-agnostic `core/` (domain types + the *ports*
-the core depends on), an `integration/` layer that *implements* those ports, and a thin
-`cli/` adapter. Keep runtime dependencies near-zero (Node 22 built-ins: `fetch`, `node:test`,
-`node:util parseArgs`, `node:fs`), adding only what a port genuinely needs (TOML lives in
-`0005`). This satisfies the spec with the smallest surface (Constitution
+Stand up minimal TypeScript/Node project. Express architecture's **dependency rule** in folder
+layout: UI-agnostic `core/` (domain types + *ports* core depends on), `integration/` layer that
+*implements* those ports, thin `cli/` adapter. Keep runtime deps near-zero (Node 22 built-ins:
+`fetch`, `node:test`, `node:util parseArgs`, `node:fs`), add only what port genuinely needs
+(TOML lives in `0005`). Satisfies spec with smallest surface (Constitution
 [P9](../../memory/constitution.md#principle-9--simplicity-yagni--observability)).
 
-Rejected alternatives: a heavyweight CLI framework (overkill for two commands — hand-roll
-over `parseArgs`); a separate test framework (Node 22's built-in `node:test` + native TS
-type-stripping needs no extra runtime). The lint layer carries an **import-boundary rule** so
-the UI-agnostic core is enforced by tooling, not just convention.
+Rejected alternatives: heavyweight CLI framework (overkill for two commands — hand-roll over
+`parseArgs`); separate test framework (Node 22 built-in `node:test` + native TS type-stripping
+need no extra runtime). Lint layer carries **import-boundary rule** so UI-agnostic core enforced
+by tooling, not convention.
 
 ## 2. Module & placement
 
@@ -42,14 +41,14 @@ src/
   index.ts              # library entry (re-exports core)
 ```
 
-- **Public contract:** the library entry re-exports the domain model + ports; the CLI is a
-  separate `bin`. **The core never imports `cli/`** (proven by an architecture test, AC-5).
-- The `ModSourceProvider` port lands in `0004`; the `PackFormat` port in `0005`. This spec
-  owns `Logger` and `InstanceFs`.
+- **Public contract:** library entry re-exports domain model + ports; CLI separate `bin`.
+  **Core never imports `cli/`** (proven by architecture test, AC-5).
+- `ModSourceProvider` port lands in `0004`; `PackFormat` port in `0005`. This spec owns
+  `Logger` and `InstanceFs`.
 
 ## 3. Data contracts
 
-Domain types (conceptual; exact fields in code, extending
+Domain types (conceptual; exact fields in code, extend
 [ARCHITECTURE: core domain model](../../docs/ARCHITECTURE.md#core-domain-model)):
 
 | Type | Shape (essentials) |
@@ -64,7 +63,7 @@ Domain types (conceptual; exact fields in code, extending
 | `ModpackBrief` | `{ theme, playstyle, minecraftVersion, loader, audienceLevel, distribution, performanceBudget, difficulty, mustHaveMechanics[], defaultsApplied[], confirmedAt? }` (consumed by `0001`) |
 | `PackState` | `{ name, author?, packVersion, minecraft, loader, mods: PackStateMod[] }` (fields finalized in `0005`) |
 
-`DependencyKind` and `ConflictCategory` mirror the DOMAIN-KNOWLEDGE taxonomies
+`DependencyKind` and `ConflictCategory` mirror DOMAIN-KNOWLEDGE taxonomies
 ([§4](../../docs/DOMAIN-KNOWLEDGE.md#4-mod-metadata--dependency-declarations),
 [§4.3](../../docs/DOMAIN-KNOWLEDGE.md#43-conflict-categories-taxonomy)).
 
@@ -72,59 +71,58 @@ Domain types (conceptual; exact fields in code, extending
 
 - **`MinecraftVersion.requiredJavaMajor` (deterministic).** Parse `major.minor.patch`, then
   apply [§2](../../docs/DOMAIN-KNOWLEDGE.md#2-java-version-by-minecraft-version): `≤1.16.5→8`,
-  `1.17–1.17.1→16`, `1.18–1.20.4→17`, `1.20.5–1.21.x→21`, via an ordered comparison against
-  pinned boundary versions. The boundaries are encoded as constants with a source comment.
-- **`Logger`.** Levels `debug|info|warn|error`; each call takes a message + an optional
-  structured field object; `child(bindings)` returns a logger that merges bindings into every
-  record. `ConsoleLogger` honors a minimum level and emits `{ ts, level, msg, ...fields }`.
-- **`GuardedInstanceFs` (the safety boundary).**
+  `1.17–1.17.1→16`, `1.18–1.20.4→17`, `1.20.5–1.21.x→21`, via ordered comparison against
+  pinned boundary versions. Boundaries encoded as constants with source comment.
+- **`Logger`.** Levels `debug|info|warn|error`; each call takes message + optional structured
+  field object; `child(bindings)` returns logger that merges bindings into every record.
+  `ConsoleLogger` honors minimum level, emits `{ ts, level, msg, ...fields }`.
+- **`GuardedInstanceFs` (safety boundary).**
   - `detectInstance(dir)` → read-only probe for instance markers (`mods/`, `config/`,
     `options.txt`, `versions/`); returns presence info, never writes.
-  - `plan(changes)` → a **dry-run** `ChangePlan` describing intended writes; performs no I/O.
+  - `plan(changes)` → **dry-run** `ChangePlan` describing intended writes; no I/O.
   - `apply(plan, { confirm, backupDir })` → **refuses** unless `confirm === true`; when
-    confirmed, **creates a backup of every target first**, then applies. The backup-before-
-    write ordering is the invariant the test asserts (AC-4).
+    confirmed, **creates backup of every target first**, then applies. Backup-before-write
+    ordering is invariant test asserts (AC-4).
 
 ## 5. External integrations
 
-None beyond the Node runtime. No catalog/network access in this spec (that is `0004`); no
-TOML (that is `0005`). Java detection in `doctor` shells out to `java -version` **read-only**
-and degrades gracefully when Java is absent.
+None beyond Node runtime. No catalog/network access in this spec (that `0004`); no TOML (that
+`0005`). Java detection in `doctor` shells out to `java -version` **read-only**, degrades
+gracefully when Java absent.
 
 ## 6. Safety & side effects
 
-- `doctor` and `detectInstance` are **strictly read-only**.
-- The only code that can write is `GuardedInstanceFs.apply`, which is **dry-run by default**,
-  requires explicit `confirm`, and **backs up before writing** (Constitution
+- `doctor` and `detectInstance` **strictly read-only**.
+- Only code that can write is `GuardedInstanceFs.apply`: **dry-run by default**, requires
+  explicit `confirm`, **backs up before writing** (Constitution
   [P4](../../memory/constitution.md#principle-4--user-data-safety-backup-consent-dry-run-by-default)).
-  In Phase 0 it is exercised only against temp dirs in tests; no feature wires through it yet.
+  In Phase 0 exercised only against temp dirs in tests; no feature wires through it yet.
 
 ## 7. Validation & testing strategy
 
 - **Unit:** `requiredJavaMajor` boundary cases (AC-2); version parse/compare; `ConsoleLogger`
-  level filtering + structured payload; `GuardedInstanceFs` (no write without confirm,
-  backup precedes write — AC-4); instance detection on a fixture dir.
-- **Architecture:** a test scans `core/**` sources and asserts none import `cli/**` (AC-5).
-- **CLI:** invoke `help` and `doctor` programmatically; assert overview text and a report
-  with no filesystem writes (AC-3).
-- All run under the built-in test runner via `npm test`; CI runs `build` + `lint` + `test`
-  (AC-1).
+  level filtering + structured payload; `GuardedInstanceFs` (no write without confirm, backup
+  precedes write — AC-4); instance detection on fixture dir.
+- **Architecture:** test scans `core/**` sources, asserts none import `cli/**` (AC-5).
+- **CLI:** invoke `help` and `doctor` programmatically; assert overview text and report with no
+  filesystem writes (AC-3).
+- All run under built-in test runner via `npm test`; CI runs `build` + `lint` + `test` (AC-1).
 
 ## 8. Observability
 
 `ConsoleLogger` provides structured, level-filtered records used across adapters; `doctor`
-surfaces each check with a clear pass/warn/fail and rationale, and `--json` exposes the same
-data for tooling (Constitution
+surfaces each check with clear pass/warn/fail + rationale, `--json` exposes same data for
+tooling (Constitution
 [P9](../../memory/constitution.md#principle-9--simplicity-yagni--observability)).
 
 ## 9. Risks & mitigations
 
-- **Core accidentally importing the CLI** → lint import-boundary rule **and** an architecture
-  test (defense in depth).
-- **Native TS execution drift across Node versions** → pin Node 22 in CI and `engines`; the
-  type-stripping path is stable on the pinned runtime.
-- **Over-building the foundation** → strictly scope to what `0004`/`0005` and Phase 1 need
-  (YAGNI); ports without consumers are deferred.
+- **Core accidentally importing CLI** → lint import-boundary rule **and** architecture test
+  (defense in depth).
+- **Native TS execution drift across Node versions** → pin Node 22 in CI and `engines`;
+  type-stripping path stable on pinned runtime.
+- **Over-building foundation** → strictly scope to what `0004`/`0005` and Phase 1 need (YAGNI);
+  ports without consumers deferred.
 
 ## 10. Rollout / sequencing
 
@@ -140,7 +138,7 @@ Detailed steps in [`tasks.md`](./tasks.md).
 
 ## Constitution Re-check
 
-All gates from [`spec.md`](./spec.md) hold under this design. Key reaffirmations: the
-UI-agnostic core is enforced by **both** a lint rule and a test (P2); the only write path is
-the **guarded** `InstanceFs` (P4); the Java rule is deterministic and **sourced** (P3, P5).
-No gate status changed once design met reality.
+All gates from [`spec.md`](./spec.md) hold under this design. Key reaffirmations: UI-agnostic
+core enforced by **both** lint rule and test (P2); only write path is **guarded** `InstanceFs`
+(P4); Java rule deterministic and **sourced** (P3, P5). No gate status changed once design met
+reality.

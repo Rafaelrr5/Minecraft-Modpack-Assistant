@@ -1,28 +1,19 @@
 # Architecture Decision Records (ADRs)
 
-This folder is the project's **durable memory of *why***. Each ADR captures a single
-significant decision — its context, the options weighed, the choice, and the consequences —
-so that future contributors (human or agent) can understand *why* the project is the way it
-is, and so decisions are revisited **deliberately** rather than drifting silently.
+This folder = project's **durable memory of *why***. Each ADR capture one significant decision — context, options weighed, choice, consequences — so future contributors (human or agent) understand *why* project is way it is, and decisions revisited **deliberately** not drift silently.
 
-This is the middle layer of the project's three-layer memory:
+Middle layer of project's three-layer memory:
 
-1. **[`CLAUDE.md`](../../CLAUDE.md)** — *working memory*: the compact, always-loaded list of
-   confirmed decisions and key facts.
-2. **ADRs (this folder)** — *the why*: the rationale behind each decision.
-3. **[`DOMAIN-KNOWLEDGE.md`](../DOMAIN-KNOWLEDGE.md)** — *the findings*: the source-cited
-   technical reference.
+1. **[`CLAUDE.md`](../../CLAUDE.md)** — *working memory*: compact, always-loaded list of confirmed decisions and key facts.
+2. **ADRs (this folder)** — *the why*: rationale behind each decision.
+3. **[`DOMAIN-KNOWLEDGE.md`](../DOMAIN-KNOWLEDGE.md)** — *the findings*: source-cited technical reference.
 
 ## How we use ADRs
 
-- One decision per file, named `NNNN-kebab-title.md`, numbered in order of decision.
+- One decision per file, named `NNNN-kebab-title.md`, numbered in decision order.
 - Use [`../../templates/adr-template.md`](../../templates/adr-template.md).
-- ADRs are **append-only in spirit**: rather than rewriting a past decision, add a new ADR
-  that *supersedes* it and update the old one's status. This preserves the history of
-  thinking.
-- Significant decisions include: changing the constitution, adopting/dropping a major
-  dependency or provider, changing a core format, or anything that would surprise a new
-  contributor.
+- ADRs **append-only in spirit**: not rewrite past decision — add new ADR that *supersedes* it, update old one's status. Preserve history of thinking.
+- Significant decisions: change constitution, adopt/drop major dependency or provider, change core format, or anything surprise new contributor.
 
 ## Index
 

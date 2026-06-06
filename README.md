@@ -14,8 +14,9 @@ a mod list **and its dependencies** into a pinned `PackState`; **Requirements** 
 version/side mismatches, known-bad combos, and keybinding collisions (read-only, proposes fixes).
 Phase 4 — **Build** (`0008`): `build` assembles a packwiz tree + a launch profile (predicted
 **Java + `-Xmx`**) and writes it **only** through the guarded `InstanceFs` (dry-run default,
-backup, `--force` to overwrite). **Next:** Crash Diagnosis (`0009`). → see the
-[roadmap](./roadmap/README.md).
+backup, `--force` to overwrite). Phase 4 also opened the **agent/LLM boundary** — a
+provider-agnostic `ChatModel` port + an OpenAI-compatible **NVIDIA** adapter (`0009`). **Next:**
+Crash Diagnosis (`0010`). → see the [roadmap](./roadmap/README.md).
 
 ---
 

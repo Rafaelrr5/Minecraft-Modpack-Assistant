@@ -64,14 +64,14 @@ src/                           Application code (begins in Phase 0)
   index.ts                     Library entry (re-exports core + integration)
   core/                        UI-agnostic core — imports no cli/ or integration/ (enforced)
     domain/                    Core domain model (MinecraftVersion, version-range, Loader, loader-compat, Mod, Modpack, Conflict, …, PackState)
-    ports/                     Interfaces the core depends on (Logger, InstanceFs[+readText], ModSourceProvider, PackFormat)
+    ports/                     Interfaces the core depends on (Logger, ChatModel, InstanceFs[+readText], ModSourceProvider, PackFormat)
     discovery/                 Phase 1 capability (spec 0001): slot-filling → validated ModpackBrief
     orchestration/             Phase 2 capability (spec 0006): list + deps → pinned PackState
     requirements/              Phase 2 capability (spec 0002): resolved set → RequirementsReport
     conflicts/                 Phase 3 capability (spec 0007): resolved set → read-only pre-flight report (+ proposed fixes)
     build/                     Phase 4 capability (spec 0008): PackState + RequirementsReport → packwiz tree + launch profile → guarded InstanceFs change plan
   integration/                 Adapters implementing the ports
-    logging/ · instance-fs/ · modrinth/ · packwiz/ (PackFormat: + pure assemble)
+    logging/ · instance-fs/ · modrinth/ · nvidia/ (ChatModel: OpenAI-compatible NVIDIA NIM) · packwiz/ (PackFormat: + pure assemble)
   cli/                         Thin CLI adapter (help · doctor · discover · orchestrate [--requirements|--preflight] · build [--apply|--force])
 
 docs/
@@ -108,6 +108,8 @@ specs/
   0007-conflict-preflight/     Phase 3 (done): resolved set → read-only pre-flight conflict report
     spec.md · plan.md · tasks.md
   0008-build-instance/         Phase 4 (done): pinned PackState + RequirementsReport → packwiz workspace + launch profile via guarded InstanceFs
+    spec.md · plan.md · tasks.md
+  0009-nvidia-chat-model/      Phase 4 (done): provider-agnostic ChatModel port + NVIDIA (OpenAI-compatible) adapter — agent/LLM boundary
     spec.md · plan.md · tasks.md
 
 templates/
@@ -155,8 +157,11 @@ roadmap/
   **only** through guarded `InstanceFs` (dry-run default, backup before write, overwrites gated
   behind `--force`); `PackFormat` port gained a pure in-memory `assemble`; surfaced via the
   `build` CLI command (spec [`0008`](./specs/0008-build-instance/spec.md)).
-  `npm run check` runs typecheck + lint + build + tests. New capabilities continue under SDD.
-  **Phase 4 continues with `0009` crash diagnosis (log ingestion + categorization + remediation).**
+  `npm run check` runs typecheck + lint + build + tests. Phase 4 also opened the **agent/LLM
+  boundary**: a provider-agnostic `chat-model` port + a **NVIDIA** adapter
+  (`src/integration/nvidia/`, OpenAI-compatible, env-only `NVIDIA_API_KEY`, never logged; no SDK)
+  — spec [`0009`](./specs/0009-nvidia-chat-model/spec.md). New capabilities continue under SDD.
+  **Phase 4 continues with `0010` crash diagnosis (log ingestion + categorization + remediation).**
 - **Running TS:** dev/test/CLI run TypeScript directly on Node ≥ 22.18 (native type
   stripping); build (`tsc`) emits `dist/`. Source uses **`.ts` import extensions**
   (rewritten to `.js` on build) + **erasable-only syntax** (no enums/parameter-properties).

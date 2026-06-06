@@ -1,0 +1,4 @@
+[16:00:00] [Render thread/ERROR]: Reported exception thrown!
+java.lang.NullPointerException: Cannot invoke "net.minecraft.world.level.block.entity.BlockEntity.getLevel()" because "tile" is null
+	at com.example.buggymod.content.BlockEntityTicker.tick(BlockEntityTicker.java:42)
+	at net.minecraft.world.level.block.entity.TickingBlockEntity.tick(TickingBlockEntity.java:233)

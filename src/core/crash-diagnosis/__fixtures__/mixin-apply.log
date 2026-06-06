@@ -1,0 +1,4 @@
+[14:00:00] [Render thread/ERROR]: Mixin apply failed sodium.mixins.json:features.render.world.SkyRendererMixin
+org.spongepowered.asm.mixin.transformer.throwables.MixinApplyError: Mixin apply failed sodium.mixins.json:features.render.world.SkyRendererMixin
+	at org.spongepowered.asm.mixin.transformer.MixinTargetContext.transform(MixinTargetContext.java:420)
+	at com.example.othermod.MixinPatch.apply(MixinPatch.java:88)

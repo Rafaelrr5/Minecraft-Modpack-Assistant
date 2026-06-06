@@ -4,7 +4,7 @@
 > from idea to a polished, shareable pack — while staying _one step ahead_ of the
 > conflicts, crashes, and compatibility traps that normally make modpack building painful.**
 
-**Status:** ✅ **Phases 0–3 implemented; Phase 4 in progress.** Phase 0 — toolchain, core domain
+**Status:** ✅ **Phases 0–4 implemented; Phase 5 next.** Phase 0 — toolchain, core domain
 model, a provider-agnostic **Modrinth** adapter (contract-tested), **packwiz**-backed pack state,
 logging, the guarded `InstanceFs`. Phase 1 — **Discovery** (`0001`): `discover` turns an idea
 into a **validated Modpack Brief**. Phase 2 — **Orchestration** (`0006`): `orchestrate` resolves
@@ -14,9 +14,12 @@ a mod list **and its dependencies** into a pinned `PackState`; **Requirements** 
 version/side mismatches, known-bad combos, and keybinding collisions (read-only, proposes fixes).
 Phase 4 — **Build** (`0008`): `build` assembles a packwiz tree + a launch profile (predicted
 **Java + `-Xmx`**) and writes it **only** through the guarded `InstanceFs` (dry-run default,
-backup, `--force` to overwrite). Phase 4 also opened the **agent/LLM boundary** — a
+backup, `--force` to overwrite). Phase 4 also added **Crash
+Diagnosis** (`0010`): `diagnose` reads a crash report / log (read-only) and categorizes it into the
+crash taxonomy with concrete remediation, reconciling pre-flight's *suspected* conflicts and
+offering an opt-in **mclo.gs** second opinion. It opened the **agent/LLM boundary** too — a
 provider-agnostic `ChatModel` port + an OpenAI-compatible **NVIDIA** adapter (`0009`). **Next:**
-Crash Diagnosis (`0010`). → see the [roadmap](./roadmap/README.md).
+Phase 5 — Quests & Scripting Automation. → see the [roadmap](./roadmap/README.md).
 
 ---
 

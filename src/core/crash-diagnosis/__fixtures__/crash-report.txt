@@ -1,0 +1,20 @@
+---- Minecraft Crash Report ----
+// Who set us up the TNT?
+
+Time: 2026-06-06 17:00:00
+Description: Exception in server tick loop
+
+java.lang.OutOfMemoryError: Java heap space
+	at net.minecraft.world.level.chunk.LevelChunk.<init>(LevelChunk.java:120)
+	at com.example.heavymod.WorldGen.generate(WorldGen.java:55)
+
+A detailed walkthrough of the error, its code path and all known details is as follows:
+---------------------------------------------------------------------------------------
+
+-- System Details --
+Details:
+	Minecraft Version: 1.21.1
+	Minecraft Version ID: 1.21.1
+	Operating System: Windows 11 (amd64) version 10.0
+	Java Version: 21.0.3, Eclipse Adoptium
+	Loaded Mods: neoforge, heavymod

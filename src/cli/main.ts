@@ -13,6 +13,7 @@ import { renderDoctor, runDoctor } from './commands/doctor.ts';
 import { runDiscoverCli } from './commands/discover.ts';
 import { type OrchestrateOptions, runOrchestrateCli } from './commands/orchestrate.ts';
 import { type BuildOptions, runBuildCli } from './commands/build.ts';
+import { type DiagnoseOptions, runDiagnoseCli } from './commands/diagnose.ts';
 
 export async function run(argv: readonly string[]): Promise<number> {
   const [command, ...rest] = argv;
@@ -164,6 +165,44 @@ export async function run(argv: readonly string[]): Promise<number> {
       force: values.force === true,
     };
     return runBuildCli(options);
+  }
+
+  if (command === 'diagnose') {
+    const { values } = parseArgs({
+      args: [...rest],
+      options: {
+        instance: { type: 'string' },
+        crash: { type: 'string' },
+        log: { type: 'string' },
+        mclogs: { type: 'boolean', default: false },
+        json: { type: 'boolean', default: false },
+        mc: { type: 'string' },
+        loader: { type: 'string' },
+      },
+      allowPositionals: false,
+    });
+
+    if (values.instance === undefined) {
+      process.stderr.write('diagnose: --instance <dir> is required (the instance to inspect).\n');
+      return 2;
+    }
+    if (values.loader !== undefined && !isLoaderFamily(values.loader)) {
+      process.stderr.write('diagnose: --loader must be one of neoforge|forge|fabric|quilt.\n');
+      return 2;
+    }
+
+    const options: DiagnoseOptions = {
+      instancePath: values.instance,
+      ...(values.crash !== undefined ? { crashPath: values.crash } : {}),
+      ...(values.log !== undefined ? { logPath: values.log } : {}),
+      mclogs: values.mclogs === true,
+      json: values.json === true,
+      ...(values.mc !== undefined ? { minecraft: values.mc } : {}),
+      ...(values.loader !== undefined && isLoaderFamily(values.loader)
+        ? { loader: values.loader }
+        : {}),
+    };
+    return runDiagnoseCli(options);
   }
 
   runHelp();

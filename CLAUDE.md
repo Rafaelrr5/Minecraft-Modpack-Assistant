@@ -64,15 +64,16 @@ src/                           Application code (begins in Phase 0)
   index.ts                     Library entry (re-exports core + integration)
   core/                        UI-agnostic core — imports no cli/ or integration/ (enforced)
     domain/                    Core domain model (MinecraftVersion, version-range, Loader, loader-compat, Mod, Modpack, Conflict, …, PackState)
-    ports/                     Interfaces the core depends on (Logger, ChatModel, InstanceFs[+readText], ModSourceProvider, PackFormat)
+    ports/                     Interfaces the core depends on (Logger, ChatModel, InstanceFs[+readText], LogAnalysisProvider, ModSourceProvider, PackFormat)
     discovery/                 Phase 1 capability (spec 0001): slot-filling → validated ModpackBrief
     orchestration/             Phase 2 capability (spec 0006): list + deps → pinned PackState
     requirements/              Phase 2 capability (spec 0002): resolved set → RequirementsReport
     conflicts/                 Phase 3 capability (spec 0007): resolved set → read-only pre-flight report (+ proposed fixes)
     build/                     Phase 4 capability (spec 0008): PackState + RequirementsReport → packwiz tree + launch profile → guarded InstanceFs change plan
+    crash-diagnosis/           Phase 4 capability (spec 0010): crash/log text → read-only categorized DiagnosisReport (taxonomy + remediation), reconciles 0007 suspicions
   integration/                 Adapters implementing the ports
-    logging/ · instance-fs/ · modrinth/ · nvidia/ (ChatModel: OpenAI-compatible NVIDIA NIM) · packwiz/ (PackFormat: + pure assemble)
-  cli/                         Thin CLI adapter (help · doctor · discover · orchestrate [--requirements|--preflight] · build [--apply|--force])
+    logging/ · instance-fs/ · modrinth/ · nvidia/ (ChatModel: OpenAI-compatible NVIDIA NIM) · mclogs/ (LogAnalysisProvider: mclo.gs second opinion) · packwiz/ (PackFormat: + pure assemble)
+  cli/                         Thin CLI adapter (help · doctor · discover · orchestrate [--requirements|--preflight] · build [--apply|--force] · diagnose [--mclogs])
 
 docs/
   VISION.md                    THE objective (single source of truth)
@@ -111,6 +112,8 @@ specs/
     spec.md · plan.md · tasks.md
   0009-nvidia-chat-model/      Phase 4 (done): provider-agnostic ChatModel port + NVIDIA (OpenAI-compatible) adapter — agent/LLM boundary
     spec.md · plan.md · tasks.md
+  0010-crash-diagnosis/        Phase 4 (done): crash/log → read-only categorized diagnosis (taxonomy + remediation) + opt-in mclo.gs second opinion
+    spec.md · plan.md · tasks.md
 
 templates/
   spec-template.md · plan-template.md · tasks-template.md · adr-template.md
@@ -138,7 +141,7 @@ roadmap/
   must be green; external API clients get **contract tests**; generated artifacts (SNBT,
   KubeJS, manifests) must **parse/validate** before write
   ([Constitution P3](./memory/constitution.md#principle-3--validation-discipline)).
-- **Phases 0–3 implemented; Phase 4 in progress (build done).** Phase 0 — toolchain, core domain model, Modrinth provider,
+- **Phases 0–4 implemented; Phase 5 (quests & scripting) next.** Phase 0 — toolchain, core domain model, Modrinth provider,
   pack state, logging, guarded `InstanceFs`, CLI (specs
   [`0003`](./specs/0003-project-foundation/spec.md)–[`0005`](./specs/0005-pack-state/spec.md)).
   Phase 1 — `discovery` + `discover` CLI turn an idea into validated `ModpackBrief` (spec
@@ -160,8 +163,17 @@ roadmap/
   `npm run check` runs typecheck + lint + build + tests. Phase 4 also opened the **agent/LLM
   boundary**: a provider-agnostic `chat-model` port + a **NVIDIA** adapter
   (`src/integration/nvidia/`, OpenAI-compatible, env-only `NVIDIA_API_KEY`, never logged; no SDK)
-  — spec [`0009`](./specs/0009-nvidia-chat-model/spec.md). New capabilities continue under SDD.
-  **Phase 4 continues with `0010` crash diagnosis (log ingestion + categorization + remediation).**
+  — spec [`0009`](./specs/0009-nvidia-chat-model/spec.md). Phase 4 closes with `crash-diagnosis`
+  (`src/core/crash-diagnosis/`): the `diagnose` CLI reads a crash report / `logs/latest.log` through
+  the guarded `InstanceFs` (read-only) and categorizes it into the crash taxonomy
+  ([§6.2](./docs/DOMAIN-KNOWLEDGE.md#62-crash-categories-taxonomy)) — missing-dependency, mixin-apply,
+  out-of-memory, wrong-java, invalid-side, generic — with concrete remediation, ranks the most-likely
+  cause first, reconciles spec `0007`'s *suspected* conflicts against the crash, and offers an opt-in
+  **mclo.gs** second opinion behind a provider-agnostic `LogAnalysisProvider` port
+  (`src/integration/mclogs/`) — advisory, never authoritative; the core does no I/O and applies
+  nothing (spec [`0010`](./specs/0010-crash-diagnosis/spec.md)). Live JVM launch/validation stays
+  deferred (environment-sensitive → Phase 8). New capabilities continue under SDD.
+  **Phase 5 (Quests & Scripting Automation, FTB Quests SNBT + KubeJS) is next.**
 - **Running TS:** dev/test/CLI run TypeScript directly on Node ≥ 22.18 (native type
   stripping); build (`tsc`) emits `dist/`. Source uses **`.ts` import extensions**
   (rewritten to `.js` on build) + **erasable-only syntax** (no enums/parameter-properties).

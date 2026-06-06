@@ -1,0 +1,21 @@
+{
+  "success": true,
+  "id": "aBcDeF",
+  "analysis": {
+    "problems": [
+      {
+        "message": "You are running an outdated version of Fabric API.",
+        "counter": 1,
+        "entry": {
+          "lines": [{ "number": 5, "content": "Fabric API 0.91.0+1.20.1" }]
+        }
+      },
+      {
+        "message": "The game ran out of memory (Java heap space).",
+        "counter": 2,
+        "entry": { "lines": [] }
+      }
+    ],
+    "information": []
+  }
+}

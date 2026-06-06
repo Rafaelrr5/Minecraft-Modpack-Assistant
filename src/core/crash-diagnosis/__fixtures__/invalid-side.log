@@ -1,0 +1,4 @@
+[15:00:00] [main/FATAL]: Failed to start the minecraft server
+java.lang.RuntimeException: Cannot load class net.minecraft.client.gui.screens.Screen in environment type SERVER
+	at net.fabricmc.loader.impl.transformer.EnvironmentStrippingData.check(EnvironmentStrippingData.java:60)
+	at com.example.clientmod.HudOverlay.<init>(HudOverlay.java:20)

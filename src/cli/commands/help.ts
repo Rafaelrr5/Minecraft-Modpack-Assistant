@@ -15,6 +15,7 @@ Commands:
   orchestrate       Resolve a mod list (+ dependencies) into a pinned set — read-only.
   build             Assemble the pack into an importable instance with the right Java + RAM.
                     Dry-run by default; writes only with --apply (backup taken first).
+  diagnose          Read a crash report / log and explain what broke, with fixes — read-only.
   doctor            Check your environment (Node, Java, game instance) — read-only.
   help              Show this overview.
   version           Print the version.
@@ -51,6 +52,15 @@ Options for 'build':
   --instance <dir>  Where to build the instance (required).
   --apply           Write the plan (otherwise dry-run, the default).
   --force           Required with --apply when the plan overwrites existing files.
+
+Options for 'diagnose':
+  --instance <dir>  Path to the Minecraft instance to inspect (required) — read-only.
+  --crash <relPath> A specific crash report, e.g. crash-reports/crash-2026-….txt.
+  --log <relPath>   A log file to read (default: logs/latest.log).
+  --mc <version>    Minecraft version, to ground Java-version advice (else read from the report).
+  --loader <name>   Loader family: neoforge | forge | fabric | quilt.
+  --mclogs          Also fetch a mclo.gs second opinion (opt-in; sends the log off-machine).
+  --json            Output the diagnosis as JSON (for scripting / experts).
 
 Options for 'doctor':
   --instance <dir>  Path to a Minecraft instance / .minecraft folder to inspect.

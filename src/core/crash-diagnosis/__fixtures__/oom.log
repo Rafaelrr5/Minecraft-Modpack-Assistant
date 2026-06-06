@@ -1,0 +1,6 @@
+[12:00:00] [Render thread/INFO]: Loading dimension data
+[12:00:05] [Server thread/ERROR]: Encountered an unexpected exception
+java.lang.OutOfMemoryError: Java heap space
+	at net.minecraft.world.level.chunk.LevelChunk.<init>(LevelChunk.java:120)
+	at com.example.heavymod.WorldGen.generate(WorldGen.java:55)
+	at net.minecraft.server.MinecraftServer.tickServer(MinecraftServer.java:880)

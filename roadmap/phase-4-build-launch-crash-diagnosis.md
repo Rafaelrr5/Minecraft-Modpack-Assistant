@@ -1,11 +1,16 @@
 # Phase 4 — Build, Launch & Crash Diagnosis
 
 > Part of the [roadmap](./README.md). Delivers the objective in
-> [`../docs/VISION.md`](../docs/VISION.md). **Status: 🟡 In progress.**
+> [`../docs/VISION.md`](../docs/VISION.md). **Status: ✅ Complete.**
 > **Build sub-capability ✅ done** — spec [`0008-build-instance`](../specs/0008-build-instance/spec.md):
 > pinned `PackState` + `RequirementsReport` → packwiz workspace + launch profile (numeric Java +
 > `-Xmx`), materialized only through the guarded `InstanceFs` (dry-run default, backup, `--force` for
-> overwrites), via the `build` CLI command. **Crash diagnosis (`0009`) is the remaining sub-capability.**
+> overwrites), via the `build` CLI command. **Crash-diagnosis sub-capability ✅ done** — spec
+> [`0010-crash-diagnosis`](../specs/0010-crash-diagnosis/spec.md): read-only categorization of a
+> crash report / log into the §6.2 taxonomy with remediation, reconciling spec `0007`'s *suspected*
+> conflicts and offering an opt-in **mclo.gs** second opinion, via the `diagnose` CLI command. The
+> agent/LLM boundary opened alongside (spec [`0009`](../specs/0009-nvidia-chat-model/spec.md)). Live
+> JVM launch/validation remains deferred (environment-sensitive → Phase 8).
 
 ## 1. Goal / outcome
 
@@ -55,8 +60,10 @@ runners (Phase 8). Local build/launch only here.
 
 - ✅ [`0008-build-instance`](../specs/0008-build-instance/spec.md): packwiz assembly + installable
   instance + applying Java/`-Xmx`. **Done.**
-- ⬜ `NNNN-crash-diagnosis`: log ingestion, categorization, mclo.gs integration, remediation
-  loop. *(Authored when picked up.)*
+- ✅ [`0010-crash-diagnosis`](../specs/0010-crash-diagnosis/spec.md): log ingestion, categorization,
+  remediation, reconciliation of `0007` suspicions, opt-in mclo.gs second opinion. **Done.** (A
+  closed auto-apply→relaunch→re-diagnose loop and live JVM launch are deferred — see the spec's
+  out-of-scope and Phase 8.)
 
 ## 6. Dependencies
 

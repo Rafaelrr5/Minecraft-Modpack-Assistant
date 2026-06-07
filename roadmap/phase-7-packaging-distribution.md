@@ -1,7 +1,9 @@
 # Phase 7 — Packaging, Distribution & Misc
 
 > Part of the [roadmap](./README.md). Delivers the objective in
-> [`../docs/VISION.md`](../docs/VISION.md). **Status: ⬜ Not started.**
+> [`../docs/VISION.md`](../docs/VISION.md). **Status: ✅ Done** — pack export
+> (spec [`0015`](../specs/0015-pack-export/spec.md)) and changelogs & sharing
+> (spec [`0016`](../specs/0016-changelogs-sharing/spec.md)) both shipped.
 
 ## 1. Goal / outcome
 
@@ -41,10 +43,13 @@ interop validation; changelog generation; backup/sharing UX.
 
 ## 5. Specs to be written
 
-- `NNNN-pack-export`: `.mrpack` + CurseForge `manifest.json` exporters and interop tests.
-- `NNNN-changelogs-sharing`: changelog generation, backups, sharing.
-
-(Authored when the phase starts.)
+- ✅ [`0015-pack-export`](../specs/0015-pack-export/spec.md): `.mrpack` + CurseForge `manifest.json`
+  exporters (a pure, byte-stable projection of `PackState`; documents validated by parse-back;
+  unmappable mods surfaced; archive via a deterministic store-only ZIP) — **done**.
+- ✅ [`0016-changelogs-sharing`](../specs/0016-changelogs-sharing/spec.md): changelog generation (from
+  the Phase 6 lockfile diff; initial-release when no baseline) + Markdown, bundled with the `0015`
+  export (archive + `CHANGELOG.md`) as one shareable, byte-stable release. Whole-instance/world backups
+  and uploading/publishing are deferred to Phase 8 — **done** (scoped).
 
 ## 6. Dependencies
 

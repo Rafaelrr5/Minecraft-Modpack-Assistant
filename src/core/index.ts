@@ -16,3 +16,5 @@ export * from './quests/index.ts';
 export * from './scripts/index.ts';
 export * from './updates/index.ts';
 export * from './migration/index.ts';
+export * from './export/index.ts';
+export * from './release/index.ts';

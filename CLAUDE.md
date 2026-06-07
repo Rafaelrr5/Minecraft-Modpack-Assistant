@@ -75,9 +75,11 @@ src/                           Application code (begins in Phase 0)
     scripts/                   Phase 5 capability (spec 0012): structured ScriptDefinition → validated KubeJS server scripts (emit/ typed model + escaped literals, real-engine parse-back via ScriptValidator port, quest cross-ref reuses 0011's questId) → guarded InstanceFs write
     updates/                   Phase 6 capability (spec 0013): pinned PackState → read-only update report (changelogs) + lockfile diff + hash-lookup identity + regression re-check (re-runs 0007 pre-flight on candidates); writes nothing
     migration/                 Phase 6 capability (spec 0014): resolved set + new MC/loader target → read-only migration report (migratable/blocked, new Java, loader floor, pre-flight at new version) + complete-only migrated PackState; writes nothing
+    export/                    Phase 7 capability (spec 0015): pinned PackState → in-memory ExportArtifact (.mrpack / CurseForge manifest, validated by parse-back, byte-stable; unmappable mods surfaced not fabricated); writes nothing
+    release/                   Phase 7 capability (spec 0016): two PackStates → changelog (reuses 0013 diff) + Markdown, bundled with the 0015 export (archive + CHANGELOG.md) into a byte-stable release; writes nothing
   integration/                 Adapters implementing the ports
-    logging/ · instance-fs/ · modrinth/ (ModSourceProvider: + version changelog/date_published) · nvidia/ (ChatModel: OpenAI-compatible NVIDIA NIM) · mclogs/ (LogAnalysisProvider: mclo.gs second opinion) · packwiz/ (PackFormat: + pure assemble) · script-validator/ (ScriptValidator: node:vm compile-only parse-back)
-  cli/                         Thin CLI adapter (help · doctor · discover · orchestrate [--requirements|--preflight] · build [--apply|--force] · diagnose [--mclogs] · quests [--apply|--force] · kubejs [--apply|--force] · updates · migrate)
+    logging/ · instance-fs/ · modrinth/ (ModSourceProvider: + version changelog/date_published) · nvidia/ (ChatModel: OpenAI-compatible NVIDIA NIM) · mclogs/ (LogAnalysisProvider: mclo.gs second opinion) · packwiz/ (PackFormat: + pure assemble) · script-validator/ (ScriptValidator: node:vm compile-only parse-back) · packaging/ (export/release archive writer: dependency-free, timestamp-free store-only ZIP + reader)
+  cli/                         Thin CLI adapter (help · doctor · discover · orchestrate [--requirements|--preflight] · build [--apply|--force] · diagnose [--mclogs] · quests [--apply|--force] · kubejs [--apply|--force] · updates · migrate · export [--format|--apply|--force] · release [--from|--format|--apply|--force])
 
 docs/
   VISION.md                    THE objective (single source of truth)
@@ -126,6 +128,10 @@ specs/
     spec.md · plan.md · tasks.md
   0014-version-migration/      Phase 6 (done): resolved set + new MC/loader target → read-only migration report (migratable/blocked, new Java, loader floor, pre-flight at new version) + complete-only migrated PackState
     spec.md · plan.md · tasks.md
+  0015-pack-export/            Phase 7 (done): pinned PackState → shareable .mrpack / CurseForge manifest pack (pure byte-stable projection, parse-back-validated, unmappable mods surfaced) via a store-only ZIP, dry-run default
+    spec.md · plan.md · tasks.md
+  0016-changelogs-sharing/     Phase 7 (done): two PackStates → changelog (reuses 0013 diff; initial-release when no baseline) + Markdown, bundled with the 0015 export (archive + CHANGELOG.md) into a byte-stable release; dry-run default
+    spec.md · plan.md · tasks.md
 
 templates/
   spec-template.md · plan-template.md · tasks-template.md · adr-template.md
@@ -153,7 +159,7 @@ roadmap/
   must be green; external API clients get **contract tests**; generated artifacts (SNBT,
   KubeJS, manifests) must **parse/validate** before write
   ([Constitution P3](./memory/constitution.md#principle-3--validation-discipline)).
-- **Phases 0–6 implemented.** Phase 0 — toolchain, core domain model, Modrinth provider,
+- **Phases 0–7 implemented.** Phase 0 — toolchain, core domain model, Modrinth provider,
   pack state, logging, guarded `InstanceFs`, CLI (specs
   [`0003`](./specs/0003-project-foundation/spec.md)–[`0005`](./specs/0005-pack-state/spec.md)).
   Phase 1 — `discovery` + `discover` CLI turn an idea into validated `ModpackBrief` (spec
@@ -212,9 +218,26 @@ roadmap/
   Java** (reusing `requiredJavaMajor`, §2) and the **loader floor** (reusing `loaderSupportsVersion`,
   §1 — e.g. NeoForge ≥ 1.20.2), re-runs pre-flight at the new version, and pins a migrated `PackState`
   **only when the migration is complete** — never forcing a partial migration (P4/P5). Both are
-  read-only behind the provider port and surface via the `updates` / `migrate` CLI commands. NL
-  quest/script description (rides `ChatModel`/`0009`, funnelling through deterministic validation) and
-  **Phase 7 (Packaging, Distribution & Misc) are next.**
+  read-only behind the provider port and surface via the `updates` / `migrate` CLI commands.
+  **Phase 7 (Packaging, Distribution & Misc) has begun:** `export` (`src/core/export/`, spec
+  [`0015`](./specs/0015-pack-export/spec.md)) projects a pinned `PackState` into a shareable
+  **Modrinth `.mrpack`** (primary) or **CurseForge `manifest.json`** pack (secondary). The document
+  assembly is a pure core module — each index/manifest built from a typed model and **validated by
+  parse-back** before use (P3), mods a format can't represent surfaced as **unmappable, never
+  fabricated** (e.g. a Modrinth mod has no CurseForge numeric id, P5), the projection **byte-stable**
+  (P7). The archive is written by the `packaging` adapter (`src/integration/packaging/`) — a
+  dependency-free, **timestamp-free store-only ZIP** writer + reader — to a caller-chosen `--out` file
+  (never a game instance), **dry-run by default**, no-clobber without `--force` (P4); surfaced via the
+  `export` CLI command. `release` (`src/core/release/`, spec
+  [`0016`](./specs/0016-changelogs-sharing/spec.md)) **closes Phase 7**: `generateChangelog` projects two
+  `PackState`s into a changelog (reusing `diffPackState`, spec `0013`; an absent baseline → an
+  initial release with everything added) in structured + **Markdown** form, and `assembleRelease`
+  **bundles it with the export** (the archive + a root `CHANGELOG.md`) into one shareable, **byte-stable**
+  release — a pure projection (the release date is a supplied input, never clock-read), written through
+  the same `0015` packaging adapter (dry-run default, no-clobber without `--force`), surfaced via the
+  `release` CLI command (`--from <packwiz dir>` supplies the baseline). Whole-instance/world backups,
+  uploading/publishing, and **Phase 8 (Productization / SaaS)** are next; NL quest/script description
+  (rides `ChatModel`/`0009`, funnelling through deterministic validation) is also pending.
 - **Running TS:** dev/test/CLI run TypeScript directly on Node ≥ 22.18 (native type
   stripping); build (`tsc`) emits `dist/`. Source uses **`.ts` import extensions**
   (rewritten to `.js` on build) + **erasable-only syntax** (no enums/parameter-properties).

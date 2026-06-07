@@ -4,7 +4,7 @@
 > from idea to a polished, shareable pack — while staying _one step ahead_ of the
 > conflicts, crashes, and compatibility traps that normally make modpack building painful.**
 
-**Status:** ✅ **Phases 0–5 implemented.** Phase 0 — toolchain, core domain
+**Status:** ✅ **Phases 0–7 implemented.** Phase 0 — toolchain, core domain
 model, a provider-agnostic **Modrinth** adapter (contract-tested), **packwiz**-backed pack state,
 logging, the guarded `InstanceFs`. Phase 1 — **Discovery** (`0001`): `discover` turns an idea
 into a **validated Modpack Brief**. Phase 2 — **Orchestration** (`0006`): `orchestrate` resolves
@@ -30,8 +30,14 @@ lockfile, identifies installed jars by hash, and **re-runs the conflict pre-flig
 so an update never silently breaks the pack; `migrate` (`0014`) plans a Minecraft/loader version
 migration — which mods can move, which are **blocked**, the new required **Java**, and the conflicts at
 the new version — refusing to force a partial migration. Both are **read-only** (the write path is the
-guarded `build`). **Next:** Phase 7 (packaging & distribution). → see the
-[roadmap](./roadmap/README.md).
+guarded `build`). Phase 7 — **Packaging** (`0015`): `export` projects a pinned `PackState` into a
+shareable **`.mrpack`** (primary) or **CurseForge `manifest.json`** pack — a pure, byte-stable
+projection whose documents are validated by parse-back, with mods a format can't represent surfaced as
+**unmappable** (never fabricated), written to a chosen `--out` file via a dependency-free store-only
+ZIP (dry-run default, no-clobber without `--force`); `release` (`0016`) **generates a changelog**
+between two versions (reusing the lockfile diff; initial-release when there's no baseline) and
+**bundles it with the export** (archive + `CHANGELOG.md`) into one shareable, byte-stable release.
+**Next:** Phase 8 (productization / SaaS). → see the [roadmap](./roadmap/README.md).
 
 ---
 
@@ -145,6 +151,10 @@ npm run cli -- kubejs --instance ./my-pack --def ./scripts.json --quests ./quest
 npm run cli -- kubejs --instance ./my-pack --def ./scripts.json --quests ./quests.json --apply  # write it (backup taken first)
 npm run cli -- updates --loader neoforge --mc 1.21.1 --mods create,jei  # available updates + changelogs + regression check (read-only)
 npm run cli -- migrate --loader neoforge --from-mc 1.20.1 --to-mc 1.21.1 --mods create,jei  # plan a version migration (read-only)
+npm run cli -- export --loader neoforge --mc 1.21.1 --mods create,jei                       # dry-run an .mrpack export plan
+npm run cli -- export --loader neoforge --mc 1.21.1 --mods create,jei --apply --out pack.mrpack  # write the .mrpack archive
+npm run cli -- release --loader neoforge --mc 1.21.1 --mods create,jei --from ./prev-pack         # dry-run a release (changelog + bundle)
+npm run cli -- release --loader neoforge --mc 1.21.1 --mods create,jei --apply --out pack.mrpack  # write the release bundle (archive + CHANGELOG.md)
 ```
 
 Optional API credentials (e.g. a Modrinth token for higher rate limits) are read **only**

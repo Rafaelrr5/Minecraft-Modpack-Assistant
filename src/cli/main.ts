@@ -13,6 +13,8 @@ import { renderDoctor, runDoctor } from './commands/doctor.ts';
 import { runDiscoverCli } from './commands/discover.ts';
 import { type OrchestrateOptions, runOrchestrateCli } from './commands/orchestrate.ts';
 import { type BuildOptions, runBuildCli } from './commands/build.ts';
+import { type ExportOptions, runExportCli } from './commands/export.ts';
+import { type ReleaseOptions, runReleaseCli } from './commands/release.ts';
 import { type DiagnoseOptions, runDiagnoseCli } from './commands/diagnose.ts';
 import { type QuestsOptions, runQuestsCli } from './commands/quests.ts';
 import { type KubeJsOptions, runKubeJsCli } from './commands/kubejs.ts';
@@ -169,6 +171,126 @@ export async function run(argv: readonly string[]): Promise<number> {
       force: values.force === true,
     };
     return runBuildCli(options);
+  }
+
+  if (command === 'export') {
+    const { values } = parseArgs({
+      args: [...rest],
+      options: {
+        loader: { type: 'string' },
+        mc: { type: 'string' },
+        mods: { type: 'string' },
+        recommend: { type: 'boolean', default: false },
+        'recommend-limit': { type: 'string' },
+        playstyle: { type: 'string' },
+        theme: { type: 'string' },
+        format: { type: 'string' },
+        name: { type: 'string' },
+        'pack-version': { type: 'string' },
+        out: { type: 'string' },
+        apply: { type: 'boolean', default: false },
+        force: { type: 'boolean', default: false },
+      },
+      allowPositionals: false,
+    });
+
+    if (values.loader === undefined || !isLoaderFamily(values.loader)) {
+      process.stderr.write('export: --loader <neoforge|forge|fabric|quilt> is required.\n');
+      return 2;
+    }
+    if (values.mc === undefined) {
+      process.stderr.write('export: --mc <minecraft-version> is required (e.g. 1.21.1).\n');
+      return 2;
+    }
+    if (values.format !== undefined && values.format !== 'mrpack' && values.format !== 'curseforge') {
+      process.stderr.write('export: --format must be one of mrpack|curseforge.\n');
+      return 2;
+    }
+    const include = (values.mods ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+
+    const options: ExportOptions = {
+      loader: values.loader,
+      minecraft: values.mc,
+      include,
+      recommend: values.recommend === true,
+      ...(values['recommend-limit'] !== undefined
+        ? { recommendLimit: Number(values['recommend-limit']) }
+        : {}),
+      ...(values.playstyle !== undefined ? { playstyle: values.playstyle } : {}),
+      ...(values.theme !== undefined ? { theme: values.theme } : {}),
+      format: values.format === 'curseforge' ? 'curseforge' : 'mrpack',
+      ...(values.name !== undefined ? { name: values.name } : {}),
+      ...(values['pack-version'] !== undefined ? { packVersion: values['pack-version'] } : {}),
+      ...(values.out !== undefined ? { out: values.out } : {}),
+      apply: values.apply === true,
+      force: values.force === true,
+    };
+    return runExportCli(options);
+  }
+
+  if (command === 'release') {
+    const { values } = parseArgs({
+      args: [...rest],
+      options: {
+        loader: { type: 'string' },
+        mc: { type: 'string' },
+        mods: { type: 'string' },
+        recommend: { type: 'boolean', default: false },
+        'recommend-limit': { type: 'string' },
+        playstyle: { type: 'string' },
+        theme: { type: 'string' },
+        format: { type: 'string' },
+        name: { type: 'string' },
+        'pack-version': { type: 'string' },
+        from: { type: 'string' },
+        'release-date': { type: 'string' },
+        out: { type: 'string' },
+        apply: { type: 'boolean', default: false },
+        force: { type: 'boolean', default: false },
+      },
+      allowPositionals: false,
+    });
+
+    if (values.loader === undefined || !isLoaderFamily(values.loader)) {
+      process.stderr.write('release: --loader <neoforge|forge|fabric|quilt> is required.\n');
+      return 2;
+    }
+    if (values.mc === undefined) {
+      process.stderr.write('release: --mc <minecraft-version> is required (e.g. 1.21.1).\n');
+      return 2;
+    }
+    if (values.format !== undefined && values.format !== 'mrpack' && values.format !== 'curseforge') {
+      process.stderr.write('release: --format must be one of mrpack|curseforge.\n');
+      return 2;
+    }
+    const include = (values.mods ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+
+    const options: ReleaseOptions = {
+      loader: values.loader,
+      minecraft: values.mc,
+      include,
+      recommend: values.recommend === true,
+      ...(values['recommend-limit'] !== undefined
+        ? { recommendLimit: Number(values['recommend-limit']) }
+        : {}),
+      ...(values.playstyle !== undefined ? { playstyle: values.playstyle } : {}),
+      ...(values.theme !== undefined ? { theme: values.theme } : {}),
+      format: values.format === 'curseforge' ? 'curseforge' : 'mrpack',
+      ...(values.name !== undefined ? { name: values.name } : {}),
+      ...(values['pack-version'] !== undefined ? { packVersion: values['pack-version'] } : {}),
+      ...(values.from !== undefined ? { from: values.from } : {}),
+      ...(values['release-date'] !== undefined ? { releaseDate: values['release-date'] } : {}),
+      ...(values.out !== undefined ? { out: values.out } : {}),
+      apply: values.apply === true,
+      force: values.force === true,
+    };
+    return runReleaseCli(options);
   }
 
   if (command === 'diagnose') {

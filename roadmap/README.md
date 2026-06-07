@@ -39,7 +39,9 @@ Every `phase-N-*.md` follows the same template:
 | 🟡 In progress | Actively being built. |
 | ✅ Done | Exit criteria met. |
 
-> **Current overall status:** **Phases 0–6 — ✅ complete.** Phase 5 closed with both quest specs done:
+> **Current overall status:** **Phases 0–7 — ✅ complete.** Phase 7 shipped both packaging specs
+> ([`0015`](../specs/0015-pack-export/spec.md) export, [`0016`](../specs/0016-changelogs-sharing/spec.md)
+> changelogs & sharing); **Phase 8 (Productization / SaaS) is next.** Phase 5 closed with both quest specs done:
 > [`0011-ftbquests-generation`](../specs/0011-ftbquests-generation/spec.md) (SNBT) and
 > [`0012-kubejs-generation`](../specs/0012-kubejs-generation/spec.md) (KubeJS scripts). The `orchestration`
 > capability (spec `0006`) resolves a confirmed `ModpackBrief` + a mod list (or theme-seeded
@@ -93,6 +95,26 @@ Every `phase-N-*.md` follows the same template:
 > a partial migration. Both reuse the sourced domain rules + the validated pre-flight, both are
 > read-only behind the `ModSourceProvider` port, and both surface via the `updates` / `migrate` CLI
 > commands.
+>
+> **Phase 7 (Packaging, Distribution & Misc) is ✅ complete:** spec
+> [`0015-pack-export`](../specs/0015-pack-export/spec.md) adds the `export` capability — a pinned
+> `PackState` is projected into a shareable **Modrinth `.mrpack`** (primary) or **CurseForge
+> `manifest.json`** pack (secondary). The document assembly is a **pure core module** (`src/core/export/`):
+> each index/manifest is built from a typed model and **validated by parse-back** before use (P3),
+> mods a format cannot represent (e.g. a Modrinth mod has no CurseForge numeric id) are **surfaced as
+> unmappable, never fabricated** (P5), and the projection is **byte-stable** (P7). The archive is
+> written by a dependency-free, **timestamp-free store-only ZIP** writer in the `packaging` integration
+> adapter (`src/integration/packaging/`) — to a caller-chosen `--out` file (never a game instance),
+> dry-run by default, no-clobber without `--force` (P4) — surfaced via the `export` CLI command. Spec
+> [`0016-changelogs-sharing`](../specs/0016-changelogs-sharing/spec.md) **closes Phase 7**: the
+> `release` capability (`src/core/release/`) **generates a changelog** between two pack versions
+> (reusing spec `0013`'s `diffPackState`; an absent baseline becomes an initial release with everything
+> added) in structured form + **Markdown**, and **bundles it with the export** (archive + a root
+> `CHANGELOG.md`) into one shareable, **byte-stable** release — a pure projection (dates are supplied
+> inputs, never clock-read), written through the same `0015` packaging adapter (dry-run default,
+> no-clobber without `--force`), surfaced via the `release` CLI command. Whole-instance/world backups,
+> uploading/publishing, and LLM-written release prose are deferred (Phase 8 / later enrichment). **Phase
+> 8 (Productization / SaaS) is next.**
 
 ## Phase map
 
@@ -105,7 +127,7 @@ Every `phase-N-*.md` follows the same template:
 | 4 | [Build, Launch & Crash Diagnosis](./phase-4-build-launch-crash-diagnosis.md) | ✅ | [`0008`](../specs/0008-build-instance/spec.md) · [`0009`](../specs/0009-nvidia-chat-model/spec.md) · [`0010`](../specs/0010-crash-diagnosis/spec.md) |
 | 5 | [Quests & Scripting Automation](./phase-5-quests-scripting-automation.md) | ✅ | [`0011`](../specs/0011-ftbquests-generation/spec.md) · [`0012`](../specs/0012-kubejs-generation/spec.md) |
 | 6 | [Updates & Maintenance](./phase-6-updates-maintenance.md) | ✅ | [`0013`](../specs/0013-update-tracking/spec.md) · [`0014`](../specs/0014-version-migration/spec.md) |
-| 7 | [Packaging, Distribution & Misc](./phase-7-packaging-distribution.md) | ⬜ | — |
+| 7 | [Packaging, Distribution & Misc](./phase-7-packaging-distribution.md) | ✅ | [`0015`](../specs/0015-pack-export/spec.md) · [`0016`](../specs/0016-changelogs-sharing/spec.md) |
 | 8 | [Productization (SaaS)](./phase-8-productization-saas.md) | ⬜ | — |
 
 ## The thread that runs through every phase

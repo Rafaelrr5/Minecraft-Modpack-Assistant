@@ -24,6 +24,10 @@ Commands:
                     conflict pre-flight on the candidates — read-only.
   migrate           Plan a Minecraft/loader version migration: which mods can move,
                     which are blocked, the new Java, and conflicts — read-only.
+  export            Export the pack to a shareable .mrpack or CurseForge pack.
+                    Dry-run by default; writes to --out only with --apply.
+  release           Generate a changelog (vs a baseline) and bundle it with the
+                    export into one shareable archive. Dry-run by default.
   doctor            Check your environment (Node, Java, game instance) — read-only.
   help              Show this overview.
   version           Print the version.
@@ -105,6 +109,33 @@ Options for 'migrate':
   --mods <a,b,c>    Comma-separated mod slugs / project ids currently in the pack.
   --side <s>        Re-check conflicts for 'client' (default) or 'server'.
   --json            Output the report as JSON (for scripting / experts).
+
+Options for 'export':
+  --loader <name>   Loader family: neoforge | forge | fabric | quilt (required).
+  --mc <version>    Target Minecraft version, e.g. 1.21.1 (required).
+  --mods <a,b,c>    Comma-separated mod slugs / project ids to include.
+  --recommend       Seed a starter set from the theme/playstyle.
+  --playstyle <s>   Playstyle hint for recommendations (e.g. tech, magic).
+  --theme <s>       Pack theme/name.
+  --format <name>   Export format: mrpack (default) | curseforge.
+  --name <s>        Override the pack name written into the export.
+  --pack-version <v> Override the pack version written into the export.
+  --out <file>      Where to write the archive (required with --apply).
+  --apply           Write the archive (otherwise dry-run, the default).
+  --force           Required with --apply when the output file already exists.
+
+Options for 'release':
+  --loader <name>   Loader family: neoforge | forge | fabric | quilt (required).
+  --mc <version>    Target Minecraft version, e.g. 1.21.1 (required).
+  --mods <a,b,c>    Comma-separated mod slugs / project ids in the current pack.
+  --from <dir>      A prior packwiz tree to diff against (baseline for the changelog).
+  --format <name>   Bundle format: mrpack (default) | curseforge.
+  --name <s>        Override the pack name written into the release.
+  --pack-version <v> Override the pack version (the release label).
+  --release-date <d> Release date to record (e.g. 2026-06-07); not read from the clock.
+  --out <file>      Where to write the bundle archive (required with --apply).
+  --apply           Write the bundle (otherwise dry-run, the default).
+  --force           Required with --apply when the output file already exists.
 
 Options for 'doctor':
   --instance <dir>  Path to a Minecraft instance / .minecraft folder to inspect.

@@ -16,6 +16,8 @@ import { type BuildOptions, runBuildCli } from './commands/build.ts';
 import { type DiagnoseOptions, runDiagnoseCli } from './commands/diagnose.ts';
 import { type QuestsOptions, runQuestsCli } from './commands/quests.ts';
 import { type KubeJsOptions, runKubeJsCli } from './commands/kubejs.ts';
+import { type UpdatesOptions, runUpdatesCli } from './commands/updates.ts';
+import { type MigrateOptions, runMigrateCli } from './commands/migrate.ts';
 
 export async function run(argv: readonly string[]): Promise<number> {
   const [command, ...rest] = argv;
@@ -283,6 +285,92 @@ export async function run(argv: readonly string[]): Promise<number> {
       json: values.json === true,
     };
     return runKubeJsCli(options);
+  }
+
+  if (command === 'updates') {
+    const { values } = parseArgs({
+      args: [...rest],
+      options: {
+        loader: { type: 'string' },
+        mc: { type: 'string' },
+        mods: { type: 'string' },
+        side: { type: 'string' },
+        json: { type: 'boolean', default: false },
+      },
+      allowPositionals: false,
+    });
+
+    if (values.loader === undefined || !isLoaderFamily(values.loader)) {
+      process.stderr.write('updates: --loader <neoforge|forge|fabric|quilt> is required.\n');
+      return 2;
+    }
+    if (values.mc === undefined) {
+      process.stderr.write('updates: --mc <minecraft-version> is required (e.g. 1.21.1).\n');
+      return 2;
+    }
+    const include = (values.mods ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+
+    const options: UpdatesOptions = {
+      loader: values.loader,
+      minecraft: values.mc,
+      include,
+      ...(values.side === 'server' || values.side === 'client' ? { side: values.side } : {}),
+      json: values.json === true,
+    };
+    return runUpdatesCli(options);
+  }
+
+  if (command === 'migrate') {
+    const { values } = parseArgs({
+      args: [...rest],
+      options: {
+        loader: { type: 'string' },
+        'from-mc': { type: 'string' },
+        'to-mc': { type: 'string' },
+        'to-loader': { type: 'string' },
+        mods: { type: 'string' },
+        side: { type: 'string' },
+        json: { type: 'boolean', default: false },
+      },
+      allowPositionals: false,
+    });
+
+    if (values.loader === undefined || !isLoaderFamily(values.loader)) {
+      process.stderr.write('migrate: --loader <neoforge|forge|fabric|quilt> is required (current loader).\n');
+      return 2;
+    }
+    if (values['from-mc'] === undefined) {
+      process.stderr.write('migrate: --from-mc <minecraft-version> is required (current version).\n');
+      return 2;
+    }
+    if (values['to-mc'] === undefined) {
+      process.stderr.write('migrate: --to-mc <minecraft-version> is required (target version).\n');
+      return 2;
+    }
+    if (values['to-loader'] !== undefined && !isLoaderFamily(values['to-loader'])) {
+      process.stderr.write('migrate: --to-loader must be one of neoforge|forge|fabric|quilt.\n');
+      return 2;
+    }
+    const include = (values.mods ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+
+    const options: MigrateOptions = {
+      loader: values.loader,
+      fromMinecraft: values['from-mc'],
+      toMinecraft: values['to-mc'],
+      ...(values['to-loader'] !== undefined && isLoaderFamily(values['to-loader'])
+        ? { toLoader: values['to-loader'] }
+        : {}),
+      include,
+      ...(values.side === 'server' || values.side === 'client' ? { side: values.side } : {}),
+      json: values.json === true,
+    };
+    return runMigrateCli(options);
   }
 
   runHelp();

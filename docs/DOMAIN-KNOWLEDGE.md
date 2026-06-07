@@ -88,8 +88,13 @@ APIs through a **provider-agnostic abstraction**
 - **Base:** `https://api.modrinth.com/v2` (Labrinth API, v2). [S8]
 - **Key endpoints:** project search with **facets** (filter by loader, MC version,
   categories, project type); get project; list project **versions**; get version (carries
-  **dependencies**, files with hashes, supported loaders & game versions); **version file
-  by hash** lookup (`/version_file/{hash}`, sha1/sha512) to identify local jars. [S8]
+  **dependencies**, files with hashes, supported loaders & game versions, plus
+  **`date_published`** and a **`changelog`**); **version file by hash** lookup
+  (`/version_file/{hash}`, sha1/sha512) to identify local jars. [S8]
+  - The version feed + `date_published` (newest-first ordering) + `changelog` + hash lookup
+    are what **update tracking** (spec `0013`) and **version migration** (spec `0014`) run on:
+    map an installed jar to its catalog version, find the newest compatible one, show what
+    changed, and re-check a new Minecraft/loader target.
 - **Rate limit:** **300 requests/minute**; a descriptive **`User-Agent`** is **required**
   (Modrinth wants a contact/project identifier). Over limit returns `429`. [S8][S9]
 - **Licensing posture:** open, documented, commercial-friendly — why it's the

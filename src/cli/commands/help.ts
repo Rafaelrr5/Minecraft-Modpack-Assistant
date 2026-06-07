@@ -20,6 +20,10 @@ Commands:
                     Dry-run by default; writes only with --apply (backup taken first).
   kubejs            Generate validated KubeJS server scripts (quest-event handlers + recipes).
                     Dry-run by default; writes only with --apply (backup taken first).
+  updates           Check a pack for available updates + changelogs, and re-run the
+                    conflict pre-flight on the candidates — read-only.
+  migrate           Plan a Minecraft/loader version migration: which mods can move,
+                    which are blocked, the new Java, and conflicts — read-only.
   doctor            Check your environment (Node, Java, game instance) — read-only.
   help              Show this overview.
   version           Print the version.
@@ -85,6 +89,22 @@ Options for 'kubejs':
   --apply           Write the files (otherwise dry-run, the default).
   --force           Required with --apply when the plan overwrites existing files.
   --json            Output the report/plan as JSON (for scripting / experts).
+
+Options for 'updates':
+  --loader <name>   Loader family: neoforge | forge | fabric | quilt (required).
+  --mc <version>    Target Minecraft version, e.g. 1.21.1 (required).
+  --mods <a,b,c>    Comma-separated mod slugs / project ids currently in the pack.
+  --side <s>        Re-check conflicts for 'client' (default) or 'server'.
+  --json            Output the report as JSON (for scripting / experts).
+
+Options for 'migrate':
+  --loader <name>   Current loader family: neoforge | forge | fabric | quilt (required).
+  --from-mc <ver>   Current Minecraft version, e.g. 1.20.1 (required).
+  --to-mc <ver>     Target Minecraft version to migrate to, e.g. 1.21.1 (required).
+  --to-loader <name> Target loader family, if changing it (defaults to --loader).
+  --mods <a,b,c>    Comma-separated mod slugs / project ids currently in the pack.
+  --side <s>        Re-check conflicts for 'client' (default) or 'server'.
+  --json            Output the report as JSON (for scripting / experts).
 
 Options for 'doctor':
   --instance <dir>  Path to a Minecraft instance / .minecraft folder to inspect.

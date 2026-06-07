@@ -64,4 +64,8 @@ export interface ModrinthVersion {
   readonly loaders: readonly string[];
   readonly dependencies: readonly ModrinthDependency[];
   readonly files: readonly ModrinthFile[];
+  /** ISO 8601 publish timestamp; used to order versions newest-first (spec 0013). */
+  readonly date_published?: string;
+  /** The version's changelog text, when present (spec 0013). */
+  readonly changelog?: string | null;
 }

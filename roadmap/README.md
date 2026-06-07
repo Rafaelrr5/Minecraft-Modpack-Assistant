@@ -39,7 +39,7 @@ Every `phase-N-*.md` follows the same template:
 | 🟡 In progress | Actively being built. |
 | ✅ Done | Exit criteria met. |
 
-> **Current overall status:** **Phases 0–5 — ✅ complete.** Phase 5 closed with both quest specs done:
+> **Current overall status:** **Phases 0–6 — ✅ complete.** Phase 5 closed with both quest specs done:
 > [`0011-ftbquests-generation`](../specs/0011-ftbquests-generation/spec.md) (SNBT) and
 > [`0012-kubejs-generation`](../specs/0012-kubejs-generation/spec.md) (KubeJS scripts). The `orchestration`
 > capability (spec `0006`) resolves a confirmed `ModpackBrief` + a mod list (or theme-seeded
@@ -78,7 +78,21 @@ Every `phase-N-*.md` follows the same template:
 > literals (never string-templated) and **parse-checked by a real JS engine** (`node:vm`, compile-only)
 > behind a new `ScriptValidator` port before any write; quest references cross-check against `0011`'s
 > `QuestDefinition` and compile to the **same** `questId` the SNBT carries, materialized through the
-> guarded `InstanceFs` (dry-run default, backup, `--force`).
+> guarded `InstanceFs` (dry-run default, backup, `--force`). **Phase 6 (Updates & Maintenance) is
+> ✅ complete:** spec [`0013-update-tracking`](../specs/0013-update-tracking/spec.md) adds the
+> `updates` capability — a pinned pack → a **read-only** report of available updates (with the
+> catalog **changelog** + publish date), a human-readable **lockfile diff**, **hash-lookup** identity
+> for installed jars, and a **regression re-check** that re-runs the Phase 3 pre-flight over the
+> candidate set so an update never silently introduces a conflict; it writes nothing (applying an
+> accepted update is the guarded `build`). Spec
+> [`0014-version-migration`](../specs/0014-version-migration/spec.md) **closes Phase 6**: the
+> `migrate` capability re-resolves each mod against a new Minecraft/loader **target**, classifies it
+> migratable/blocked/provider-error (blockers **surfaced, never dropped**), reports the **new required
+> Java** (changed?) and the **loader floor** (e.g. NeoForge ≥ 1.20.2), re-runs pre-flight at the new
+> version, and produces a migrated `PackState` **only when the migration is complete** — never forcing
+> a partial migration. Both reuse the sourced domain rules + the validated pre-flight, both are
+> read-only behind the `ModSourceProvider` port, and both surface via the `updates` / `migrate` CLI
+> commands.
 
 ## Phase map
 
@@ -90,7 +104,7 @@ Every `phase-N-*.md` follows the same template:
 | 3 | [Conflict Resolution & Pre-flight](./phase-3-conflict-resolution.md) | ✅ | [`0007`](../specs/0007-conflict-preflight/spec.md) |
 | 4 | [Build, Launch & Crash Diagnosis](./phase-4-build-launch-crash-diagnosis.md) | ✅ | [`0008`](../specs/0008-build-instance/spec.md) · [`0009`](../specs/0009-nvidia-chat-model/spec.md) · [`0010`](../specs/0010-crash-diagnosis/spec.md) |
 | 5 | [Quests & Scripting Automation](./phase-5-quests-scripting-automation.md) | ✅ | [`0011`](../specs/0011-ftbquests-generation/spec.md) · [`0012`](../specs/0012-kubejs-generation/spec.md) |
-| 6 | [Updates & Maintenance](./phase-6-updates-maintenance.md) | ⬜ | — |
+| 6 | [Updates & Maintenance](./phase-6-updates-maintenance.md) | ✅ | [`0013`](../specs/0013-update-tracking/spec.md) · [`0014`](../specs/0014-version-migration/spec.md) |
 | 7 | [Packaging, Distribution & Misc](./phase-7-packaging-distribution.md) | ⬜ | — |
 | 8 | [Productization (SaaS)](./phase-8-productization-saas.md) | ⬜ | — |
 

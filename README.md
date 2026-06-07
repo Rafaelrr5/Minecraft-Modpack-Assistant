@@ -24,8 +24,14 @@ SNBT** (a real serializer with parse-back, plus item-namespace/dependency/cycle 
 (`0012`) turns a structured `ScriptDefinition` into **validated KubeJS server scripts** — quest-reactive
 `FTBQuestsEvents` handlers + recipes emitted from a typed model with escaped literals and
 **parse-checked by a real JS engine** before write, with quest references compiled to the **same**
-`questId` the SNBT carries — both written **only** through the guarded `InstanceFs`. **Next:** Phase 6
-(updates & maintenance). → see the [roadmap](./roadmap/README.md).
+`questId` the SNBT carries — both written **only** through the guarded `InstanceFs`. Phase 6 —
+**Updates & Maintenance**: `updates` (`0013`) reports available updates (with changelogs), diffs the
+lockfile, identifies installed jars by hash, and **re-runs the conflict pre-flight on the candidates**
+so an update never silently breaks the pack; `migrate` (`0014`) plans a Minecraft/loader version
+migration — which mods can move, which are **blocked**, the new required **Java**, and the conflicts at
+the new version — refusing to force a partial migration. Both are **read-only** (the write path is the
+guarded `build`). **Next:** Phase 7 (packaging & distribution). → see the
+[roadmap](./roadmap/README.md).
 
 ---
 
@@ -137,6 +143,8 @@ npm run cli -- quests --instance ./my-pack --def ./quests.json          # dry-ru
 npm run cli -- quests --instance ./my-pack --def ./quests.json --apply  # write it (backup taken first)
 npm run cli -- kubejs --instance ./my-pack --def ./scripts.json --quests ./quests.json          # dry-run validated KubeJS scripts
 npm run cli -- kubejs --instance ./my-pack --def ./scripts.json --quests ./quests.json --apply  # write it (backup taken first)
+npm run cli -- updates --loader neoforge --mc 1.21.1 --mods create,jei  # available updates + changelogs + regression check (read-only)
+npm run cli -- migrate --loader neoforge --from-mc 1.20.1 --to-mc 1.21.1 --mods create,jei  # plan a version migration (read-only)
 ```
 
 Optional API credentials (e.g. a Modrinth token for higher rate limits) are read **only**

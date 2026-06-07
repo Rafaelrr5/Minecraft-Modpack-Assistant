@@ -74,5 +74,7 @@ export function mapVersionToModFile(version: ModrinthVersion): ModFile {
     dependencies: version.dependencies.map(mapDependency),
     side: 'both',
     downloadUrl: file.url,
+    ...(version.date_published ? { datePublished: version.date_published } : {}),
+    ...(version.changelog ? { changelog: version.changelog } : {}),
   };
 }

@@ -74,6 +74,8 @@ remaining phases get their specs when work on them begins (see the
 | [0010](./0010-crash-diagnosis/spec.md) | Crash & Log Diagnosis — categorize crash/log into the §6.2 taxonomy with remediation; reconcile `0007` suspicions; optional mclo.gs second opinion (read-only) | 4 | done |
 | [0011](./0011-ftbquests-generation/spec.md) | FTB Quests Generation — structured definition → validated FTB Quests **SNBT** (real serializer + parse-back, item-namespace/dependency/cycle checks) written through the guarded `InstanceFs` | 5 | done |
 | [0012](./0012-kubejs-generation/spec.md) | KubeJS Generation — structured `ScriptDefinition` → validated **KubeJS** scripts (typed emit model + escaped literals + **real-engine parse-back** via a `ScriptValidator` port; quest-event handlers cross-checked against `0011`'s `QuestDefinition` using the shared `questId`) written through the guarded `InstanceFs` | 5 | done |
+| [0013](./0013-update-tracking/spec.md) | Update Tracking — pinned `PackState` → read-only report of available updates (changelogs), lockfile diff, hash-lookup identity, and a **regression re-check** that re-runs the `0007` pre-flight over the candidate set | 6 | done |
+| [0014](./0014-version-migration/spec.md) | Version Migration — resolved set + new Minecraft/loader target → read-only migration report (per-mod migratable/blocked, new required Java, loader support, pre-flight at the new version) + a **complete-only** migrated `PackState` | 6 | done |
 
 > Specs `0003`–`0005` are the **Phase 0 foundation** (authored when the phase was picked up,
 > per the constitution). Future specs (e.g. mod orchestration, conflict resolution, crash

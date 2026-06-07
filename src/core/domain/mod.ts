@@ -76,4 +76,12 @@ export interface ModFile {
    */
   readonly side: Side;
   readonly downloadUrl: string;
+  /**
+   * When this version was published (ISO 8601), when the catalog provides it. Used to order
+   * versions newest-first for update tracking (spec 0013); optional because not every source
+   * exposes it (DOMAIN-KNOWLEDGE §3.1).
+   */
+  readonly datePublished?: string;
+  /** The version's changelog text, when the catalog provides one (spec 0013, DOMAIN-KNOWLEDGE §3.1). */
+  readonly changelog?: string;
 }

@@ -1,7 +1,10 @@
 # Phase 6 — Updates & Maintenance
 
 > Part of the [roadmap](./README.md). Delivers the objective in
-> [`../docs/VISION.md`](../docs/VISION.md). **Status: ⬜ Not started.**
+> [`../docs/VISION.md`](../docs/VISION.md). **Status: ✅ Done** — specs
+> [`0013-update-tracking`](../specs/0013-update-tracking/spec.md) and
+> [`0014-version-migration`](../specs/0014-version-migration/spec.md) shipped (both read-only over the
+> `ModSourceProvider` port; the write path is the guarded `build`).
 
 ## 1. Goal / outcome
 
@@ -40,12 +43,15 @@ CurseForge update feeds at scale (Phase 8).
   mods without a compatible version — including Java-version changes from spec `0002`/
   [Domain §2](../docs/DOMAIN-KNOWLEDGE.md#2-java-version-by-minecraft-version).
 
-## 5. Specs to be written
+## 5. Specs (written)
 
-- `NNNN-update-tracking`: version feeds, hash lookup, changelog/diff.
-- `NNNN-version-migration`: the MC/loader migration assistant.
-
-(Authored when the phase starts.)
+- [`0013-update-tracking`](../specs/0013-update-tracking/spec.md) ✅ — version feeds, hash lookup,
+  changelog, lockfile diff, and a regression re-check (re-runs the `0007` pre-flight on candidates).
+  Core module `src/core/updates/`; surfaced via the read-only `updates` CLI command.
+- [`0014-version-migration`](../specs/0014-version-migration/spec.md) ✅ — the MC/loader migration
+  assistant: per-mod re-resolution against the target, blockers surfaced, new required Java + loader
+  floor, pre-flight at the new version, complete-only migrated state. Core module
+  `src/core/migration/`; surfaced via the read-only `migrate` CLI command.
 
 ## 6. Dependencies
 

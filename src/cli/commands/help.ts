@@ -16,6 +16,8 @@ Commands:
   build             Assemble the pack into an importable instance with the right Java + RAM.
                     Dry-run by default; writes only with --apply (backup taken first).
   diagnose          Read a crash report / log and explain what broke, with fixes — read-only.
+  quests            Generate validated FTB Quests (SNBT) from a definition file.
+                    Dry-run by default; writes only with --apply (backup taken first).
   doctor            Check your environment (Node, Java, game instance) — read-only.
   help              Show this overview.
   version           Print the version.
@@ -61,6 +63,15 @@ Options for 'diagnose':
   --loader <name>   Loader family: neoforge | forge | fabric | quilt.
   --mclogs          Also fetch a mclo.gs second opinion (opt-in; sends the log off-machine).
   --json            Output the diagnosis as JSON (for scripting / experts).
+
+Options for 'quests':
+  --instance <dir>  Where to write the quests (required).
+  --def <file>      Quest definition to generate: a .json file (or a .ts/.js module
+                    with a default export) describing chapters → quests → tasks/rewards.
+  --namespaces <a,b> Item namespaces allowed beyond 'minecraft' (e.g. your pack's mods).
+  --apply           Write the files (otherwise dry-run, the default).
+  --force           Required with --apply when the plan overwrites existing files.
+  --json            Output the report/plan as JSON (for scripting / experts).
 
 Options for 'doctor':
   --instance <dir>  Path to a Minecraft instance / .minecraft folder to inspect.

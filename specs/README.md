@@ -72,6 +72,7 @@ remaining phases get their specs when work on them begins (see the
 | [0008](./0008-build-instance/spec.md) | Pack Build & Launch Configuration — pinned `PackState` + `RequirementsReport` → packwiz workspace + launch profile, materialized through the guarded `InstanceFs` | 4 | done |
 | [0009](./0009-nvidia-chat-model/spec.md) | NVIDIA Chat-Model Provider — provider-agnostic `ChatModel` port + OpenAI-compatible NVIDIA adapter (agent/LLM boundary) | 4 | done |
 | [0010](./0010-crash-diagnosis/spec.md) | Crash & Log Diagnosis — categorize crash/log into the §6.2 taxonomy with remediation; reconcile `0007` suspicions; optional mclo.gs second opinion (read-only) | 4 | done |
+| [0011](./0011-ftbquests-generation/spec.md) | FTB Quests Generation — structured definition → validated FTB Quests **SNBT** (real serializer + parse-back, item-namespace/dependency/cycle checks) written through the guarded `InstanceFs` | 5 | done |
 
 > Specs `0003`–`0005` are the **Phase 0 foundation** (authored when the phase was picked up,
 > per the constitution). Future specs (e.g. mod orchestration, conflict resolution, crash

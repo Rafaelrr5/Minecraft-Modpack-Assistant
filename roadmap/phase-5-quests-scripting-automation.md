@@ -1,7 +1,8 @@
 # Phase 5 — Quests & Scripting Automation
 
 > Part of the [roadmap](./README.md). Delivers the objective in
-> [`../docs/VISION.md`](../docs/VISION.md). **Status: ⬜ Not started.**
+> [`../docs/VISION.md`](../docs/VISION.md). **Status: 🟡 In progress** — FTB Quests SNBT generation
+> (spec [`0011`](../specs/0011-ftbquests-generation/spec.md)) is **done**; KubeJS (`0012`) is next.
 
 ## 1. Goal / outcome
 
@@ -44,8 +45,9 @@ assistant scaffolds and validates, the user directs); non-FTB quest systems; dee
 
 ## 5. Specs to be written
 
-- `NNNN-ftbquests-generation`: the SNBT model + serializer + validation.
-- `NNNN-kubejs-generation`: script emitter + FTBQuests-events integration + validation.
+- ✅ [`0011-ftbquests-generation`](../specs/0011-ftbquests-generation/spec.md): the SNBT model +
+  serializer (+ parser for parse-back) + validation. **Done.**
+- ⬜ `0012-kubejs-generation`: script emitter + FTBQuests-events integration + validation. **Next.**
 
 (Authored when the phase starts.)
 

@@ -4,7 +4,7 @@
 > from idea to a polished, shareable pack — while staying _one step ahead_ of the
 > conflicts, crashes, and compatibility traps that normally make modpack building painful.**
 
-**Status:** ✅ **Phases 0–4 implemented; Phase 5 next.** Phase 0 — toolchain, core domain
+**Status:** ✅ **Phases 0–4 implemented; Phase 5 in progress.** Phase 0 — toolchain, core domain
 model, a provider-agnostic **Modrinth** adapter (contract-tested), **packwiz**-backed pack state,
 logging, the guarded `InstanceFs`. Phase 1 — **Discovery** (`0001`): `discover` turns an idea
 into a **validated Modpack Brief**. Phase 2 — **Orchestration** (`0006`): `orchestrate` resolves
@@ -18,8 +18,11 @@ backup, `--force` to overwrite). Phase 4 also added **Crash
 Diagnosis** (`0010`): `diagnose` reads a crash report / log (read-only) and categorizes it into the
 crash taxonomy with concrete remediation, reconciling pre-flight's *suspected* conflicts and
 offering an opt-in **mclo.gs** second opinion. It opened the **agent/LLM boundary** too — a
-provider-agnostic `ChatModel` port + an OpenAI-compatible **NVIDIA** adapter (`0009`). **Next:**
-Phase 5 — Quests & Scripting Automation. → see the [roadmap](./roadmap/README.md).
+provider-agnostic `ChatModel` port + an OpenAI-compatible **NVIDIA** adapter (`0009`). Phase 5 —
+**Quests** (`0011`) has begun: `quests` turns a structured definition into **validated FTB Quests
+SNBT** (a real serializer with parse-back, plus item-namespace/dependency/cycle checks), written
+**only** through the guarded `InstanceFs`. **Next:** KubeJS scripting (`0012`). → see the
+[roadmap](./roadmap/README.md).
 
 ---
 
@@ -127,6 +130,8 @@ npm run cli -- orchestrate --loader neoforge --mc 1.21.1 --mods create --require
 npm run cli -- orchestrate --loader neoforge --mc 1.21.1 --mods optifine,sodium --preflight  # conflict pre-flight (read-only)
 npm run cli -- build --loader neoforge --mc 1.21.1 --mods create --instance ./my-pack          # dry-run a build plan
 npm run cli -- build --loader neoforge --mc 1.21.1 --mods create --instance ./my-pack --apply  # write it (backup taken first)
+npm run cli -- quests --instance ./my-pack --def ./quests.json          # dry-run validated FTB Quests SNBT
+npm run cli -- quests --instance ./my-pack --def ./quests.json --apply  # write it (backup taken first)
 ```
 
 Optional API credentials (e.g. a Modrinth token for higher rate limits) are read **only**

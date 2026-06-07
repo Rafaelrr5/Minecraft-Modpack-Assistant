@@ -83,7 +83,8 @@ Each maps to roadmap phase, gets own spec when built. All **UI-agnostic**, expos
 | **conflicts** | 3 | Static + heuristic conflict & keybinding pre-flight | `Conflict[]` |
 | **build** | 4 | Assemble packwiz tree + launch profile (numeric Java/`-Xmx` from `0002`), materialize via guarded `InstanceFs` (spec `0008`) | `BuildArtifacts` / `BuildPlan` → instance |
 | **crash-diagnosis** | 4 | Ingest & categorize logs, drive remediation loop | `CrashDiagnosis` |
-| **quests / scripting** | 5 | Generate validated FTB Quests SNBT & KubeJS scripts | `.snbt`, `.js` artifacts |
+| **quests** | 5 | Structured definition → validated FTB Quests **SNBT** via a real `snbt/` serializer **+ parser** (parse-back), with namespace/dependency/cycle checks; materialize via guarded `InstanceFs` (spec `0011`, **done**) | `QuestGenerationReport` → `.snbt` |
+| **scripting (KubeJS)** | 5 | Generate KubeJS scripts + reactive `FTBQuestsEvents` (spec `0012`, next) | `.js` artifacts |
 | **updates** | 6 | Track updates, diff, re-check compatibility, migrate | update plan / diff |
 | **packaging** | 7 | Export `.mrpack` / CurseForge / packwiz; launcher interop | distributable pack |
 

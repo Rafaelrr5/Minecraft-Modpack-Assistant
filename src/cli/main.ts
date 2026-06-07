@@ -14,6 +14,7 @@ import { runDiscoverCli } from './commands/discover.ts';
 import { type OrchestrateOptions, runOrchestrateCli } from './commands/orchestrate.ts';
 import { type BuildOptions, runBuildCli } from './commands/build.ts';
 import { type DiagnoseOptions, runDiagnoseCli } from './commands/diagnose.ts';
+import { type QuestsOptions, runQuestsCli } from './commands/quests.ts';
 
 export async function run(argv: readonly string[]): Promise<number> {
   const [command, ...rest] = argv;
@@ -203,6 +204,44 @@ export async function run(argv: readonly string[]): Promise<number> {
         : {}),
     };
     return runDiagnoseCli(options);
+  }
+
+  if (command === 'quests') {
+    const { values } = parseArgs({
+      args: [...rest],
+      options: {
+        instance: { type: 'string' },
+        def: { type: 'string' },
+        namespaces: { type: 'string' },
+        apply: { type: 'boolean', default: false },
+        force: { type: 'boolean', default: false },
+        json: { type: 'boolean', default: false },
+      },
+      allowPositionals: false,
+    });
+
+    if (values.instance === undefined) {
+      process.stderr.write('quests: --instance <dir> is required (where to write the quests).\n');
+      return 2;
+    }
+    if (values.def === undefined) {
+      process.stderr.write('quests: --def <file> is required (the quest definition to generate).\n');
+      return 2;
+    }
+    const namespaces = (values.namespaces ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+
+    const options: QuestsOptions = {
+      instancePath: values.instance,
+      defPath: values.def,
+      ...(namespaces.length > 0 ? { namespaces } : {}),
+      apply: values.apply === true,
+      force: values.force === true,
+      json: values.json === true,
+    };
+    return runQuestsCli(options);
   }
 
   runHelp();

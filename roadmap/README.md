@@ -39,7 +39,9 @@ Every `phase-N-*.md` follows the same template:
 | 🟡 In progress | Actively being built. |
 | ✅ Done | Exit criteria met. |
 
-> **Current overall status:** **Phase 4 — ✅ complete** (Phases 0–4 ✅); **Phase 5 — ⬜ next**. The `orchestration`
+> **Current overall status:** **Phase 4 — ✅ complete** (Phases 0–4 ✅); **Phase 5 — 🟡 in progress**
+> (spec [`0011-ftbquests-generation`](../specs/0011-ftbquests-generation/spec.md) ✅ done; KubeJS
+> `0012` next). The `orchestration`
 > capability (spec `0006`) resolves a confirmed `ModpackBrief` + a mod list (or theme-seeded
 > recommendations) into a dependency-complete, pinned `PackState`, surfacing
 > unresolved/incompatible cases as issues. The `requirements` capability (spec `0002`) consumes
@@ -65,7 +67,11 @@ Every `phase-N-*.md` follows the same template:
 > **mclo.gs** second opinion (never authoritative). The agent/LLM boundary opened alongside it
 > (spec [`0009`](../specs/0009-nvidia-chat-model/spec.md), a provider-agnostic `ChatModel` + NVIDIA
 > adapter). Live JVM launch/validation remains deferred (environment-sensitive → Phase 8).
-> **Phase 5 (Quests & Scripting Automation) is next.**
+> **Phase 5 (Quests & Scripting Automation) has begun:** spec
+> [`0011-ftbquests-generation`](../specs/0011-ftbquests-generation/spec.md) adds the `quests`
+> capability — a structured quest definition → **validated FTB Quests SNBT** via a real serializer
+> (with parse-back) and item-namespace/dependency/cycle checks, written **only** through the guarded
+> `InstanceFs` (dry-run default, backup, `--force`). **KubeJS scripting (`0012`) is next.**
 
 ## Phase map
 
@@ -76,7 +82,7 @@ Every `phase-N-*.md` follows the same template:
 | 2 | [Mod Orchestration & Curation](./phase-2-mod-orchestration.md) | ✅ | [`0006`](../specs/0006-mod-orchestration/spec.md) · [`0002`](../specs/0002-system-requirements-prediction/spec.md) |
 | 3 | [Conflict Resolution & Pre-flight](./phase-3-conflict-resolution.md) | ✅ | [`0007`](../specs/0007-conflict-preflight/spec.md) |
 | 4 | [Build, Launch & Crash Diagnosis](./phase-4-build-launch-crash-diagnosis.md) | ✅ | [`0008`](../specs/0008-build-instance/spec.md) · [`0009`](../specs/0009-nvidia-chat-model/spec.md) · [`0010`](../specs/0010-crash-diagnosis/spec.md) |
-| 5 | [Quests & Scripting Automation](./phase-5-quests-scripting-automation.md) | ⬜ | — |
+| 5 | [Quests & Scripting Automation](./phase-5-quests-scripting-automation.md) | 🟡 | [`0011`](../specs/0011-ftbquests-generation/spec.md) |
 | 6 | [Updates & Maintenance](./phase-6-updates-maintenance.md) | ⬜ | — |
 | 7 | [Packaging, Distribution & Misc](./phase-7-packaging-distribution.md) | ⬜ | — |
 | 8 | [Productization (SaaS)](./phase-8-productization-saas.md) | ⬜ | — |

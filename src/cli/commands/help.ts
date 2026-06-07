@@ -18,6 +18,8 @@ Commands:
   diagnose          Read a crash report / log and explain what broke, with fixes — read-only.
   quests            Generate validated FTB Quests (SNBT) from a definition file.
                     Dry-run by default; writes only with --apply (backup taken first).
+  kubejs            Generate validated KubeJS server scripts (quest-event handlers + recipes).
+                    Dry-run by default; writes only with --apply (backup taken first).
   doctor            Check your environment (Node, Java, game instance) — read-only.
   help              Show this overview.
   version           Print the version.
@@ -68,6 +70,17 @@ Options for 'quests':
   --instance <dir>  Where to write the quests (required).
   --def <file>      Quest definition to generate: a .json file (or a .ts/.js module
                     with a default export) describing chapters → quests → tasks/rewards.
+  --namespaces <a,b> Item namespaces allowed beyond 'minecraft' (e.g. your pack's mods).
+  --apply           Write the files (otherwise dry-run, the default).
+  --force           Required with --apply when the plan overwrites existing files.
+  --json            Output the report/plan as JSON (for scripting / experts).
+
+Options for 'kubejs':
+  --instance <dir>  Where to write the scripts (required).
+  --def <file>      Script definition to generate: a .json file (or a .ts/.js module
+                    with a default export) describing files → quest-event handlers + recipes.
+  --quests <file>   Quest definition (0011) to cross-validate handler references and
+                    resolve their ids — a handler may only react to a quest it names.
   --namespaces <a,b> Item namespaces allowed beyond 'minecraft' (e.g. your pack's mods).
   --apply           Write the files (otherwise dry-run, the default).
   --force           Required with --apply when the plan overwrites existing files.

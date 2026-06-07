@@ -64,7 +64,7 @@ src/                           Application code (begins in Phase 0)
   index.ts                     Library entry (re-exports core + integration)
   core/                        UI-agnostic core — imports no cli/ or integration/ (enforced)
     domain/                    Core domain model (MinecraftVersion, version-range, Loader, loader-compat, Mod, Modpack, Conflict, …, PackState)
-    ports/                     Interfaces the core depends on (Logger, ChatModel, InstanceFs[+readText], LogAnalysisProvider, ModSourceProvider, PackFormat)
+    ports/                     Interfaces the core depends on (Logger, ChatModel, InstanceFs[+readText], LogAnalysisProvider, ModSourceProvider, PackFormat, ScriptValidator)
     discovery/                 Phase 1 capability (spec 0001): slot-filling → validated ModpackBrief
     orchestration/             Phase 2 capability (spec 0006): list + deps → pinned PackState
     requirements/              Phase 2 capability (spec 0002): resolved set → RequirementsReport
@@ -72,9 +72,10 @@ src/                           Application code (begins in Phase 0)
     build/                     Phase 4 capability (spec 0008): PackState + RequirementsReport → packwiz tree + launch profile → guarded InstanceFs change plan
     crash-diagnosis/           Phase 4 capability (spec 0010): crash/log text → read-only categorized DiagnosisReport (taxonomy + remediation), reconciles 0007 suspicions
     quests/                    Phase 5 capability (spec 0011): structured quest definition → validated FTB Quests SNBT (snbt/ real serializer + parser) → guarded InstanceFs write
+    scripts/                   Phase 5 capability (spec 0012): structured ScriptDefinition → validated KubeJS server scripts (emit/ typed model + escaped literals, real-engine parse-back via ScriptValidator port, quest cross-ref reuses 0011's questId) → guarded InstanceFs write
   integration/                 Adapters implementing the ports
-    logging/ · instance-fs/ · modrinth/ · nvidia/ (ChatModel: OpenAI-compatible NVIDIA NIM) · mclogs/ (LogAnalysisProvider: mclo.gs second opinion) · packwiz/ (PackFormat: + pure assemble)
-  cli/                         Thin CLI adapter (help · doctor · discover · orchestrate [--requirements|--preflight] · build [--apply|--force] · diagnose [--mclogs] · quests [--apply|--force])
+    logging/ · instance-fs/ · modrinth/ · nvidia/ (ChatModel: OpenAI-compatible NVIDIA NIM) · mclogs/ (LogAnalysisProvider: mclo.gs second opinion) · packwiz/ (PackFormat: + pure assemble) · script-validator/ (ScriptValidator: node:vm compile-only parse-back)
+  cli/                         Thin CLI adapter (help · doctor · discover · orchestrate [--requirements|--preflight] · build [--apply|--force] · diagnose [--mclogs] · quests [--apply|--force] · kubejs [--apply|--force])
 
 docs/
   VISION.md                    THE objective (single source of truth)
@@ -117,6 +118,8 @@ specs/
     spec.md · plan.md · tasks.md
   0011-ftbquests-generation/   Phase 5 (done): structured quest definition → validated FTB Quests SNBT (real serializer + parse-back, namespace/dependency/cycle checks) via guarded InstanceFs
     spec.md · plan.md · tasks.md
+  0012-kubejs-generation/      Phase 5 (done): structured ScriptDefinition → validated KubeJS server scripts (typed emit model + escaped literals + real-engine parse-back via ScriptValidator port; quest cross-ref reuses 0011's questId) via guarded InstanceFs
+    spec.md · plan.md · tasks.md
 
 templates/
   spec-template.md · plan-template.md · tasks-template.md · adr-template.md
@@ -144,7 +147,7 @@ roadmap/
   must be green; external API clients get **contract tests**; generated artifacts (SNBT,
   KubeJS, manifests) must **parse/validate** before write
   ([Constitution P3](./memory/constitution.md#principle-3--validation-discipline)).
-- **Phases 0–4 implemented; Phase 5 (quests & scripting) in progress.** Phase 0 — toolchain, core domain model, Modrinth provider,
+- **Phases 0–5 implemented.** Phase 0 — toolchain, core domain model, Modrinth provider,
   pack state, logging, guarded `InstanceFs`, CLI (specs
   [`0003`](./specs/0003-project-foundation/spec.md)–[`0005`](./specs/0005-pack-state/spec.md)).
   Phase 1 — `discovery` + `discover` CLI turn an idea into validated `ModpackBrief` (spec
@@ -181,9 +184,16 @@ roadmap/
   parse-back guarantee; no string/regex SNBT, Constitution P3), deterministic ids for byte-identical
   output (P7), and item-namespace/dependency-cycle/duplicate/type validation that **blocks** invalid
   definitions — written **only** through the guarded `InstanceFs` (dry-run default, backup, `--force`)
-  via the `quests` CLI command (spec [`0011`](./specs/0011-ftbquests-generation/spec.md)). NL quest
-  description (rides `ChatModel`/`0009`, funnels through this validation) and **KubeJS scripting
-  (`0012`, FTB XMod Compat `FTBQuestsEvents`) are next.**
+  via the `quests` CLI command (spec [`0011`](./specs/0011-ftbquests-generation/spec.md)). **KubeJS
+  scripting** (`scripts`, `src/core/scripts/`) **closes Phase 5** (spec
+  [`0012`](./specs/0012-kubejs-generation/spec.md)): the `kubejs` CLI turns a structured
+  `ScriptDefinition` into **validated KubeJS server scripts** — quest-reactive `FTBQuestsEvents`
+  handlers + shaped/shapeless recipes — emitted from a typed `emit/` model with **escaped literals**
+  (never string-templated, P3) and **parse-checked by a real JS engine** (a `ScriptValidator` port; the
+  `node:vm` adapter compiles, never executes) before any guarded write, with handler quest references
+  cross-validated against `0011`'s `QuestDefinition` and compiled to the **same** `questId` the SNBT
+  carries (P7). NL quest/script description (rides `ChatModel`/`0009`, funnelling through this
+  deterministic validation) and **Phase 6 (Updates & Maintenance) are next.**
 - **Running TS:** dev/test/CLI run TypeScript directly on Node ≥ 22.18 (native type
   stripping); build (`tsc`) emits `dist/`. Source uses **`.ts` import extensions**
   (rewritten to `.js` on build) + **erasable-only syntax** (no enums/parameter-properties).

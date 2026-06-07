@@ -84,7 +84,7 @@ Each maps to roadmap phase, gets own spec when built. All **UI-agnostic**, expos
 | **build** | 4 | Assemble packwiz tree + launch profile (numeric Java/`-Xmx` from `0002`), materialize via guarded `InstanceFs` (spec `0008`) | `BuildArtifacts` / `BuildPlan` → instance |
 | **crash-diagnosis** | 4 | Ingest & categorize logs, drive remediation loop | `CrashDiagnosis` |
 | **quests** | 5 | Structured definition → validated FTB Quests **SNBT** via a real `snbt/` serializer **+ parser** (parse-back), with namespace/dependency/cycle checks; materialize via guarded `InstanceFs` (spec `0011`, **done**) | `QuestGenerationReport` → `.snbt` |
-| **scripting (KubeJS)** | 5 | Generate KubeJS scripts + reactive `FTBQuestsEvents` (spec `0012`, next) | `.js` artifacts |
+| **scripts (KubeJS)** | 5 | Structured `ScriptDefinition` → KubeJS server scripts (reactive `FTBQuestsEvents` handlers + shaped/shapeless recipes) from a typed emit model with escaped literals; **real-engine parse-back** + namespace/type/recipe/quest cross-validation before any guarded write (spec `0012`, **done**) | `ScriptGenerationReport` → `.js` |
 | **updates** | 6 | Track updates, diff, re-check compatibility, migrate | update plan / diff |
 | **packaging** | 7 | Export `.mrpack` / CurseForge / packwiz; launcher interop | distributable pack |
 
@@ -97,6 +97,7 @@ Each maps to roadmap phase, gets own spec when built. All **UI-agnostic**, expos
 - **`PackFormat`** — `assemble` a `PackState` into in-memory pack files (pure, validated) + read/write **packwiz** (source of truth); **export** `.mrpack` / CurseForge `manifest.json` later behind same seam. Pure `assemble` (spec `0008`) lets `build` capability fold whole tree into one guarded `InstanceFs` change plan. (Domain §8.)
 - **`CrashAnalyzer`** — our deterministic heuristics first; **mclo.gs** optional second opinion. (Domain §6.)
 - **`ArtifactSerializer`** — **real SNBT serializer** for FTB Quests + KubeJS script emitter; both validate output before any write. (Domain §7; Constitution P3.)
+- **`ScriptValidator`** — **real JS engine parse-back** for generated KubeJS scripts: compile-only, **never executes** (a `node:vm` adapter first). The `scripts` core emits JS from a typed model and proves it parses through this port before any write — the engine never lives in the core (spec `0012`; Domain §7.3; Constitution P3).
 - **`InstanceFs`** — **single guarded path** for touching user's instance: backup → dry-run plan → explicit confirm → apply. (Constitution P4.)
 - **`Logger`** — structured, observable logging across all above. (Constitution P9.)
 

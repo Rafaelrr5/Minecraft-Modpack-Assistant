@@ -15,6 +15,7 @@ import { type OrchestrateOptions, runOrchestrateCli } from './commands/orchestra
 import { type BuildOptions, runBuildCli } from './commands/build.ts';
 import { type DiagnoseOptions, runDiagnoseCli } from './commands/diagnose.ts';
 import { type QuestsOptions, runQuestsCli } from './commands/quests.ts';
+import { type KubeJsOptions, runKubeJsCli } from './commands/kubejs.ts';
 
 export async function run(argv: readonly string[]): Promise<number> {
   const [command, ...rest] = argv;
@@ -242,6 +243,46 @@ export async function run(argv: readonly string[]): Promise<number> {
       json: values.json === true,
     };
     return runQuestsCli(options);
+  }
+
+  if (command === 'kubejs') {
+    const { values } = parseArgs({
+      args: [...rest],
+      options: {
+        instance: { type: 'string' },
+        def: { type: 'string' },
+        quests: { type: 'string' },
+        namespaces: { type: 'string' },
+        apply: { type: 'boolean', default: false },
+        force: { type: 'boolean', default: false },
+        json: { type: 'boolean', default: false },
+      },
+      allowPositionals: false,
+    });
+
+    if (values.instance === undefined) {
+      process.stderr.write('kubejs: --instance <dir> is required (where to write the scripts).\n');
+      return 2;
+    }
+    if (values.def === undefined) {
+      process.stderr.write('kubejs: --def <file> is required (the script definition to generate).\n');
+      return 2;
+    }
+    const namespaces = (values.namespaces ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+
+    const options: KubeJsOptions = {
+      instancePath: values.instance,
+      defPath: values.def,
+      ...(values.quests !== undefined ? { questsPath: values.quests } : {}),
+      ...(namespaces.length > 0 ? { namespaces } : {}),
+      apply: values.apply === true,
+      force: values.force === true,
+      json: values.json === true,
+    };
+    return runKubeJsCli(options);
   }
 
   runHelp();

@@ -5,3 +5,4 @@ export * from './instance-fs.ts';
 export * from './log-analysis-provider.ts';
 export * from './mod-source-provider.ts';
 export * from './pack-format.ts';
+export * from './script-validator.ts';

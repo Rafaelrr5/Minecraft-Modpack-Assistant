@@ -37,6 +37,8 @@ test('core/** imports neither the CLI nor concrete integrations', async () => {
         !/(^|\/)integration(\/|$)/.test(spec),
         `${file} must not import a concrete integration: "${spec}"`,
       );
+      // The core owns no JS engine: parse-back lives behind the ScriptValidator port (spec 0012 AC-7).
+      assert.ok(spec !== 'node:vm', `${file} must not import node:vm — use the ScriptValidator port`);
     }
   }
 });

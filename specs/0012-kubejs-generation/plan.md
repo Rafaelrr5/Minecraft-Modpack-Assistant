@@ -7,7 +7,7 @@
 | | |
 | --- | --- |
 | **Spec ID** | `0012` |
-| **Status** | `draft` |
+| **Status** | `done` |
 
 ---
 

@@ -8,7 +8,7 @@
 | | |
 | --- | --- |
 | **Spec ID** | `0012` |
-| **Status** | `draft` |
+| **Status** | `done` |
 | **Roadmap phase** | [Phase 5 — Quests & Scripting Automation](../../roadmap/phase-5-quests-scripting-automation.md) |
 | **Author / date** | Claude Code · 2026-06-07 |
 | **Related specs** | the sibling of [`0011`](../0011-ftbquests-generation/spec.md) — it **consumes** `0011`'s `QuestDefinition` and reuses its deterministic `questId` so the reactive JS references the **same** ids the SNBT carries; writes **only** through the guarded `InstanceFs` from [`0003`](../0003-project-foundation/spec.md); shares the dry-run/backup/`--force` posture of [`0008`](../0008-build-instance/spec.md); introduces a `ScriptValidator` **port** in the same agent/adapter spirit as the `ChatModel` (`0009`) and `LogAnalysisProvider` (`0010`) ports; validates item namespaces against the resolved set from [`0006`](../0006-mod-orchestration/spec.md) |

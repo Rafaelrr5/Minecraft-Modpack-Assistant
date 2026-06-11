@@ -125,8 +125,14 @@ Every `phase-N-*.md` follows the same template:
 > `CHANGELOG.md`) into one shareable, **byte-stable** release — a pure projection (dates are supplied
 > inputs, never clock-read), written through the same `0015` packaging adapter (dry-run default,
 > no-clobber without `--force`), surfaced via the `release` CLI command. Whole-instance/world backups,
-> uploading/publishing, and LLM-written release prose are deferred (Phase 8 / later enrichment). **Phase
-> 8 (Productization / SaaS) is next.**
+> uploading/publishing, and LLM-written release prose are deferred (Phase 8 / later enrichment).
+>
+> **A friendly desktop app (Electron) is now underway** as a second adapter over the same UI-agnostic
+> core — a bridge between today's CLI and the Phase 8 web/SaaS (spec
+> [`0022`](../specs/0022-desktop-app/spec.md); [ADR 0008](../docs/decisions/0008-desktop-app-electron.md),
+> amending [ADR 0003](../docs/decisions/0003-cli-first-form-factor.md)). The Electron main process runs
+> the core in-process (keeping local `.minecraft` access); an isolated React renderer surfaces the
+> dry-run → confirm safety on screen. **Phase 8 (Productization / SaaS) follows.**
 
 ## Phase map
 
@@ -140,6 +146,7 @@ Every `phase-N-*.md` follows the same template:
 | 5 | [Quests & Scripting Automation](./phase-5-quests-scripting-automation.md) | ✅ | [`0011`](../specs/0011-ftbquests-generation/spec.md) · [`0012`](../specs/0012-kubejs-generation/spec.md) |
 | 6 | [Updates & Maintenance](./phase-6-updates-maintenance.md) | ✅ | [`0013`](../specs/0013-update-tracking/spec.md) · [`0014`](../specs/0014-version-migration/spec.md) |
 | 7 | [Packaging, Distribution & Misc](./phase-7-packaging-distribution.md) | ✅ | [`0015`](../specs/0015-pack-export/spec.md) · [`0016`](../specs/0016-changelogs-sharing/spec.md) |
+| — | **Desktop form factor** (friendly GUI; bridge to Phase 8) | 🟡 | [`0022`](../specs/0022-desktop-app/spec.md) |
 | 8 | [Productization (SaaS)](./phase-8-productization-saas.md) | ⬜ | — |
 
 ## The thread that runs through every phase

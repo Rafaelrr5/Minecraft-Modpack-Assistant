@@ -25,5 +25,9 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts"],
+  // The Electron-coupled shell (imports electron/react) is built/typechecked by electron-vite via
+  // src/desktop/tsconfig.json — not the core gate (spec 0022 FR-9). The Electron-free backbone
+  // (src/desktop/services.ts, shared/) stays in.
+  "exclude": ["src/desktop/main", "src/desktop/preload", "src/desktop/renderer"]
 }

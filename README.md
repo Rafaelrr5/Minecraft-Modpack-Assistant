@@ -112,7 +112,7 @@ code. *No capability without a spec.* → [why](./docs/decisions/0001-spec-drive
 | **Specs** | [`specs/`](./specs/README.md) | Capability specs (`spec → plan → tasks`). |
 | **Templates** | [`templates/`](./templates/) | Standardized spec/plan/tasks/ADR templates. |
 | **Roadmap** | [`roadmap/`](./roadmap/README.md) | Phased delivery plan (Phase 0 → 8). |
-| **Source** | [`src/`](./src/) | The implementation: `core/` (UI-agnostic domain + ports), `integration/` (adapters), `cli/`. |
+| **Source** | [`src/`](./src/) | The implementation: `core/` (UI-agnostic domain + ports), `integration/` (adapters), `cli/`, `desktop/` (Electron GUI — spec 0022). |
 
 ## The roadmap at a glance
 
@@ -126,6 +126,7 @@ code. *No capability without a spec.* → [why](./docs/decisions/0001-spec-drive
 | [5 — Quests & Scripting](./roadmap/phase-5-quests-scripting-automation.md) | Generate **FTB Quests** SNBT + **KubeJS**. |
 | [6 — Updates](./roadmap/phase-6-updates-maintenance.md) | Track updates, re-check compatibility, migrate versions. |
 | [7 — Packaging](./roadmap/phase-7-packaging-distribution.md) | Export `.mrpack`/CurseForge/packwiz; launcher interop. |
+| [Desktop app](./specs/0022-desktop-app/spec.md) | Friendly **Electron** GUI over the full lifecycle (bridge to SaaS). |
 | [8 — SaaS](./roadmap/phase-8-productization-saas.md) | Multi-tenant web app, billing, hosted runners. |
 
 ---
@@ -135,7 +136,9 @@ code. *No capability without a spec.* → [why](./docs/decisions/0001-spec-drive
 - **Stack:** TypeScript / Node.js — one language from CLI to SaaS
   ([ADR 0002](./docs/decisions/0002-tech-stack-typescript-node.md)).
 - **Form factor:** CLI-first, UI-agnostic core
-  ([ADR 0003](./docs/decisions/0003-cli-first-form-factor.md)).
+  ([ADR 0003](./docs/decisions/0003-cli-first-form-factor.md)); a friendly **Electron desktop app**
+  is a second adapter over the same core ([ADR 0008](./docs/decisions/0008-desktop-app-electron.md),
+  spec [0022](./specs/0022-desktop-app/spec.md)).
 - **Mod catalog:** Modrinth first
   ([ADR 0004](./docs/decisions/0004-modrinth-first-data-source.md)).
 - **Pack format:** packwiz (dev) + `.mrpack` (export)
@@ -172,6 +175,16 @@ npm run cli -- export --loader neoforge --mc 1.21.1 --mods create,jei           
 npm run cli -- export --loader neoforge --mc 1.21.1 --mods create,jei --apply --out pack.mrpack  # write the .mrpack archive
 npm run cli -- release --loader neoforge --mc 1.21.1 --mods create,jei --from ./prev-pack         # dry-run a release (changelog + bundle)
 npm run cli -- release --loader neoforge --mc 1.21.1 --mods create,jei --apply --out pack.mrpack  # write the release bundle (archive + CHANGELOG.md)
+```
+
+The friendly **desktop app** (Electron — spec 0022) builds with a separate toolchain (kept out of
+`npm run check`); install dependencies first, then:
+
+```bash
+npm run desktop:dev        # launch the desktop app with hot reload (electron-vite)
+npm run desktop:typecheck  # typecheck the Electron shell (src/desktop/tsconfig.json)
+npm run desktop:build      # bundle main + preload + renderer into out/
+npm run desktop:dist       # package an installer (electron-builder → release/)
 ```
 
 Optional API credentials (e.g. a Modrinth token for higher rate limits) are read **only**

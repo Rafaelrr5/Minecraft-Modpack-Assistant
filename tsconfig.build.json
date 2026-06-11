@@ -8,5 +8,12 @@
     "sourceMap": true
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["src/**/*.test.ts", "src/**/__fixtures__/**", "src/**/__tests__/**"]
+  "exclude": [
+    "src/**/*.test.ts",
+    "src/**/__fixtures__/**",
+    "src/**/__tests__/**",
+    "src/desktop/main",
+    "src/desktop/preload",
+    "src/desktop/renderer"
+  ]
 }

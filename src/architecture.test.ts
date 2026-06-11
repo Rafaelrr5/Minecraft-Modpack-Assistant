@@ -1,8 +1,8 @@
 /**
- * Architecture guard (Constitution P2 / spec 0003 AC-5): the UI-agnostic core must not import
- * the CLI or any concrete integration. This scans every `core/**` source for import/export
- * specifiers pointing at `cli/` or `integration/` and fails if any exist — the authoritative
- * enforcement behind the lint rule.
+ * Architecture guard (Constitution P2 / spec 0003 AC-5, spec 0022 AC-3): the UI-agnostic core must
+ * not import the CLI, any concrete integration, or the desktop adapter. This scans every `core/**`
+ * source for import/export specifiers pointing at `cli/`, `integration/`, or `desktop/` and fails if
+ * any exist — the authoritative enforcement behind the lint rule.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -36,6 +36,10 @@ test('core/** imports neither the CLI nor concrete integrations', async () => {
       assert.ok(
         !/(^|\/)integration(\/|$)/.test(spec),
         `${file} must not import a concrete integration: "${spec}"`,
+      );
+      assert.ok(
+        !/(^|\/)desktop(\/|$)/.test(spec),
+        `${file} must not import the desktop adapter: "${spec}"`,
       );
       // The core owns no JS engine: parse-back lives behind the ScriptValidator port (spec 0012 AC-7).
       assert.ok(spec !== 'node:vm', `${file} must not import node:vm — use the ScriptValidator port`);

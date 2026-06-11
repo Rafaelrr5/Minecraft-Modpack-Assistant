@@ -57,6 +57,7 @@ README.md                      Front door + doc map
 CLAUDE.md                      ← you are here (operating guide)
 .gitignore                     Node/OS/editor ignores
 package.json · tsconfig*.json · eslint.config.js   TypeScript/Node toolchain (Phase 0)
+electron.vite.config.ts · electron-builder.yml      Desktop (Electron) build/package toolchain (spec 0022; out of `npm run check`)
 .env.example                   Documents optional, env-only API credentials (never committed)
 .github/workflows/ci.yml       CI: build + lint + test on Node 22
 
@@ -84,6 +85,10 @@ src/                           Application code (begins in Phase 0)
   integration/                 Adapters implementing the ports
     logging/ · instance-fs/ (+binary write-bytes/readBytes) · modrinth/ (ModSourceProvider: + version changelog/date_published) · nvidia/ (ChatModel: OpenAI-compatible NVIDIA NIM, + tool-calling) · google/ (ChatModel: OpenAI-compatible Google Gemini, + tool-calling; spec 0021) · mclogs/ (LogAnalysisProvider: mclo.gs second opinion) · packwiz/ (PackFormat: + pure assemble) · download/ (JarTransport: fetch-based jar bytes + User-Agent) · launcher/ (GameLauncher: node:child_process spawn + JDK probe via JAVA_HOME/MPA_JDKS/PATH + newest crash-report read) · script-validator/ (ScriptValidator: node:vm compile-only parse-back) · packaging/ (export/release archive writer: dependency-free, timestamp-free store-only ZIP + reader)
   cli/                         Thin CLI adapter (help · doctor · discover · orchestrate [--requirements|--preflight] · build [--apply|--force] · install [--from|--apply|--force] · launch [--apply|--arg|--json] · diagnose [--mclogs] · quests [--def|--describe|--apply|--force] · kubejs [--def|--describe|--quests|--apply|--force] · updates · migrate · export [--format|--apply|--force] · release [--from|--format|--apply|--force] · assistant [--expert|--instance|--no-llm])
+  desktop/                     Desktop (Electron) adapter (spec 0022) — a second UI over the SAME core, sibling to cli/ (ADR 0008)
+    services.ts                Electron-FREE composition root: wires ports once, delegates each capability to the same injectable runner the CLI uses, returns a structured CapabilityResult (covered by `npm run check`)
+    shared/ipc-contract.ts     Electron-FREE typed IPC contract (channels, result envelope, DesktopApi) shared by main + preload + renderer
+    main/ (index · ipc · interactive) · preload/ · renderer/ (React)   Electron shell — built/typechecked by electron-vite (`desktop:*` scripts), excluded from the core gate
 
 docs/
   VISION.md                    THE objective (single source of truth)
@@ -142,6 +147,8 @@ specs/
   0020-nl-quest-script-authoring/   Phase 5 (done): NL description → ChatModel drafts a structured QuestDefinition/ScriptDefinition → funnelled through the existing 0011/0012 validators + parse-back (bounded re-draft loop) before any guarded write; surfaced on quests/kubejs --describe; expert --def unchanged through the same validation
     spec.md · plan.md · tasks.md
   0021-google-chat-model/      Phase 4 (done): second ChatModel adapter — Google Gemini via its OpenAI-compatible endpoint (env GEMINI_API_KEY/GOOGLE_API_KEY, Bearer, no SDK; default gemini-2.5-flash) — plus an MPA_LLM_PROVIDER switch (nvidia|google, auto-detect NVIDIA→Google) shared by assistant + quests/kubejs --describe; reuses the 0009 port, core untouched
+    spec.md · plan.md · tasks.md
+  0022-desktop-app/            Desktop (in-progress): friendly **Electron** GUI over the full lifecycle as a second adapter — main runs the UI-agnostic core in-process (keeps local `.minecraft` access), an isolated React renderer surfaces the dry-run→confirm safety on screen; the Electron-FREE composition root (`src/desktop/services.ts`) + IPC contract are covered by `npm run check`, the Electron shell is built by electron-vite (ADR 0008, amends ADR 0003)
     spec.md · plan.md · tasks.md
 
 templates/
@@ -309,6 +316,7 @@ Settled. Don't relitigate without an ADR amendment.
 | First mod catalog | **Modrinth** (CurseForge later, behind same interface) | [0004](./docs/decisions/0004-modrinth-first-data-source.md) |
 | Pack format | **packwiz** (dev) + **`.mrpack`** (export) | [0005](./docs/decisions/0005-packwiz-and-mrpack-pack-format.md) |
 | packwiz I/O | **Native in-process TOML** (no CLI shell-out) | [0006](./docs/decisions/0006-native-packwiz-io.md) |
+| Desktop form factor | **Electron GUI** (second adapter over the same core; amends ADR 0003) | [0008](./docs/decisions/0008-desktop-app-electron.md) |
 
 ---
 

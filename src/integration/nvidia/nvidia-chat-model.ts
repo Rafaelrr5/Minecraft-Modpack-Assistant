@@ -13,10 +13,17 @@
  *  - `extraBody` is merged into the request body for provider-specific knobs (e.g. DeepSeek's
  *    `{ chat_template_kwargs: { thinking: false } }`), keeping the port itself provider-neutral.
  */
-import type { ChatCompletion, ChatModel, ChatRequest } from '../../core/ports/chat-model.ts';
+import type {
+  ChatCompletion,
+  ChatMessage,
+  ChatModel,
+  ChatRequest,
+  ChatTool,
+  ToolCall,
+} from '../../core/ports/chat-model.ts';
 import type { Logger } from '../../core/ports/logger.ts';
 import { noopLogger } from '../logging/console-logger.ts';
-import type { NvidiaChatCompletionResponse } from './nvidia-types.ts';
+import type { NvidiaChatCompletionResponse, NvidiaToolCall } from './nvidia-types.ts';
 
 const DEFAULT_BASE_URL = 'https://integrate.api.nvidia.com/v1';
 const DEFAULT_MODEL = 'deepseek-ai/deepseek-v4-pro';
@@ -56,6 +63,38 @@ export interface NvidiaChatModelOptions {
   readonly extraBody?: Record<string, unknown>;
 }
 
+/**
+ * Render a neutral {@link ChatMessage} to the OpenAI-compatible wire shape (spec 0017 FR-10).
+ * Plain turns stay `{ role, content }` (no extra keys → existing callers untouched); `assistant`
+ * tool-call turns gain `tool_calls`; `tool` results gain `tool_call_id`.
+ */
+function toWireMessage(m: ChatMessage): Record<string, unknown> {
+  const wire: Record<string, unknown> = { role: m.role, content: m.content };
+  if (m.role === 'tool' && m.toolCallId !== undefined) wire.tool_call_id = m.toolCallId;
+  if (m.toolCalls && m.toolCalls.length > 0) {
+    wire.tool_calls = m.toolCalls.map((tc) => ({
+      id: tc.id,
+      type: 'function',
+      function: { name: tc.name, arguments: tc.arguments },
+    }));
+  }
+  return wire;
+}
+
+/** Render a neutral {@link ChatTool} to the OpenAI-compatible `tools[]` entry (spec 0017 FR-10). */
+function toWireTool(tool: ChatTool): Record<string, unknown> {
+  return {
+    type: 'function',
+    function: { name: tool.name, description: tool.description, parameters: tool.parameters },
+  };
+}
+
+/** Map provider tool calls back to the neutral {@link ToolCall}; the consumer validates `arguments`. */
+function parseToolCalls(raw: readonly NvidiaToolCall[] | undefined): ToolCall[] {
+  if (!raw || raw.length === 0) return [];
+  return raw.map((tc) => ({ id: tc.id, name: tc.function.name, arguments: tc.function.arguments }));
+}
+
 export class NvidiaChatModel implements ChatModel {
   readonly id = PROVIDER_ID;
 
@@ -84,7 +123,7 @@ export class NvidiaChatModel implements ChatModel {
 
     const body: Record<string, unknown> = {
       model,
-      messages: request.messages.map((m) => ({ role: m.role, content: m.content })),
+      messages: request.messages.map(toWireMessage),
       stream: false,
     };
     const sampling = request.sampling;
@@ -92,6 +131,9 @@ export class NvidiaChatModel implements ChatModel {
     if (sampling?.topP !== undefined) body.top_p = sampling.topP;
     if (sampling?.maxTokens !== undefined) body.max_tokens = sampling.maxTokens;
     if (sampling?.stop?.length) body.stop = [...sampling.stop];
+    // Tool-calling (spec 0017 FR-10): declared tools + use policy, only when the caller asks.
+    if (request.tools && request.tools.length > 0) body.tools = request.tools.map(toWireTool);
+    if (request.toolChoice !== undefined) body.tool_choice = request.toolChoice;
     // Provider-specific passthrough merged last so callers can override defaults (FR-5).
     if (this.#extraBody) Object.assign(body, this.#extraBody);
 
@@ -99,7 +141,9 @@ export class NvidiaChatModel implements ChatModel {
 
     const choice = data.choices[0];
     const content = choice?.message?.content;
-    if (content == null) {
+    const toolCalls = parseToolCalls(choice?.message?.tool_calls);
+    // A tool-call turn legitimately carries no prose (content:null); only an empty turn is an error.
+    if (content == null && toolCalls.length === 0) {
       throw new NvidiaApiError(
         this.#baseUrl + '/chat/completions',
         200,
@@ -108,9 +152,10 @@ export class NvidiaChatModel implements ChatModel {
     }
 
     return {
-      content,
+      content: content ?? '',
       model: data.model ?? model,
       finishReason: choice?.finish_reason ?? null,
+      ...(toolCalls.length > 0 ? { toolCalls } : {}),
       ...(data.usage
         ? {
             usage: {

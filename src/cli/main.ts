@@ -20,6 +20,7 @@ import { type QuestsOptions, runQuestsCli } from './commands/quests.ts';
 import { type KubeJsOptions, runKubeJsCli } from './commands/kubejs.ts';
 import { type UpdatesOptions, runUpdatesCli } from './commands/updates.ts';
 import { type MigrateOptions, runMigrateCli } from './commands/migrate.ts';
+import { parseAssistantArgs, runAssistantCli } from './commands/assistant.ts';
 
 export async function run(argv: readonly string[]): Promise<number> {
   const [command, ...rest] = argv;
@@ -493,6 +494,10 @@ export async function run(argv: readonly string[]): Promise<number> {
       json: values.json === true,
     };
     return runMigrateCli(options);
+  }
+
+  if (command === 'assistant') {
+    return runAssistantCli(parseAssistantArgs(rest));
   }
 
   runHelp();

@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | **Spec ID** | `0017` |
-| **Status** | `planned` |
+| **Status** | `done` |
 | **Roadmap phase** | [Phase 4 — Build, Launch & Crash Diagnosis](../../roadmap/phase-4-build-launch-crash-diagnosis.md) — completes the agent/LLM boundary opened by [`0009`](../0009-nvidia-chat-model/spec.md) |
 | **Author / date** | Project owner + Claude · 2026-06-10 |
 | **Related specs** | Depends on + **additively extends** `0009` (`ChatModel` port → tool-calling); depends on `0001` (discovery), `0006` (orchestration), `0002` (requirements), `0007` (pre-flight), `0008` (build), `0003` (logger + guarded `InstanceFs`). Feeds `0018` (runnable build), `0019` (launch loop), `0020` (NL authoring). |

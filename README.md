@@ -18,7 +18,12 @@ backup, `--force` to overwrite). Phase 4 also added **Crash
 Diagnosis** (`0010`): `diagnose` reads a crash report / log (read-only) and categorizes it into the
 crash taxonomy with concrete remediation, reconciling pre-flight's *suspected* conflicts and
 offering an opt-in **mclo.gs** second opinion. It opened the **agent/LLM boundary** too — a
-provider-agnostic `ChatModel` port + an OpenAI-compatible **NVIDIA** adapter (`0009`). Phase 5 —
+provider-agnostic `ChatModel` port + an OpenAI-compatible **NVIDIA** adapter (`0009`) — now **consumed**
+by the **Conversational Assistant** (`0017`): the `assistant` command runs a guided NL session that drives
+discovery→orchestration→requirements→pre-flight→build via **native tool-calling**, validating every model
+action against a fixed registry before running it, keeping the deterministic core the fact-authority,
+gating the one write behind in-dialogue confirmation, and **degrading to a deterministic flow when no LLM is
+configured**. Phase 5 —
 **Quests & Scripting**: `quests` (`0011`) turns a structured definition into **validated FTB Quests
 SNBT** (a real serializer with parse-back, plus item-namespace/dependency/cycle checks); `kubejs`
 (`0012`) turns a structured `ScriptDefinition` into **validated KubeJS server scripts** — quest-reactive

@@ -68,7 +68,14 @@ Every `phase-N-*.md` follows the same template:
 > reconciling pre-flight's *suspected* conflicts against the crash and offering an optional, opt-in
 > **mclo.gs** second opinion (never authoritative). The agent/LLM boundary opened alongside it
 > (spec [`0009`](../specs/0009-nvidia-chat-model/spec.md), a provider-agnostic `ChatModel` + NVIDIA
-> adapter). Live JVM launch/validation remains deferred (environment-sensitive → Phase 8).
+> adapter) and is now **consumed**: spec
+> [`0017-conversational-assistant`](../specs/0017-conversational-assistant/spec.md) adds the `assistant`
+> command — a guided NL session that drives discovery → orchestration → requirements → pre-flight →
+> build via **native tool-calling** (the `ChatModel` port additively extended), validating every tool
+> call against a fixed registry before running it, keeping the deterministic core the sole fact-source,
+> gating writes behind in-dialogue confirmation, and **degrading to a deterministic flow when no LLM is
+> configured** (closes MVP Blocker A). Live JVM launch/validation remains deferred (environment-sensitive
+> → Phase 8).
 > **Phase 5 (Quests & Scripting Automation) has begun:** spec
 > [`0011-ftbquests-generation`](../specs/0011-ftbquests-generation/spec.md) adds the `quests`
 > capability — a structured quest definition → **validated FTB Quests SNBT** via a real serializer
@@ -124,7 +131,7 @@ Every `phase-N-*.md` follows the same template:
 | 1 | [Discovery & Ideation](./phase-1-discovery-ideation.md) | ✅ | [`0001`](../specs/0001-modpack-discovery/spec.md) |
 | 2 | [Mod Orchestration & Curation](./phase-2-mod-orchestration.md) | ✅ | [`0006`](../specs/0006-mod-orchestration/spec.md) · [`0002`](../specs/0002-system-requirements-prediction/spec.md) |
 | 3 | [Conflict Resolution & Pre-flight](./phase-3-conflict-resolution.md) | ✅ | [`0007`](../specs/0007-conflict-preflight/spec.md) |
-| 4 | [Build, Launch & Crash Diagnosis](./phase-4-build-launch-crash-diagnosis.md) | ✅ | [`0008`](../specs/0008-build-instance/spec.md) · [`0009`](../specs/0009-nvidia-chat-model/spec.md) · [`0010`](../specs/0010-crash-diagnosis/spec.md) |
+| 4 | [Build, Launch & Crash Diagnosis](./phase-4-build-launch-crash-diagnosis.md) | ✅ | [`0008`](../specs/0008-build-instance/spec.md) · [`0009`](../specs/0009-nvidia-chat-model/spec.md) · [`0010`](../specs/0010-crash-diagnosis/spec.md) · [`0017`](../specs/0017-conversational-assistant/spec.md) |
 | 5 | [Quests & Scripting Automation](./phase-5-quests-scripting-automation.md) | ✅ | [`0011`](../specs/0011-ftbquests-generation/spec.md) · [`0012`](../specs/0012-kubejs-generation/spec.md) |
 | 6 | [Updates & Maintenance](./phase-6-updates-maintenance.md) | ✅ | [`0013`](../specs/0013-update-tracking/spec.md) · [`0014`](../specs/0014-version-migration/spec.md) |
 | 7 | [Packaging, Distribution & Misc](./phase-7-packaging-distribution.md) | ✅ | [`0015`](../specs/0015-pack-export/spec.md) · [`0016`](../specs/0016-changelogs-sharing/spec.md) |

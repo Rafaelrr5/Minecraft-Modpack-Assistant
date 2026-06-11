@@ -114,6 +114,8 @@ Conversational assistant sits in **agent layer**, reaches deterministic core thr
 
 Keeps system **grounded and safe**: model = planner + communicator over trustworthy core, not source of truth itself.
 
+**Implemented by spec [`0017`](../specs/0017-conversational-assistant/spec.md)** (the `assistant` command + `src/core/assistant/`): the `ChatModel` port is additively extended with `tools`/`toolChoice` on the request and `toolCalls` on the message/completion (existing callers untouched); the capabilities are exposed to the model as a **fixed tool registry**, and every requested call is **validated** — known tool name + JSON-Schema-valid arguments — *before* execution, with an unknown/malformed call rejected and re-elicited (never run). The single writing tool (`apply_build`) requires explicit in-dialogue confirmation, egress to the provider is disclosed before the first call, each routed step is logged with an in-session **"why?"**, and the session **degrades to a deterministic keyword flow** when no model is configured or one errors.
+
 ---
 
 ## From CLI to SaaS (Phase 8 readiness)

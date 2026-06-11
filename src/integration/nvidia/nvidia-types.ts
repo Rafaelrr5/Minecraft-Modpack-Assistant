@@ -9,9 +9,18 @@
  * re-validation against the live NVIDIA API when the network policy allows it (Constitution P5).
  */
 
+/** OpenAI-compatible tool call on a response message (spec 0017 FR-10). */
+export interface NvidiaToolCall {
+  readonly id: string;
+  readonly type: 'function';
+  readonly function: { readonly name: string; readonly arguments: string };
+}
+
 export interface NvidiaChoiceMessage {
   readonly role: string;
+  /** `null` when the assistant turn is purely tool calls (no prose). */
   readonly content: string | null;
+  readonly tool_calls?: readonly NvidiaToolCall[];
 }
 
 export interface NvidiaChoice {

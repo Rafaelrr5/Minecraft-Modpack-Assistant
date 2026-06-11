@@ -64,7 +64,7 @@ src/                           Application code (begins in Phase 0)
   index.ts                     Library entry (re-exports core + integration)
   core/                        UI-agnostic core — imports no cli/ or integration/ (enforced)
     domain/                    Core domain model (MinecraftVersion, version-range, Loader, loader-compat, Mod, Modpack, Conflict, …, PackState)
-    ports/                     Interfaces the core depends on (Logger, ChatModel, InstanceFs[+readText], LogAnalysisProvider, ModSourceProvider, PackFormat, ScriptValidator)
+    ports/                     Interfaces the core depends on (Logger, ChatModel[+ tool-calling], InstanceFs[+readText], LogAnalysisProvider, ModSourceProvider, PackFormat, ScriptValidator)
     discovery/                 Phase 1 capability (spec 0001): slot-filling → validated ModpackBrief
     orchestration/             Phase 2 capability (spec 0006): list + deps → pinned PackState
     requirements/              Phase 2 capability (spec 0002): resolved set → RequirementsReport
@@ -77,9 +77,10 @@ src/                           Application code (begins in Phase 0)
     migration/                 Phase 6 capability (spec 0014): resolved set + new MC/loader target → read-only migration report (migratable/blocked, new Java, loader floor, pre-flight at new version) + complete-only migrated PackState; writes nothing
     export/                    Phase 7 capability (spec 0015): pinned PackState → in-memory ExportArtifact (.mrpack / CurseForge manifest, validated by parse-back, byte-stable; unmappable mods surfaced not fabricated); writes nothing
     release/                   Phase 7 capability (spec 0016): two PackStates → changelog (reuses 0013 diff) + Markdown, bundled with the 0015 export (archive + CHANGELOG.md) into a byte-stable release; writes nothing
+    assistant/                 Phase 4 capability (spec 0017): conversational guided session — drives discovery→orchestration→requirements→pre-flight→build over ChatModel native tool-calling, behind a fixed tool registry validated before execution (FR-3); deterministic core stays fact-authority, writes guarded + confirmed, graceful no-LLM fallback, in-session "why?"
   integration/                 Adapters implementing the ports
-    logging/ · instance-fs/ · modrinth/ (ModSourceProvider: + version changelog/date_published) · nvidia/ (ChatModel: OpenAI-compatible NVIDIA NIM) · mclogs/ (LogAnalysisProvider: mclo.gs second opinion) · packwiz/ (PackFormat: + pure assemble) · script-validator/ (ScriptValidator: node:vm compile-only parse-back) · packaging/ (export/release archive writer: dependency-free, timestamp-free store-only ZIP + reader)
-  cli/                         Thin CLI adapter (help · doctor · discover · orchestrate [--requirements|--preflight] · build [--apply|--force] · diagnose [--mclogs] · quests [--apply|--force] · kubejs [--apply|--force] · updates · migrate · export [--format|--apply|--force] · release [--from|--format|--apply|--force])
+    logging/ · instance-fs/ · modrinth/ (ModSourceProvider: + version changelog/date_published) · nvidia/ (ChatModel: OpenAI-compatible NVIDIA NIM, + tool-calling) · mclogs/ (LogAnalysisProvider: mclo.gs second opinion) · packwiz/ (PackFormat: + pure assemble) · script-validator/ (ScriptValidator: node:vm compile-only parse-back) · packaging/ (export/release archive writer: dependency-free, timestamp-free store-only ZIP + reader)
+  cli/                         Thin CLI adapter (help · doctor · discover · orchestrate [--requirements|--preflight] · build [--apply|--force] · diagnose [--mclogs] · quests [--apply|--force] · kubejs [--apply|--force] · updates · migrate · export [--format|--apply|--force] · release [--from|--format|--apply|--force] · assistant [--expert|--instance|--no-llm])
 
 docs/
   VISION.md                    THE objective (single source of truth)
@@ -235,9 +236,18 @@ roadmap/
   **bundles it with the export** (the archive + a root `CHANGELOG.md`) into one shareable, **byte-stable**
   release — a pure projection (the release date is a supplied input, never clock-read), written through
   the same `0015` packaging adapter (dry-run default, no-clobber without `--force`), surfaced via the
-  `release` CLI command (`--from <packwiz dir>` supplies the baseline). Whole-instance/world backups,
-  uploading/publishing, and **Phase 8 (Productization / SaaS)** are next; NL quest/script description
-  (rides `ChatModel`/`0009`, funnelling through deterministic validation) is also pending.
+  `release` CLI command (`--from <packwiz dir>` supplies the baseline). **The agent/LLM boundary opened by
+  `0009` is now consumed (spec [`0017`](./specs/0017-conversational-assistant/spec.md), done):** the
+  `assistant` CLI (`src/core/assistant/`) runs a conversational, guided session that drives
+  discovery→orchestration→requirements→pre-flight→build via **native tool-calling** — the `ChatModel` port
+  additively extended with `tools`/`toolCalls` (every existing caller untouched). Each model tool-call is
+  **validated against a fixed registry before execution** (P3/FR-3), the deterministic capabilities remain
+  the sole fact-source (P5), the one write (`apply_build`) is **confirmation-gated** through the guarded
+  `InstanceFs` (P4), egress to the LLM is disclosed (FR-9), every routed step is logged with an in-session
+  **"why?"**, and a **deterministic keyword fallback** runs when no LLM is configured or one errors (FR-6) —
+  closing MVP Blocker A. Whole-instance/world backups, uploading/publishing, and
+  **Phase 8 (Productization / SaaS)** are next; **NL quest/script description (spec `0020`) rides this `0017`
+  assistant, funnelling through the existing `0011`/`0012` validators** — pending.
 - **Running TS:** dev/test/CLI run TypeScript directly on Node ≥ 22.18 (native type
   stripping); build (`tsc`) emits `dist/`. Source uses **`.ts` import extensions**
   (rewritten to `.js` on build) + **erasable-only syntax** (no enums/parameter-properties).

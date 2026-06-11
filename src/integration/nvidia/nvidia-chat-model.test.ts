@@ -151,3 +151,136 @@ test('the API key never appears in any log record (AC-5)', async () => {
   assert.ok(records.length > 0, 'expected at least one log record');
   assert.ok(!serialized.includes(FAKE_KEY), 'API key leaked into a log record');
 });
+
+// --- Tool-calling (spec 0017, FR-10) ----------------------------------------
+
+const toolCallFixture = {
+  id: 'chatcmpl-tools',
+  model: 'deepseek-ai/deepseek-v4-pro',
+  choices: [
+    {
+      index: 0,
+      message: {
+        role: 'assistant',
+        content: null,
+        tool_calls: [
+          {
+            id: 'call_1',
+            type: 'function',
+            function: { name: 'resolve_mods', arguments: '{"include":["sodium"]}' },
+          },
+        ],
+      },
+      finish_reason: 'tool_calls',
+    },
+  ],
+};
+
+test('renders request.tools + toolChoice to the OpenAI wire shape (0017 FR-10)', async () => {
+  let body: Record<string, unknown> | undefined;
+  const fetchStub: typeof fetch = (_input, init) => {
+    body = JSON.parse(String(init?.body)) as Record<string, unknown>;
+    return Promise.resolve(jsonResponse(completionFixture));
+  };
+  const model = new NvidiaChatModel({ apiKey: FAKE_KEY, fetch: fetchStub });
+
+  await model.complete({
+    messages: [{ role: 'user', content: 'build me a pack' }],
+    tools: [
+      {
+        name: 'resolve_mods',
+        description: 'Resolve a mod list into a pinned pack state.',
+        parameters: {
+          type: 'object',
+          properties: { include: { type: 'array' } },
+          required: ['include'],
+        },
+      },
+    ],
+    toolChoice: 'auto',
+  });
+
+  assert.ok(body);
+  assert.deepEqual(body.tools, [
+    {
+      type: 'function',
+      function: {
+        name: 'resolve_mods',
+        description: 'Resolve a mod list into a pinned pack state.',
+        parameters: {
+          type: 'object',
+          properties: { include: { type: 'array' } },
+          required: ['include'],
+        },
+      },
+    },
+  ]);
+  assert.equal(body.tool_choice, 'auto');
+});
+
+test('parses tool_calls from a completion, tolerating null content (0017 FR-10)', async () => {
+  const fetchStub: typeof fetch = () => Promise.resolve(jsonResponse(toolCallFixture));
+  const model = new NvidiaChatModel({ apiKey: FAKE_KEY, fetch: fetchStub });
+
+  const result = await model.complete({ messages: [{ role: 'user', content: 'go' }] });
+
+  assert.equal(result.content, ''); // null content normalized to '' when tool calls are present
+  assert.equal(result.finishReason, 'tool_calls');
+  assert.deepEqual(result.toolCalls, [
+    { id: 'call_1', name: 'resolve_mods', arguments: '{"include":["sodium"]}' },
+  ]);
+});
+
+test('serializes assistant tool-call turns and tool results to wire messages (0017 FR-10)', async () => {
+  let body: Record<string, unknown> | undefined;
+  const fetchStub: typeof fetch = (_input, init) => {
+    body = JSON.parse(String(init?.body)) as Record<string, unknown>;
+    return Promise.resolve(jsonResponse(completionFixture));
+  };
+  const model = new NvidiaChatModel({ apiKey: FAKE_KEY, fetch: fetchStub });
+
+  await model.complete({
+    messages: [
+      { role: 'user', content: 'resolve sodium' },
+      {
+        role: 'assistant',
+        content: '',
+        toolCalls: [{ id: 'call_1', name: 'resolve_mods', arguments: '{"include":["sodium"]}' }],
+      },
+      { role: 'tool', toolCallId: 'call_1', name: 'resolve_mods', content: '{"ok":true}' },
+    ],
+  });
+
+  assert.ok(body);
+  assert.deepEqual(body.messages, [
+    { role: 'user', content: 'resolve sodium' },
+    {
+      role: 'assistant',
+      content: '',
+      tool_calls: [
+        {
+          id: 'call_1',
+          type: 'function',
+          function: { name: 'resolve_mods', arguments: '{"include":["sodium"]}' },
+        },
+      ],
+    },
+    { role: 'tool', tool_call_id: 'call_1', content: '{"ok":true}' },
+  ]);
+});
+
+test('a plain (toolless) request still maps messages to bare { role, content } (0017 FR-10 additive)', async () => {
+  let body: Record<string, unknown> | undefined;
+  const fetchStub: typeof fetch = (_input, init) => {
+    body = JSON.parse(String(init?.body)) as Record<string, unknown>;
+    return Promise.resolve(jsonResponse(completionFixture));
+  };
+  const model = new NvidiaChatModel({ apiKey: FAKE_KEY, fetch: fetchStub });
+
+  await model.complete({ messages: [{ role: 'user', content: 'hi' }] });
+
+  assert.ok(body);
+  assert.deepEqual(body.messages, [{ role: 'user', content: 'hi' }]);
+  assert.ok(!('tools' in body), 'no tools field when none requested');
+  assert.ok(!('tool_choice' in body), 'no tool_choice field when none requested');
+});

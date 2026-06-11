@@ -11,6 +11,9 @@ Usage:
   mpa <command> [options]
 
 Commands:
+  assistant         Guided conversation: describe your idea and I drive discovery →
+                    resolve → pre-flight → requirements → a dry-run build, explaining
+                    each step. Read-only until you confirm a build (backup taken first).
   discover          Turn your idea into a validated modpack brief (interactive) — read-only.
   orchestrate       Resolve a mod list (+ dependencies) into a pinned set — read-only.
   build             Assemble the pack into an importable instance with the right Java + RAM.
@@ -31,6 +34,11 @@ Commands:
   doctor            Check your environment (Node, Java, game instance) — read-only.
   help              Show this overview.
   version           Print the version.
+
+Options for 'assistant':
+  --expert          Terse, expert-mode session (bulk input, raw artifacts on request).
+  --instance <dir>  Where a confirmed build would be written (enables build planning).
+  --no-llm          Skip the language model; run the deterministic guided flow.
 
 Options for 'discover':
   --expert          Terse, expert-mode prompts (skip beginner explanations).

@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | **Spec ID** | `0018` |
-| **Status** | `draft` |
+| **Status** | `done` |
 | **Roadmap phase** | [Phase 4 — Build, Launch & Crash Diagnosis](../../roadmap/phase-4-build-launch-crash-diagnosis.md) — makes the `0008` build actually runnable |
 | **Author / date** | Project owner + Claude · 2026-06-10 |
 | **Related specs** | Depends on `0008` (build + guarded `InstanceFs`), `0005` (pack state w/ pinned `download.url`/`hash`), `0004` (Modrinth). Feeds `0019` (launch). Consumed by `0017` (assistant `apply_build`). |

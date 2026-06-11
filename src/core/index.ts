@@ -11,6 +11,7 @@ export * from './orchestration/index.ts';
 export * from './requirements/index.ts';
 export * from './conflicts/index.ts';
 export * from './build/index.ts';
+export * from './install/index.ts';
 export * from './crash-diagnosis/index.ts';
 export * from './quests/index.ts';
 export * from './scripts/index.ts';

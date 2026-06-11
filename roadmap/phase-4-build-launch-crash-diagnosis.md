@@ -5,7 +5,12 @@
 > **Build sub-capability ✅ done** — spec [`0008-build-instance`](../specs/0008-build-instance/spec.md):
 > pinned `PackState` + `RequirementsReport` → packwiz workspace + launch profile (numeric Java +
 > `-Xmx`), materialized only through the guarded `InstanceFs` (dry-run default, backup, `--force` for
-> overwrites), via the `build` CLI command. **Crash-diagnosis sub-capability ✅ done** — spec
+> overwrites), via the `build` CLI command. **Runnable-build sub-capability done** — spec
+[`0018-runnable-build`](../specs/0018-runnable-build/spec.md): the `install` CLI fetches each pinned
+mod jar through an injected `JarTransport`, **hash-verifies the bytes before writing** them into
+`mods/` via the guarded `InstanceFs` (idempotent skips, dry-run default, backup, `--force` to replace),
+making a `0008` build directly launchable in-process — no external `packwiz-installer` (closes MVP
+Blocker B). **Crash-diagnosis sub-capability ✅ done** — spec
 > [`0010-crash-diagnosis`](../specs/0010-crash-diagnosis/spec.md): read-only categorization of a
 > crash report / log into the §6.2 taxonomy with remediation, reconciling spec `0007`'s *suspected*
 > conflicts and offering an opt-in **mclo.gs** second opinion, via the `diagnose` CLI command. The
@@ -60,6 +65,10 @@ runners (Phase 8). Local build/launch only here.
 
 - ✅ [`0008-build-instance`](../specs/0008-build-instance/spec.md): packwiz assembly + installable
   instance + applying Java/`-Xmx`. **Done.**
+- ✅ [`0018-runnable-build`](../specs/0018-runnable-build/spec.md): in-process fetch + **hash-verify
+  before write** of each pinned mod jar into `mods/` via the guarded `InstanceFs` (injectable
+  `JarTransport`, idempotent, dry-run default), the `install` CLI — makes the build runnable without an
+  external installer. **Done.**
 - ✅ [`0010-crash-diagnosis`](../specs/0010-crash-diagnosis/spec.md): log ingestion, categorization,
   remediation, reconciliation of `0007` suspicions, opt-in mclo.gs second opinion. **Done.** (A
   closed auto-apply→relaunch→re-diagnose loop and live JVM launch are deferred — see the spec's

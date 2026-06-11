@@ -13,6 +13,7 @@ import { renderDoctor, runDoctor } from './commands/doctor.ts';
 import { runDiscoverCli } from './commands/discover.ts';
 import { type OrchestrateOptions, runOrchestrateCli } from './commands/orchestrate.ts';
 import { type BuildOptions, runBuildCli } from './commands/build.ts';
+import { type InstallOptions, runInstallCli } from './commands/install.ts';
 import { type ExportOptions, runExportCli } from './commands/export.ts';
 import { type ReleaseOptions, runReleaseCli } from './commands/release.ts';
 import { type DiagnoseOptions, runDiagnoseCli } from './commands/diagnose.ts';
@@ -172,6 +173,34 @@ export async function run(argv: readonly string[]): Promise<number> {
       force: values.force === true,
     };
     return runBuildCli(options);
+  }
+
+  if (command === 'install') {
+    const { values } = parseArgs({
+      args: [...rest],
+      options: {
+        instance: { type: 'string' },
+        from: { type: 'string' },
+        apply: { type: 'boolean', default: false },
+        force: { type: 'boolean', default: false },
+      },
+      allowPositionals: false,
+    });
+
+    if (values.instance === undefined) {
+      process.stderr.write(
+        'install: --instance <dir> is required (the built instance to download jars into).\n',
+      );
+      return 2;
+    }
+
+    const options: InstallOptions = {
+      instancePath: values.instance,
+      ...(values.from !== undefined ? { from: values.from } : {}),
+      apply: values.apply === true,
+      force: values.force === true,
+    };
+    return runInstallCli(options);
   }
 
   if (command === 'export') {

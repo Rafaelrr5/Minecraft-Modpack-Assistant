@@ -18,6 +18,8 @@ Commands:
   orchestrate       Resolve a mod list (+ dependencies) into a pinned set — read-only.
   build             Assemble the pack into an importable instance with the right Java + RAM.
                     Dry-run by default; writes only with --apply (backup taken first).
+  install           Download each pinned mod jar, verify it against its hash, and write it
+                    into mods/. Makes a build runnable. Dry-run by default; --apply to write.
   diagnose          Read a crash report / log and explain what broke, with fixes — read-only.
   quests            Generate validated FTB Quests (SNBT) from a definition file.
                     Dry-run by default; writes only with --apply (backup taken first).
@@ -72,6 +74,13 @@ Options for 'build':
   --instance <dir>  Where to build the instance (required).
   --apply           Write the plan (otherwise dry-run, the default).
   --force           Required with --apply when the plan overwrites existing files.
+
+Options for 'install':
+  --instance <dir>  The built instance to download mod jars into (required). Also the
+                    packwiz source for the pinned mod list unless --from is given.
+  --from <dir>      Read the pinned pack (mod list + hashes) from this packwiz tree instead.
+  --apply           Download + write the verified jars (otherwise dry-run, the default).
+  --force           Required with --apply to replace an existing jar whose bytes differ.
 
 Options for 'diagnose':
   --instance <dir>  Path to the Minecraft instance to inspect (required) — read-only.

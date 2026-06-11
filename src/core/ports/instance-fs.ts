@@ -21,6 +21,7 @@ export interface InstanceInfo {
 /** A single intended change, relative to the instance directory. */
 export type FileChange =
   | { readonly kind: 'write'; readonly relPath: string; readonly contents: string }
+  | { readonly kind: 'write-bytes'; readonly relPath: string; readonly contents: Uint8Array }
   | { readonly kind: 'delete'; readonly relPath: string };
 
 /** A reviewable set of intended changes — produced without performing any I/O. */
@@ -54,6 +55,12 @@ export interface InstanceFs {
    * not exist. Refuses to read outside the instance directory. Never writes (Constitution P4).
    */
   readText(instanceDir: string, relPath: string): Promise<string | null>;
+  /**
+   * Read-only: return a file's raw bytes relative to the instance, or `null` if it does not exist.
+   * Same path-escape guard as {@link readText}; never writes. Optional so existing implementations
+   * need no change; the guarded adapter implements it (idempotency in spec 0018 relies on it).
+   */
+  readBytes?(instanceDir: string, relPath: string): Promise<Uint8Array | null>;
   /** Build a dry-run plan. Performs no filesystem writes. */
   plan(instanceDir: string, changes: readonly FileChange[]): ChangePlan;
   /** Apply a plan — refuses without `confirm`; backs up before writing when confirmed. */

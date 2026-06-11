@@ -62,6 +62,11 @@ Every `phase-N-*.md` follows the same template:
 > launch profile carrying the **predicted numeric Java + `-Xmx`** (spec `0002`), then materializes it
 > **only** through the guarded `InstanceFs` (dry-run by default, backup before write, destructive
 > overwrites gated behind `--force`), via the new `build` CLI command. Spec
+> [`0018-runnable-build`](../specs/0018-runnable-build/spec.md) makes that build **directly launchable**:
+> the `install` command fetches each pinned mod jar through an injected `JarTransport` and
+> **hash-verifies the bytes before writing** them into `mods/` via the guarded `InstanceFs` (idempotent
+> skips, dry-run default, backup, `--force` to replace) — an in-process download/verify that owns the
+> safety guarantees end-to-end, no external `packwiz-installer` (**closes MVP Blocker B**). Spec
 > [`0010-crash-diagnosis`](../specs/0010-crash-diagnosis/spec.md) adds the `diagnose` capability —
 > a **read-only** categorization of a crash report / log into the crash taxonomy
 > ([§6.2](../docs/DOMAIN-KNOWLEDGE.md#62-crash-categories-taxonomy)) with concrete remediation,

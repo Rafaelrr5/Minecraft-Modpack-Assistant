@@ -64,12 +64,13 @@ src/                           Application code (begins in Phase 0)
   index.ts                     Library entry (re-exports core + integration)
   core/                        UI-agnostic core — imports no cli/ or integration/ (enforced)
     domain/                    Core domain model (MinecraftVersion, version-range, Loader, loader-compat, Mod, Modpack, Conflict, …, PackState)
-    ports/                     Interfaces the core depends on (Logger, ChatModel[+ tool-calling], InstanceFs[+readText], LogAnalysisProvider, ModSourceProvider, PackFormat, ScriptValidator)
+    ports/                     Interfaces the core depends on (Logger, ChatModel[+ tool-calling], InstanceFs[+readText, +binary write-bytes/readBytes], JarTransport, LogAnalysisProvider, ModSourceProvider, PackFormat, ScriptValidator)
     discovery/                 Phase 1 capability (spec 0001): slot-filling → validated ModpackBrief
     orchestration/             Phase 2 capability (spec 0006): list + deps → pinned PackState
     requirements/              Phase 2 capability (spec 0002): resolved set → RequirementsReport
     conflicts/                 Phase 3 capability (spec 0007): resolved set → read-only pre-flight report (+ proposed fixes)
     build/                     Phase 4 capability (spec 0008): PackState + RequirementsReport → packwiz tree + launch profile → guarded InstanceFs change plan
+    install/                   Phase 4 capability (spec 0018): pinned PackState → fetch each jar via JarTransport, hash-verify before write into mods/ via guarded InstanceFs (idempotent, dry-run default); makes the 0008 build runnable (closes MVP Blocker B)
     crash-diagnosis/           Phase 4 capability (spec 0010): crash/log text → read-only categorized DiagnosisReport (taxonomy + remediation), reconciles 0007 suspicions
     quests/                    Phase 5 capability (spec 0011): structured quest definition → validated FTB Quests SNBT (snbt/ real serializer + parser) → guarded InstanceFs write
     scripts/                   Phase 5 capability (spec 0012): structured ScriptDefinition → validated KubeJS server scripts (emit/ typed model + escaped literals, real-engine parse-back via ScriptValidator port, quest cross-ref reuses 0011's questId) → guarded InstanceFs write
@@ -79,8 +80,8 @@ src/                           Application code (begins in Phase 0)
     release/                   Phase 7 capability (spec 0016): two PackStates → changelog (reuses 0013 diff) + Markdown, bundled with the 0015 export (archive + CHANGELOG.md) into a byte-stable release; writes nothing
     assistant/                 Phase 4 capability (spec 0017): conversational guided session — drives discovery→orchestration→requirements→pre-flight→build over ChatModel native tool-calling, behind a fixed tool registry validated before execution (FR-3); deterministic core stays fact-authority, writes guarded + confirmed, graceful no-LLM fallback, in-session "why?"
   integration/                 Adapters implementing the ports
-    logging/ · instance-fs/ · modrinth/ (ModSourceProvider: + version changelog/date_published) · nvidia/ (ChatModel: OpenAI-compatible NVIDIA NIM, + tool-calling) · mclogs/ (LogAnalysisProvider: mclo.gs second opinion) · packwiz/ (PackFormat: + pure assemble) · script-validator/ (ScriptValidator: node:vm compile-only parse-back) · packaging/ (export/release archive writer: dependency-free, timestamp-free store-only ZIP + reader)
-  cli/                         Thin CLI adapter (help · doctor · discover · orchestrate [--requirements|--preflight] · build [--apply|--force] · diagnose [--mclogs] · quests [--apply|--force] · kubejs [--apply|--force] · updates · migrate · export [--format|--apply|--force] · release [--from|--format|--apply|--force] · assistant [--expert|--instance|--no-llm])
+    logging/ · instance-fs/ (+binary write-bytes/readBytes) · modrinth/ (ModSourceProvider: + version changelog/date_published) · nvidia/ (ChatModel: OpenAI-compatible NVIDIA NIM, + tool-calling) · mclogs/ (LogAnalysisProvider: mclo.gs second opinion) · packwiz/ (PackFormat: + pure assemble) · download/ (JarTransport: fetch-based jar bytes + User-Agent) · script-validator/ (ScriptValidator: node:vm compile-only parse-back) · packaging/ (export/release archive writer: dependency-free, timestamp-free store-only ZIP + reader)
+  cli/                         Thin CLI adapter (help · doctor · discover · orchestrate [--requirements|--preflight] · build [--apply|--force] · install [--from|--apply|--force] · diagnose [--mclogs] · quests [--apply|--force] · kubejs [--apply|--force] · updates · migrate · export [--format|--apply|--force] · release [--from|--format|--apply|--force] · assistant [--expert|--instance|--no-llm])
 
 docs/
   VISION.md                    THE objective (single source of truth)
@@ -245,7 +246,18 @@ roadmap/
   the sole fact-source (P5), the one write (`apply_build`) is **confirmation-gated** through the guarded
   `InstanceFs` (P4), egress to the LLM is disclosed (FR-9), every routed step is logged with an in-session
   **"why?"**, and a **deterministic keyword fallback** runs when no LLM is configured or one errors (FR-6) —
-  closing MVP Blocker A. Whole-instance/world backups, uploading/publishing, and
+  closing MVP Blocker A. **Spec [`0018`](./specs/0018-runnable-build/spec.md) (done) closes MVP
+  Blocker B — the build is now *runnable*:** the `install` CLI (`src/core/install/`) turns a pinned
+  `PackState` into actual jars — for each mod it fetches the pinned `download.url` through an injected
+  `JarTransport` port (`fetch`-based adapter in `src/integration/download/`, descriptive `User-Agent`,
+  offline contract-tested) and **verifies the bytes against the pinned `hash`/`hashFormat`
+  (`node:crypto`) before any write** (P3): a mismatch/HTTP error/transport failure is surfaced as a
+  failed entry and **never** becomes a write. Verified jars are written to `mods/<filename>` **only**
+  through the guarded `InstanceFs` — additively extended with a binary `write-bytes` change + read-only
+  `readBytes` (the text API + every existing caller untouched) — dry-run by default, backup before
+  write, `--force` to replace a differing jar (P4); the op is **idempotent** (a jar already present with
+  the correct hash is skipped, no fetch, FR-3). In-process, owning the verify/reproducibility guarantees
+  end-to-end — no external `packwiz-installer`. Whole-instance/world backups, uploading/publishing, and
   **Phase 8 (Productization / SaaS)** are next; **NL quest/script description (spec `0020`) rides this `0017`
   assistant, funnelling through the existing `0011`/`0012` validators** — pending.
 - **Running TS:** dev/test/CLI run TypeScript directly on Node ≥ 22.18 (native type

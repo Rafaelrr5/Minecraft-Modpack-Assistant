@@ -89,6 +89,19 @@ export class GuardedInstanceFs implements InstanceFs {
     }
   }
 
+  async readBytes(instanceDir: string, relPath: string): Promise<Uint8Array | null> {
+    const base = path.resolve(instanceDir);
+    const target = path.resolve(base, relPath);
+    if (target !== base && !target.startsWith(base + path.sep)) {
+      throw new Error(`Refusing to read outside the instance directory: ${relPath}`);
+    }
+    try {
+      return await readFile(target); // no encoding → raw bytes (Buffer is a Uint8Array)
+    } catch {
+      return null; // absent or unreadable — caller treats as "no data"
+    }
+  }
+
   plan(instanceDir: string, changes: readonly FileChange[]): ChangePlan {
     // Pure: building a plan performs no I/O. Callers review it before applying.
     return { instanceDir, changes };
@@ -136,6 +149,9 @@ export class GuardedInstanceFs implements InstanceFs {
       if (change.kind === 'write') {
         await mkdir(path.dirname(target), { recursive: true });
         await writeFile(target, change.contents, 'utf8');
+      } else if (change.kind === 'write-bytes') {
+        await mkdir(path.dirname(target), { recursive: true });
+        await writeFile(target, change.contents); // raw bytes — no text encoding
       } else {
         await rm(target, { force: true });
       }

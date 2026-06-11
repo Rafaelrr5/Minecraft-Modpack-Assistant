@@ -23,10 +23,12 @@ Commands:
   launch            Run the built instance with the pinned Java + -Xmx, and auto-diagnose a
                     crash. Dry-run by default (prints the command); spawns only with --apply.
   diagnose          Read a crash report / log and explain what broke, with fixes — read-only.
-  quests            Generate validated FTB Quests (SNBT) from a definition file.
-                    Dry-run by default; writes only with --apply (backup taken first).
-  kubejs            Generate validated KubeJS server scripts (quest-event handlers + recipes).
-                    Dry-run by default; writes only with --apply (backup taken first).
+  quests            Generate validated FTB Quests (SNBT) from a structured --def file, or
+                    draft one from a plain-language --describe. Dry-run by default; writes
+                    only with --apply (backup taken first).
+  kubejs            Generate validated KubeJS server scripts (quest-event handlers + recipes)
+                    from a structured --def file, or draft one from a plain-language
+                    --describe. Dry-run by default; writes only with --apply (backup first).
   updates           Check a pack for available updates + changelogs, and re-run the
                     conflict pre-flight on the candidates — read-only.
   migrate           Plan a Minecraft/loader version migration: which mods can move,
@@ -103,6 +105,10 @@ Options for 'quests':
   --instance <dir>  Where to write the quests (required).
   --def <file>      Quest definition to generate: a .json file (or a .ts/.js module
                     with a default export) describing chapters → quests → tasks/rewards.
+  --describe "<t>"  Plain-language description; the assistant drafts the definition and the
+                    same validator must accept it before any write (needs NVIDIA_API_KEY).
+                    Use exactly one of --def or --describe.
+  --attempts <n>    Bounded model re-draft attempts on a validation failure (default 2).
   --namespaces <a,b> Item namespaces allowed beyond 'minecraft' (e.g. your pack's mods).
   --apply           Write the files (otherwise dry-run, the default).
   --force           Required with --apply when the plan overwrites existing files.
@@ -112,6 +118,10 @@ Options for 'kubejs':
   --instance <dir>  Where to write the scripts (required).
   --def <file>      Script definition to generate: a .json file (or a .ts/.js module
                     with a default export) describing files → quest-event handlers + recipes.
+  --describe "<t>"  Plain-language description; the assistant drafts the definition and the
+                    same validator (+ real-engine parse-back) must accept it before any write
+                    (needs NVIDIA_API_KEY). Use exactly one of --def or --describe.
+  --attempts <n>    Bounded model re-draft attempts on a validation failure (default 2).
   --quests <file>   Quest definition (0011) to cross-validate handler references and
                     resolve their ids — a handler may only react to a quest it names.
   --namespaces <a,b> Item namespaces allowed beyond 'minecraft' (e.g. your pack's mods).

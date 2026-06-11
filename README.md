@@ -35,7 +35,11 @@ SNBT** (a real serializer with parse-back, plus item-namespace/dependency/cycle 
 (`0012`) turns a structured `ScriptDefinition` into **validated KubeJS server scripts** — quest-reactive
 `FTBQuestsEvents` handlers + recipes emitted from a typed model with escaped literals and
 **parse-checked by a real JS engine** before write, with quest references compiled to the **same**
-`questId` the SNBT carries — both written **only** through the guarded `InstanceFs`. Phase 6 —
+`questId` the SNBT carries — both written **only** through the guarded `InstanceFs`. The
+**natural-language front door** (`0020`) closes the authoring gap: `quests`/`kubejs --describe` let you
+describe content in prose — the `0017` `ChatModel` **drafts** the structured definition, which is then
+**validated by the same `0011`/`0012` pipeline** (+ SNBT/JS parse-back) and **blocked if it wouldn't
+load** before any write (a bounded re-draft loop on failure); the expert `--def` path is unchanged. Phase 6 —
 **Updates & Maintenance**: `updates` (`0013`) reports available updates (with changelogs), diffs the
 lockfile, identifies installed jars by hash, and **re-runs the conflict pre-flight on the candidates**
 so an update never silently breaks the pack; `migrate` (`0014`) plans a Minecraft/loader version
@@ -158,8 +162,10 @@ npm run cli -- build --loader neoforge --mc 1.21.1 --mods create --instance ./my
 npm run cli -- build --loader neoforge --mc 1.21.1 --mods create --instance ./my-pack --apply  # write it (backup taken first)
 npm run cli -- quests --instance ./my-pack --def ./quests.json          # dry-run validated FTB Quests SNBT
 npm run cli -- quests --instance ./my-pack --def ./quests.json --apply  # write it (backup taken first)
+npm run cli -- quests --instance ./my-pack --describe "a 3-step farming quest line rewarding bread"  # NL draft → validate → dry-run (needs NVIDIA_API_KEY)
 npm run cli -- kubejs --instance ./my-pack --def ./scripts.json --quests ./quests.json          # dry-run validated KubeJS scripts
 npm run cli -- kubejs --instance ./my-pack --def ./scripts.json --quests ./quests.json --apply  # write it (backup taken first)
+npm run cli -- kubejs --instance ./my-pack --quests ./quests.json --describe "reward a diamond when bake_bread completes"  # NL draft → validate → dry-run
 npm run cli -- updates --loader neoforge --mc 1.21.1 --mods create,jei  # available updates + changelogs + regression check (read-only)
 npm run cli -- migrate --loader neoforge --from-mc 1.20.1 --to-mc 1.21.1 --mods create,jei  # plan a version migration (read-only)
 npm run cli -- export --loader neoforge --mc 1.21.1 --mods create,jei                       # dry-run an .mrpack export plan

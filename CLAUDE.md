@@ -75,6 +75,7 @@ src/                           Application code (begins in Phase 0)
     launch/                    Phase 4 capability (spec 0019): pinned LaunchProfile → resolve command (exact-major JDK select via GameLauncher port + pinned Java/-Xmx) or actionable no-JDK guidance; opt-in/confirmed spawn (dry-run default), auto-routes a crash into 0010 diagnosis (closes MVP Blocker C); ADR 0007
     quests/                    Phase 5 capability (spec 0011): structured quest definition → validated FTB Quests SNBT (snbt/ real serializer + parser) → guarded InstanceFs write
     scripts/                   Phase 5 capability (spec 0012): structured ScriptDefinition → validated KubeJS server scripts (emit/ typed model + escaped literals, real-engine parse-back via ScriptValidator port, quest cross-ref reuses 0011's questId) → guarded InstanceFs write
+    authoring/                 Phase 5 capability (spec 0020): NL description → ChatModel drafts a structured QuestDefinition/ScriptDefinition → funnelled through the existing 0011/0012 validators + SNBT/JS parse-back (bounded re-draft loop) before any guarded write; LLM drafts, deterministic serializer stays source of truth; surfaced on quests/kubejs --describe
     updates/                   Phase 6 capability (spec 0013): pinned PackState → read-only update report (changelogs) + lockfile diff + hash-lookup identity + regression re-check (re-runs 0007 pre-flight on candidates); writes nothing
     migration/                 Phase 6 capability (spec 0014): resolved set + new MC/loader target → read-only migration report (migratable/blocked, new Java, loader floor, pre-flight at new version) + complete-only migrated PackState; writes nothing
     export/                    Phase 7 capability (spec 0015): pinned PackState → in-memory ExportArtifact (.mrpack / CurseForge manifest, validated by parse-back, byte-stable; unmappable mods surfaced not fabricated); writes nothing
@@ -82,7 +83,7 @@ src/                           Application code (begins in Phase 0)
     assistant/                 Phase 4 capability (spec 0017): conversational guided session — drives discovery→orchestration→requirements→pre-flight→build over ChatModel native tool-calling, behind a fixed tool registry validated before execution (FR-3); deterministic core stays fact-authority, writes guarded + confirmed, graceful no-LLM fallback, in-session "why?"
   integration/                 Adapters implementing the ports
     logging/ · instance-fs/ (+binary write-bytes/readBytes) · modrinth/ (ModSourceProvider: + version changelog/date_published) · nvidia/ (ChatModel: OpenAI-compatible NVIDIA NIM, + tool-calling) · mclogs/ (LogAnalysisProvider: mclo.gs second opinion) · packwiz/ (PackFormat: + pure assemble) · download/ (JarTransport: fetch-based jar bytes + User-Agent) · launcher/ (GameLauncher: node:child_process spawn + JDK probe via JAVA_HOME/MPA_JDKS/PATH + newest crash-report read) · script-validator/ (ScriptValidator: node:vm compile-only parse-back) · packaging/ (export/release archive writer: dependency-free, timestamp-free store-only ZIP + reader)
-  cli/                         Thin CLI adapter (help · doctor · discover · orchestrate [--requirements|--preflight] · build [--apply|--force] · install [--from|--apply|--force] · launch [--apply|--arg|--json] · diagnose [--mclogs] · quests [--apply|--force] · kubejs [--apply|--force] · updates · migrate · export [--format|--apply|--force] · release [--from|--format|--apply|--force] · assistant [--expert|--instance|--no-llm])
+  cli/                         Thin CLI adapter (help · doctor · discover · orchestrate [--requirements|--preflight] · build [--apply|--force] · install [--from|--apply|--force] · launch [--apply|--arg|--json] · diagnose [--mclogs] · quests [--def|--describe|--apply|--force] · kubejs [--def|--describe|--quests|--apply|--force] · updates · migrate · export [--format|--apply|--force] · release [--from|--format|--apply|--force] · assistant [--expert|--instance|--no-llm])
 
 docs/
   VISION.md                    THE objective (single source of truth)
@@ -137,6 +138,8 @@ specs/
   0016-changelogs-sharing/     Phase 7 (done): two PackStates → changelog (reuses 0013 diff; initial-release when no baseline) + Markdown, bundled with the 0015 export (archive + CHANGELOG.md) into a byte-stable release; dry-run default
     spec.md · plan.md · tasks.md
   0019-launch-diagnose-loop/   Phase 4 (done): pinned LaunchProfile → resolve command via GameLauncher port (exact-major JDK + pinned Java/-Xmx) or no-JDK guidance; opt-in/confirmed spawn (dry-run default), auto-routes a crash into 0010 diagnosis (closes MVP Blocker C); ADR 0007
+    spec.md · plan.md · tasks.md
+  0020-nl-quest-script-authoring/   Phase 5 (done): NL description → ChatModel drafts a structured QuestDefinition/ScriptDefinition → funnelled through the existing 0011/0012 validators + parse-back (bounded re-draft loop) before any guarded write; surfaced on quests/kubejs --describe; expert --def unchanged through the same validation
     spec.md · plan.md · tasks.md
 
 templates/
@@ -272,10 +275,19 @@ roadmap/
   `--apply` spawns, and a **crashed outcome auto-routes the captured log/crash report into the `0010`
   diagnosis** (ranked, with remediation, reconciling `0007` suspicions — FR-2). Launch writes no configs
   (only the game's own output, FR-6); the mechanism choice is [ADR 0007](./docs/decisions/0007-local-launch-adapter.md).
-  Whole-instance/world backups, uploading/publishing, **hosted/sandboxed launch runners + full client
-  bootstrap (assets/auth)**, and **Phase 8 (Productization / SaaS)** are next; **NL quest/script
-  description (spec `0020`) rides this `0017` assistant, funnelling through the existing `0011`/`0012`
-  validators** — pending.
+  **Spec [`0020`](./specs/0020-nl-quest-script-authoring/spec.md) (done) adds the natural-language
+  front door to Phase 5 authoring:** the `authoring` core (`src/core/authoring/`) lets a user **describe**
+  quests/recipes/events in prose — the `0017` `ChatModel` **drafts** the structured
+  `QuestDefinition`/`ScriptDefinition` (the `0011`/`0012` input types, never SNBT/JS text, P5), which is
+  then validated by the **existing** `0011`/`0012` pipeline — item-namespace/dependency/cycle/type +
+  quest cross-ref **and** SNBT/JS **parse-back** — the **source of truth** that **blocks** anything that
+  would not load (FR-2/FR-5); a validation failure feeds the exact findings back for a **bounded
+  re-draft** (default 2) then surfaces them. The drafted definition funnels through the **identical**
+  guarded write path as the hand-written `--def` (dry-run/backup/force, P4), surfaced as
+  `quests`/`kubejs --describe` (needs `NVIDIA_API_KEY`; degrades to a clear "use --def" message); the
+  expert structured `--def` path is **unchanged** through the same validation (P8). Whole-instance/world
+  backups, uploading/publishing, **hosted/sandboxed launch runners + full client bootstrap
+  (assets/auth)**, and **Phase 8 (Productization / SaaS)** are next.
 - **Running TS:** dev/test/CLI run TypeScript directly on Node ≥ 22.18 (native type
   stripping); build (`tsc`) emits `dist/`. Source uses **`.ts` import extensions**
   (rewritten to `.js` on build) + **erasable-only syntax** (no enums/parameter-properties).

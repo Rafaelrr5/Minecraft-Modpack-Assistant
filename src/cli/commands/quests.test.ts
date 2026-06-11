@@ -12,9 +12,10 @@ import * as path from 'node:path';
 
 import { type InstanceFs, parseSnbt, type QuestDefinition } from '../../core/index.ts';
 import { GuardedInstanceFs } from '../../integration/instance-fs/index.ts';
-import { runQuests } from './quests.ts';
+import { runQuests, runQuestsAuthoring, selectAuthoringChatModel } from './quests.ts';
 import { helpText } from './help.ts';
 import { farmingDefinition } from '../../core/quests/__fixtures__/farming.def.ts';
+import { ScriptedChatModel, toolCalls } from '../../core/assistant/__fixtures__/fakes.ts';
 
 const CHAPTER_REL = 'config/ftbquests/quests/chapters/farming.snbt';
 
@@ -139,4 +140,55 @@ test('AC-6: --apply --force overwrites an existing file with valid SNBT', async 
 
 test('AC-8: help lists the quests command', () => {
   assert.match(helpText(), /\bquests\b/);
+});
+
+// --- Natural-language authoring route (spec 0020 AC-4/AC-5) ---
+
+test('0020: --describe drafts a valid definition then dry-runs (nothing written)', async () => {
+  const { fs, state } = recordingFs();
+  const chatModel = new ScriptedChatModel([toolCalls({ name: 'submit_quest_definition', args: farmingDefinition })]);
+  let out = '';
+  const code = await runQuestsAuthoring(
+    'a three-step farming quest line',
+    { instancePath: '/inst' },
+    { instanceFs: fs, chatModel },
+    (t) => (out += t),
+  );
+  assert.equal(code, 0);
+  assert.equal(state.applied, false, 'dry-run by default');
+  assert.match(out, /Drafting quest content/);
+  assert.match(out, /Dry-run/);
+});
+
+test('0020: an invalid drafted definition exits 1 and never writes (AC-2)', async () => {
+  const badDef: QuestDefinition = {
+    chapters: [{ filename: 'b', title: 'B', quests: [{ key: 'q', title: 'Q', tasks: [{ type: 'item', item: 'acme:gizmo' }] }] }],
+  };
+  const { fs, state } = recordingFs();
+  const chatModel = new ScriptedChatModel([
+    toolCalls({ name: 'submit_quest_definition', args: badDef }),
+    toolCalls({ name: 'submit_quest_definition', args: badDef }),
+  ]);
+  let out = '';
+  const code = await runQuestsAuthoring(
+    'quests using acme items',
+    { instancePath: '/inst', apply: true },
+    { instanceFs: fs, chatModel },
+    (t) => (out += t),
+  );
+  assert.equal(code, 1);
+  assert.equal(state.applied, false);
+  assert.match(out, /unknown-namespace/);
+});
+
+test('0020: --describe with no NVIDIA_API_KEY degrades to a clear message (no model)', () => {
+  const choice = selectAuthoringChatModel({}, () => {
+    throw new Error('should not construct without a key');
+  });
+  assert.equal(choice.chatModel, undefined);
+  assert.match(choice.note, /NVIDIA_API_KEY|--def/);
+});
+
+test('0020: help documents the --describe authoring flag', () => {
+  assert.match(helpText(), /--describe/);
 });

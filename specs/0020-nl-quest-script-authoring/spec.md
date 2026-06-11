@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | **Spec ID** | `0020` |
-| **Status** | `draft` |
+| **Status** | `done` |
 | **Roadmap phase** | [Phase 5 — Quests & Scripting Automation](../../roadmap/phase-5-quests-scripting-automation.md) — the NL front door deferred when `0011`/`0012` shipped |
 | **Author / date** | Project owner + Claude · 2026-06-10 |
 | **Related specs** | Depends on `0017` (assistant + tool-calling), `0011` (FTB Quests SNBT), `0012` (KubeJS), `0003` (guarded `InstanceFs`). |

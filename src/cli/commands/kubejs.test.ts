@@ -10,13 +10,14 @@ import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
 
-import { type InstanceFs } from '../../core/index.ts';
+import { type InstanceFs, type ScriptDefinition } from '../../core/index.ts';
 import { GuardedInstanceFs } from '../../integration/instance-fs/index.ts';
 import { VmScriptValidator } from '../../integration/script-validator/index.ts';
-import { runKubeJs } from './kubejs.ts';
+import { runKubeJs, runKubeJsAuthoring } from './kubejs.ts';
 import { helpText } from './help.ts';
 import { farmingScriptsDefinition } from '../../core/scripts/__fixtures__/farming-scripts.def.ts';
 import { farmingDefinition } from '../../core/quests/__fixtures__/farming.def.ts';
+import { ScriptedChatModel, toolCalls } from '../../core/assistant/__fixtures__/fakes.ts';
 
 const SCRIPT_REL = 'kubejs/server_scripts/farming-rewards.js';
 
@@ -130,4 +131,43 @@ test('AC-6: an existing file is refused without --force and left unchanged', asy
 
 test('AC-8: help lists the kubejs command', () => {
   assert.match(helpText(), /\bkubejs\b/);
+});
+
+// --- Natural-language authoring route (spec 0020 AC-3/AC-4/AC-5) ---
+
+test('0020: --describe drafts a valid script definition then dry-runs (nothing written)', async () => {
+  const { fs, state } = recordingFs();
+  const chatModel = new ScriptedChatModel([toolCalls({ name: 'submit_script_definition', args: farmingScriptsDefinition })]);
+  let out = '';
+  const code = await runKubeJsAuthoring(
+    'reward the player when they finish baking, plus a bread recipe',
+    { instancePath: '/inst', questDefinition: farmingDefinition },
+    { instanceFs: fs, scriptValidator: new VmScriptValidator(), chatModel },
+    (t) => (out += t),
+  );
+  assert.equal(code, 0);
+  assert.equal(state.applied, false, 'dry-run by default');
+  assert.match(out, /Drafting script content/);
+  assert.match(out, /Dry-run/);
+});
+
+test('0020: a drafted handler for an absent quest exits 1 and never writes (AC-3)', async () => {
+  const ghost: ScriptDefinition = {
+    files: [{ filename: 'f', handlers: [{ on: 'completed', questKey: 'ghost', actions: [{ type: 'log', message: 'x' }] }] }],
+  };
+  const { fs, state } = recordingFs();
+  const chatModel = new ScriptedChatModel([
+    toolCalls({ name: 'submit_script_definition', args: ghost }),
+    toolCalls({ name: 'submit_script_definition', args: ghost }),
+  ]);
+  let out = '';
+  const code = await runKubeJsAuthoring(
+    'react to a quest that does not exist',
+    { instancePath: '/inst', apply: true, questDefinition: farmingDefinition },
+    { instanceFs: fs, scriptValidator: new VmScriptValidator(), chatModel },
+    (t) => (out += t),
+  );
+  assert.equal(code, 1);
+  assert.equal(state.applied, false);
+  assert.match(out, /unknown-quest/);
 });

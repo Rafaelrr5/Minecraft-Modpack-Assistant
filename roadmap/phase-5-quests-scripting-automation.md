@@ -3,7 +3,10 @@
 > Part of the [roadmap](./README.md). Delivers the objective in
 > [`../docs/VISION.md`](../docs/VISION.md). **Status: ✅ Done** — FTB Quests SNBT generation
 > (spec [`0011`](../specs/0011-ftbquests-generation/spec.md)) **and** KubeJS script generation
-> (spec [`0012`](../specs/0012-kubejs-generation/spec.md)) are both **done**.
+> (spec [`0012`](../specs/0012-kubejs-generation/spec.md)) are both **done**; the
+> **natural-language front door** (spec [`0020`](../specs/0020-nl-quest-script-authoring/spec.md))
+> that drafts those structured definitions from a plain-language description — then funnels them
+> through the **same** `0011`/`0012` validators before any write — is **done** too.
 
 ## 1. Goal / outcome
 
@@ -51,6 +54,11 @@ assistant scaffolds and validates, the user directs); non-FTB quest systems; dee
 - ✅ [`0012-kubejs-generation`](../specs/0012-kubejs-generation/spec.md): script emitter (typed model +
   escaped literals) + reactive `FTBQuestsEvents` handlers + recipes + **real-engine parse-back** (a
   `ScriptValidator` port) + namespace/type/recipe/quest cross-validation. **Done.**
+- ✅ [`0020-nl-quest-script-authoring`](../specs/0020-nl-quest-script-authoring/spec.md): the
+  **natural-language front door** — the `0017` `ChatModel` drafts a structured
+  `QuestDefinition`/`ScriptDefinition`, which is then validated by the **existing** `0011`/`0012`
+  pipeline (item/dependency/cycle/quest-cross-ref + SNBT/JS parse-back) before any guarded write; a
+  bounded re-draft loop on failure; surfaced on `quests`/`kubejs --describe`. **Done.**
 
 (Authored when the phase starts.)
 

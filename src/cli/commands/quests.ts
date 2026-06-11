@@ -13,21 +13,29 @@ import { pathToFileURL } from 'node:url';
 
 import {
   type ApplyResult,
+  type ChatModel,
   type InstanceFs,
   type QuestDefinition,
+  draftQuestDefinition,
   generateQuests,
   planQuestWrite,
   renderQuestApply,
+  renderQuestDraft,
   renderQuestPlan,
   renderQuestReport,
 } from '../../core/index.ts';
 import { GuardedInstanceFs } from '../../integration/instance-fs/index.ts';
+import { createNvidiaChatModel } from '../../integration/nvidia/index.ts';
 
 export interface QuestsOptions {
   /** The instance to write into (required). */
   readonly instancePath: string;
   /** Path to the quest definition file (`.json`, or a `.ts`/`.js` module with a default export). */
-  readonly defPath: string;
+  readonly defPath?: string;
+  /** Natural-language description to draft a definition from (spec 0020); alternative to `defPath`. */
+  readonly describe?: string;
+  /** Bounded model re-draft attempts on a validation failure (spec 0020; default 2). */
+  readonly attempts?: number;
   /** Item namespaces allowed beyond `minecraft` (e.g. the mods in your pack). */
   readonly namespaces?: readonly string[];
   /** Write the plan (default false = dry-run). */
@@ -39,6 +47,43 @@ export interface QuestsOptions {
 
 export interface QuestsPorts {
   readonly instanceFs: InstanceFs;
+}
+
+/** Ports for the natural-language authoring path — the guarded FS plus an injected `ChatModel`. */
+export interface QuestsAuthoringPorts extends QuestsPorts {
+  readonly chatModel: ChatModel;
+}
+
+export interface AuthoringChatChoice {
+  readonly chatModel?: ChatModel;
+  /** A one-line, user-facing note explaining the choice. */
+  readonly note: string;
+}
+
+/**
+ * Decide whether a `ChatModel` is available for the `--describe` path (spec 0020). Pure and
+ * injectable (env + factory) so the missing-key path is testable without network. The NL path needs
+ * a model; a missing key/construction error degrades to a clear message pointing at `--def` (the
+ * structured path never needs a model) — shared by `quests` and `kubejs`.
+ */
+export function selectAuthoringChatModel(
+  env: Record<string, string | undefined> = process.env,
+  create: () => ChatModel = createNvidiaChatModel,
+): AuthoringChatChoice {
+  if (!env.NVIDIA_API_KEY) {
+    return {
+      note: 'Describing content needs a language model, but NVIDIA_API_KEY is not set. Set it, or pass a structured definition with --def.',
+    };
+  }
+  try {
+    return { chatModel: create(), note: 'Drafting from your description with the NVIDIA model…' };
+  } catch (error) {
+    return {
+      note: `Could not initialise the language model (${
+        error instanceof Error ? error.message : String(error)
+      }); pass a structured definition with --def instead.`,
+    };
+  }
 }
 
 /** Load a quest definition from a JSON file, or a `.ts`/`.js` module exporting one (default export). */
@@ -117,19 +162,72 @@ export async function runQuests(
   return apply?.applied ? 0 : 1;
 }
 
-/** Wire the guarded instance FS and read the definition for terminal use. */
-export async function runQuestsCli(options: QuestsOptions): Promise<number> {
-  const def = await loadDefinition(options.defPath);
-  return runQuests(
-    def,
-    {
-      instancePath: options.instancePath,
-      ...(options.namespaces !== undefined ? { namespaces: options.namespaces } : {}),
-      ...(options.apply !== undefined ? { apply: options.apply } : {}),
-      ...(options.force !== undefined ? { force: options.force } : {}),
-      ...(options.json !== undefined ? { json: options.json } : {}),
-    },
-    { instanceFs: new GuardedInstanceFs() },
-    (text) => process.stdout.write(text),
+/**
+ * Draft a definition from a natural-language description (spec 0020), then funnel the drafted
+ * definition through the **identical** generate → plan → guarded-apply path as `--def` (FR-4/FR-6).
+ * An invalid/unverifiable draft is surfaced and writes nothing (FR-2). `--json` stays machine-readable.
+ */
+export async function runQuestsAuthoring(
+  description: string,
+  options: Omit<QuestsOptions, 'defPath' | 'describe'>,
+  ports: QuestsAuthoringPorts,
+  write: (text: string) => void,
+): Promise<number> {
+  const draft = await draftQuestDefinition(
+    { description, ...(options.namespaces !== undefined ? { knownNamespaces: options.namespaces } : {}) },
+    ports.chatModel,
+    { ...(options.attempts !== undefined ? { maxAttempts: options.attempts } : {}) },
   );
+
+  if (!draft.ok || !draft.definition) {
+    if (options.json) {
+      write(
+        `${JSON.stringify(
+          { ok: false, attempts: draft.attempts, findings: draft.findings, ...(draft.error ? { error: draft.error } : {}) },
+          null,
+          2,
+        )}\n`,
+      );
+    } else {
+      write(renderQuestDraft(draft));
+    }
+    return 1; // surfaced for revision — nothing written (FR-2)
+  }
+
+  if (!options.json) write(renderQuestDraft(draft));
+  return runQuests(draft.definition, options, { instanceFs: ports.instanceFs }, write);
+}
+
+/** Wire the guarded instance FS and read (or draft) the definition for terminal use. */
+export async function runQuestsCli(options: QuestsOptions): Promise<number> {
+  const common = {
+    instancePath: options.instancePath,
+    ...(options.attempts !== undefined ? { attempts: options.attempts } : {}),
+    ...(options.namespaces !== undefined ? { namespaces: options.namespaces } : {}),
+    ...(options.apply !== undefined ? { apply: options.apply } : {}),
+    ...(options.force !== undefined ? { force: options.force } : {}),
+    ...(options.json !== undefined ? { json: options.json } : {}),
+  };
+  const write = (text: string): boolean => process.stdout.write(text);
+
+  if (options.describe !== undefined) {
+    const choice = selectAuthoringChatModel();
+    if (!choice.chatModel) {
+      process.stderr.write(`${choice.note}\n`);
+      return 2;
+    }
+    return runQuestsAuthoring(
+      options.describe,
+      common,
+      { instanceFs: new GuardedInstanceFs(), chatModel: choice.chatModel },
+      write,
+    );
+  }
+
+  if (options.defPath === undefined) {
+    process.stderr.write('quests: one of --def or --describe is required.\n');
+    return 2;
+  }
+  const def = await loadDefinition(options.defPath);
+  return runQuests(def, common, { instanceFs: new GuardedInstanceFs() }, write);
 }

@@ -395,6 +395,8 @@ export async function run(argv: readonly string[]): Promise<number> {
       options: {
         instance: { type: 'string' },
         def: { type: 'string' },
+        describe: { type: 'string' },
+        attempts: { type: 'string' },
         namespaces: { type: 'string' },
         apply: { type: 'boolean', default: false },
         force: { type: 'boolean', default: false },
@@ -407,8 +409,12 @@ export async function run(argv: readonly string[]): Promise<number> {
       process.stderr.write('quests: --instance <dir> is required (where to write the quests).\n');
       return 2;
     }
-    if (values.def === undefined) {
-      process.stderr.write('quests: --def <file> is required (the quest definition to generate).\n');
+    if (values.def === undefined && values.describe === undefined) {
+      process.stderr.write('quests: one of --def <file> or --describe "<text>" is required.\n');
+      return 2;
+    }
+    if (values.def !== undefined && values.describe !== undefined) {
+      process.stderr.write('quests: use only one of --def or --describe.\n');
       return 2;
     }
     const namespaces = (values.namespaces ?? '')
@@ -418,7 +424,9 @@ export async function run(argv: readonly string[]): Promise<number> {
 
     const options: QuestsOptions = {
       instancePath: values.instance,
-      defPath: values.def,
+      ...(values.def !== undefined ? { defPath: values.def } : {}),
+      ...(values.describe !== undefined ? { describe: values.describe } : {}),
+      ...(values.attempts !== undefined ? { attempts: Number(values.attempts) } : {}),
       ...(namespaces.length > 0 ? { namespaces } : {}),
       apply: values.apply === true,
       force: values.force === true,
@@ -433,6 +441,8 @@ export async function run(argv: readonly string[]): Promise<number> {
       options: {
         instance: { type: 'string' },
         def: { type: 'string' },
+        describe: { type: 'string' },
+        attempts: { type: 'string' },
         quests: { type: 'string' },
         namespaces: { type: 'string' },
         apply: { type: 'boolean', default: false },
@@ -446,8 +456,12 @@ export async function run(argv: readonly string[]): Promise<number> {
       process.stderr.write('kubejs: --instance <dir> is required (where to write the scripts).\n');
       return 2;
     }
-    if (values.def === undefined) {
-      process.stderr.write('kubejs: --def <file> is required (the script definition to generate).\n');
+    if (values.def === undefined && values.describe === undefined) {
+      process.stderr.write('kubejs: one of --def <file> or --describe "<text>" is required.\n');
+      return 2;
+    }
+    if (values.def !== undefined && values.describe !== undefined) {
+      process.stderr.write('kubejs: use only one of --def or --describe.\n');
       return 2;
     }
     const namespaces = (values.namespaces ?? '')
@@ -457,7 +471,9 @@ export async function run(argv: readonly string[]): Promise<number> {
 
     const options: KubeJsOptions = {
       instancePath: values.instance,
-      defPath: values.def,
+      ...(values.def !== undefined ? { defPath: values.def } : {}),
+      ...(values.describe !== undefined ? { describe: values.describe } : {}),
+      ...(values.attempts !== undefined ? { attempts: Number(values.attempts) } : {}),
       ...(values.quests !== undefined ? { questsPath: values.quests } : {}),
       ...(namespaces.length > 0 ? { namespaces } : {}),
       apply: values.apply === true,

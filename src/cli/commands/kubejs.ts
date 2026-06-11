@@ -14,25 +14,32 @@ import { pathToFileURL } from 'node:url';
 
 import {
   type ApplyResult,
+  type ChatModel,
   type InstanceFs,
   type QuestDefinition,
   type ScriptDefinition,
   type ScriptValidator,
+  draftScriptDefinition,
   generateScripts,
   planScriptWrite,
   renderScriptApply,
+  renderScriptDraft,
   renderScriptPlan,
   renderScriptReport,
 } from '../../core/index.ts';
 import { GuardedInstanceFs } from '../../integration/instance-fs/index.ts';
 import { VmScriptValidator } from '../../integration/script-validator/index.ts';
-import { loadDefinition } from './quests.ts';
+import { loadDefinition, selectAuthoringChatModel } from './quests.ts';
 
 export interface KubeJsOptions {
   /** The instance to write into (required). */
   readonly instancePath: string;
   /** Path to the script definition file (`.json`, or a `.ts`/`.js` module with a default export). */
-  readonly defPath: string;
+  readonly defPath?: string;
+  /** Natural-language description to draft a definition from (spec 0020); alternative to `defPath`. */
+  readonly describe?: string;
+  /** Bounded model re-draft attempts on a validation failure (spec 0020; default 2). */
+  readonly attempts?: number;
   /** Optional quest definition (0011) to cross-validate handler references and resolve their ids. */
   readonly questsPath?: string;
   /** Item namespaces allowed beyond `minecraft` (e.g. the mods in your pack). */
@@ -47,6 +54,11 @@ export interface KubeJsOptions {
 export interface KubeJsPorts {
   readonly instanceFs: InstanceFs;
   readonly scriptValidator: ScriptValidator;
+}
+
+/** Ports for the natural-language authoring path — the script ports plus an injected `ChatModel`. */
+export interface KubeJsAuthoringPorts extends KubeJsPorts {
+  readonly chatModel: ChatModel;
 }
 
 /** Load a script definition from a JSON file, or a `.ts`/`.js` module exporting one (default export). */
@@ -132,22 +144,91 @@ export async function runKubeJs(
   return apply?.applied ? 0 : 1;
 }
 
-/** Wire the guarded instance FS + the V8 parse-back engine and read the definitions for terminal use. */
+/**
+ * Draft a script definition from a natural-language description (spec 0020), then funnel the drafted
+ * definition through the **identical** generate → plan → guarded-apply path as `--def` (FR-4/FR-6).
+ * The quest definition (when supplied) both steers the draft's handler references and cross-validates
+ * them (FR-3). An invalid/unverifiable draft is surfaced and writes nothing (FR-2).
+ */
+export async function runKubeJsAuthoring(
+  description: string,
+  options: Omit<KubeJsOptions, 'defPath' | 'describe' | 'questsPath'> & { readonly questDefinition?: QuestDefinition },
+  ports: KubeJsAuthoringPorts,
+  write: (text: string) => void,
+): Promise<number> {
+  const draft = await draftScriptDefinition(
+    {
+      description,
+      ...(options.namespaces !== undefined ? { knownNamespaces: options.namespaces } : {}),
+      ...(options.questDefinition !== undefined ? { questDefinition: options.questDefinition } : {}),
+    },
+    ports.chatModel,
+    ports.scriptValidator,
+    { ...(options.attempts !== undefined ? { maxAttempts: options.attempts } : {}) },
+  );
+
+  if (!draft.ok || !draft.definition) {
+    if (options.json) {
+      write(
+        `${JSON.stringify(
+          { ok: false, attempts: draft.attempts, findings: draft.findings, ...(draft.error ? { error: draft.error } : {}) },
+          null,
+          2,
+        )}\n`,
+      );
+    } else {
+      write(renderScriptDraft(draft));
+    }
+    return 1; // surfaced for revision — nothing written (FR-2)
+  }
+
+  if (!options.json) write(renderScriptDraft(draft));
+  return runKubeJs(
+    draft.definition,
+    options,
+    { instanceFs: ports.instanceFs, scriptValidator: ports.scriptValidator },
+    write,
+  );
+}
+
+/** Wire the guarded instance FS + the V8 parse-back engine and read (or draft) definitions for terminal use. */
 export async function runKubeJsCli(options: KubeJsOptions): Promise<number> {
-  const def = await loadScriptDefinition(options.defPath);
   const questDefinition =
     options.questsPath !== undefined ? await loadDefinition(options.questsPath) : undefined;
+  const common = {
+    instancePath: options.instancePath,
+    ...(questDefinition !== undefined ? { questDefinition } : {}),
+    ...(options.attempts !== undefined ? { attempts: options.attempts } : {}),
+    ...(options.namespaces !== undefined ? { namespaces: options.namespaces } : {}),
+    ...(options.apply !== undefined ? { apply: options.apply } : {}),
+    ...(options.force !== undefined ? { force: options.force } : {}),
+    ...(options.json !== undefined ? { json: options.json } : {}),
+  };
+  const write = (text: string): boolean => process.stdout.write(text);
+
+  if (options.describe !== undefined) {
+    const choice = selectAuthoringChatModel();
+    if (!choice.chatModel) {
+      process.stderr.write(`${choice.note}\n`);
+      return 2;
+    }
+    return runKubeJsAuthoring(
+      options.describe,
+      common,
+      { instanceFs: new GuardedInstanceFs(), scriptValidator: new VmScriptValidator(), chatModel: choice.chatModel },
+      write,
+    );
+  }
+
+  if (options.defPath === undefined) {
+    process.stderr.write('kubejs: one of --def or --describe is required.\n');
+    return 2;
+  }
+  const def = await loadScriptDefinition(options.defPath);
   return runKubeJs(
     def,
-    {
-      instancePath: options.instancePath,
-      ...(questDefinition !== undefined ? { questDefinition } : {}),
-      ...(options.namespaces !== undefined ? { namespaces: options.namespaces } : {}),
-      ...(options.apply !== undefined ? { apply: options.apply } : {}),
-      ...(options.force !== undefined ? { force: options.force } : {}),
-      ...(options.json !== undefined ? { json: options.json } : {}),
-    },
+    common,
     { instanceFs: new GuardedInstanceFs(), scriptValidator: new VmScriptValidator() },
-    (text) => process.stdout.write(text),
+    write,
   );
 }

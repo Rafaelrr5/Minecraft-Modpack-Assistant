@@ -14,7 +14,13 @@ a mod list **and its dependencies** into a pinned `PackState`; **Requirements** 
 version/side mismatches, known-bad combos, and keybinding collisions (read-only, proposes fixes).
 Phase 4 — **Build** (`0008`): `build` assembles a packwiz tree + a launch profile (predicted
 **Java + `-Xmx`**) and writes it **only** through the guarded `InstanceFs` (dry-run default,
-backup, `--force` to overwrite). Phase 4 also added **Crash
+backup, `--force` to overwrite). The build becomes **runnable** with `install` (`0018`) — which
+downloads each pinned mod jar and **hash-verifies it before writing** into `mods/` (idempotent,
+dry-run default) — and **launchable** with `launch` (`0019`): an opt-in, confirmed run with the
+pinned **Java + `-Xmx`** behind an injectable `GameLauncher` (CI needs no JRE) that, when no
+compatible JDK is present, gives actionable install guidance (never a guessed path), and on a crash
+**auto-routes the captured log into the `0010` diagnosis** — closing the build→launch→diagnose loop.
+Phase 4 also added **Crash
 Diagnosis** (`0010`): `diagnose` reads a crash report / log (read-only) and categorizes it into the
 crash taxonomy with concrete remediation, reconciling pre-flight's *suspected* conflicts and
 offering an opt-in **mclo.gs** second opinion. It opened the **agent/LLM boundary** too — a

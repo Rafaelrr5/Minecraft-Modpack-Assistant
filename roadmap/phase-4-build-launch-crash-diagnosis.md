@@ -14,8 +14,16 @@ Blocker B). **Crash-diagnosis sub-capability ✅ done** — spec
 > [`0010-crash-diagnosis`](../specs/0010-crash-diagnosis/spec.md): read-only categorization of a
 > crash report / log into the §6.2 taxonomy with remediation, reconciling spec `0007`'s *suspected*
 > conflicts and offering an opt-in **mclo.gs** second opinion, via the `diagnose` CLI command. The
-> agent/LLM boundary opened alongside (spec [`0009`](../specs/0009-nvidia-chat-model/spec.md)). Live
-> JVM launch/validation remains deferred (environment-sensitive → Phase 8).
+> agent/LLM boundary opened alongside (spec [`0009`](../specs/0009-nvidia-chat-model/spec.md)).
+> **Launch & auto-diagnose sub-capability ✅ done** — spec
+> [`0019-launch-diagnose-loop`](../specs/0019-launch-diagnose-loop/spec.md): the `launch` CLI runs the
+> built instance with the **pinned Java + `-Xmx`** behind an injectable **`GameLauncher`** port
+> (env-sensitive spawn in the adapter, CI needs no JRE), opt-in + confirmed (dry-run prints the exact
+> command), surfaces actionable guidance when no compatible JDK is present (never a guessed path), and
+> on a crash **auto-routes the captured log into the `0010` diagnosis** — closing the
+> build→launch→observe→diagnose loop (MVP **Blocker C**), per
+> [ADR 0007](../docs/decisions/0007-local-launch-adapter.md). **Hosted/sandboxed runners and full
+> client bootstrap (assets/auth) remain deferred to Phase 8.**
 
 ## 1. Goal / outcome
 
@@ -71,8 +79,12 @@ runners (Phase 8). Local build/launch only here.
   external installer. **Done.**
 - ✅ [`0010-crash-diagnosis`](../specs/0010-crash-diagnosis/spec.md): log ingestion, categorization,
   remediation, reconciliation of `0007` suspicions, opt-in mclo.gs second opinion. **Done.** (A
-  closed auto-apply→relaunch→re-diagnose loop and live JVM launch are deferred — see the spec's
-  out-of-scope and Phase 8.)
+  closed auto-apply→relaunch→re-diagnose loop is deferred — see the spec's out-of-scope and Phase 8.)
+- ✅ [`0019-launch-diagnose-loop`](../specs/0019-launch-diagnose-loop/spec.md): opt-in, confirmed local
+  launch with the pinned Java + `-Xmx` behind an injectable `GameLauncher` port, capturing the log and
+  **auto-routing a crash into the `0010` diagnosis** — closes the build→launch→diagnose loop (MVP
+  Blocker C). **Done.** (Hosted/sandboxed runners + full client bootstrap → Phase 8;
+  [ADR 0007](../docs/decisions/0007-local-launch-adapter.md).)
 
 ## 6. Dependencies
 

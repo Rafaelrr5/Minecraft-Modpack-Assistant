@@ -25,3 +25,4 @@ Middle layer of project's three-layer memory:
 | [0004](./0004-modrinth-first-data-source.md) | Modrinth as the first mod-catalog data source | accepted |
 | [0005](./0005-packwiz-and-mrpack-pack-format.md) | packwiz (dev) + `.mrpack` (export) as pack formats | accepted |
 | [0006](./0006-native-packwiz-io.md) | Native (in-process) packwiz I/O, no CLI shell-out | accepted |
+| [0007](./0007-local-launch-adapter.md) | Local launch via a `GameLauncher` port; full client bootstrap deferred to Phase 8 | accepted |

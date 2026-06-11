@@ -20,6 +20,8 @@ Commands:
                     Dry-run by default; writes only with --apply (backup taken first).
   install           Download each pinned mod jar, verify it against its hash, and write it
                     into mods/. Makes a build runnable. Dry-run by default; --apply to write.
+  launch            Run the built instance with the pinned Java + -Xmx, and auto-diagnose a
+                    crash. Dry-run by default (prints the command); spawns only with --apply.
   diagnose          Read a crash report / log and explain what broke, with fixes — read-only.
   quests            Generate validated FTB Quests (SNBT) from a definition file.
                     Dry-run by default; writes only with --apply (backup taken first).
@@ -81,6 +83,12 @@ Options for 'install':
   --from <dir>      Read the pinned pack (mod list + hashes) from this packwiz tree instead.
   --apply           Download + write the verified jars (otherwise dry-run, the default).
   --force           Required with --apply to replace an existing jar whose bytes differ.
+
+Options for 'launch':
+  --instance <dir>  The built instance to launch (required). Reads its mpa-launch.json.
+  --apply           Actually spawn the JVM (otherwise dry-run: prints the command only).
+  --arg <a>         A program arg appended after the JVM args (repeatable; launch mechanism).
+  --json            Output the plan/report as JSON (for scripting / experts).
 
 Options for 'diagnose':
   --instance <dir>  Path to the Minecraft instance to inspect (required) — read-only.

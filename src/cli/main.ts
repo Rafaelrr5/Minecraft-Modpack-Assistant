@@ -14,6 +14,7 @@ import { runDiscoverCli } from './commands/discover.ts';
 import { type OrchestrateOptions, runOrchestrateCli } from './commands/orchestrate.ts';
 import { type BuildOptions, runBuildCli } from './commands/build.ts';
 import { type InstallOptions, runInstallCli } from './commands/install.ts';
+import { type LaunchCommandOptions, runLaunchCli } from './commands/launch.ts';
 import { type ExportOptions, runExportCli } from './commands/export.ts';
 import { type ReleaseOptions, runReleaseCli } from './commands/release.ts';
 import { type DiagnoseOptions, runDiagnoseCli } from './commands/diagnose.ts';
@@ -201,6 +202,33 @@ export async function run(argv: readonly string[]): Promise<number> {
       force: values.force === true,
     };
     return runInstallCli(options);
+  }
+
+  if (command === 'launch') {
+    const { values } = parseArgs({
+      args: [...rest],
+      options: {
+        instance: { type: 'string' },
+        apply: { type: 'boolean', default: false },
+        arg: { type: 'string', multiple: true },
+        json: { type: 'boolean', default: false },
+      },
+      allowPositionals: false,
+    });
+
+    if (values.instance === undefined) {
+      process.stderr.write('launch: --instance <dir> is required (the built instance to launch).\n');
+      return 2;
+    }
+
+    const programArgs = Array.isArray(values.arg) ? values.arg : [];
+    const options: LaunchCommandOptions = {
+      instancePath: values.instance,
+      apply: values.apply === true,
+      ...(programArgs.length > 0 ? { programArgs } : {}),
+      json: values.json === true,
+    };
+    return runLaunchCli(options);
   }
 
   if (command === 'export') {

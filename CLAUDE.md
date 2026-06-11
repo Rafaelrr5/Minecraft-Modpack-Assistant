@@ -64,7 +64,7 @@ src/                           Application code (begins in Phase 0)
   index.ts                     Library entry (re-exports core + integration)
   core/                        UI-agnostic core — imports no cli/ or integration/ (enforced)
     domain/                    Core domain model (MinecraftVersion, version-range, Loader, loader-compat, Mod, Modpack, Conflict, …, PackState)
-    ports/                     Interfaces the core depends on (Logger, ChatModel[+ tool-calling], InstanceFs[+readText, +binary write-bytes/readBytes], JarTransport, LogAnalysisProvider, ModSourceProvider, PackFormat, ScriptValidator)
+    ports/                     Interfaces the core depends on (Logger, ChatModel[+ tool-calling], InstanceFs[+readText, +binary write-bytes/readBytes], JarTransport, GameLauncher, LogAnalysisProvider, ModSourceProvider, PackFormat, ScriptValidator)
     discovery/                 Phase 1 capability (spec 0001): slot-filling → validated ModpackBrief
     orchestration/             Phase 2 capability (spec 0006): list + deps → pinned PackState
     requirements/              Phase 2 capability (spec 0002): resolved set → RequirementsReport
@@ -72,6 +72,7 @@ src/                           Application code (begins in Phase 0)
     build/                     Phase 4 capability (spec 0008): PackState + RequirementsReport → packwiz tree + launch profile → guarded InstanceFs change plan
     install/                   Phase 4 capability (spec 0018): pinned PackState → fetch each jar via JarTransport, hash-verify before write into mods/ via guarded InstanceFs (idempotent, dry-run default); makes the 0008 build runnable (closes MVP Blocker B)
     crash-diagnosis/           Phase 4 capability (spec 0010): crash/log text → read-only categorized DiagnosisReport (taxonomy + remediation), reconciles 0007 suspicions
+    launch/                    Phase 4 capability (spec 0019): pinned LaunchProfile → resolve command (exact-major JDK select via GameLauncher port + pinned Java/-Xmx) or actionable no-JDK guidance; opt-in/confirmed spawn (dry-run default), auto-routes a crash into 0010 diagnosis (closes MVP Blocker C); ADR 0007
     quests/                    Phase 5 capability (spec 0011): structured quest definition → validated FTB Quests SNBT (snbt/ real serializer + parser) → guarded InstanceFs write
     scripts/                   Phase 5 capability (spec 0012): structured ScriptDefinition → validated KubeJS server scripts (emit/ typed model + escaped literals, real-engine parse-back via ScriptValidator port, quest cross-ref reuses 0011's questId) → guarded InstanceFs write
     updates/                   Phase 6 capability (spec 0013): pinned PackState → read-only update report (changelogs) + lockfile diff + hash-lookup identity + regression re-check (re-runs 0007 pre-flight on candidates); writes nothing
@@ -80,8 +81,8 @@ src/                           Application code (begins in Phase 0)
     release/                   Phase 7 capability (spec 0016): two PackStates → changelog (reuses 0013 diff) + Markdown, bundled with the 0015 export (archive + CHANGELOG.md) into a byte-stable release; writes nothing
     assistant/                 Phase 4 capability (spec 0017): conversational guided session — drives discovery→orchestration→requirements→pre-flight→build over ChatModel native tool-calling, behind a fixed tool registry validated before execution (FR-3); deterministic core stays fact-authority, writes guarded + confirmed, graceful no-LLM fallback, in-session "why?"
   integration/                 Adapters implementing the ports
-    logging/ · instance-fs/ (+binary write-bytes/readBytes) · modrinth/ (ModSourceProvider: + version changelog/date_published) · nvidia/ (ChatModel: OpenAI-compatible NVIDIA NIM, + tool-calling) · mclogs/ (LogAnalysisProvider: mclo.gs second opinion) · packwiz/ (PackFormat: + pure assemble) · download/ (JarTransport: fetch-based jar bytes + User-Agent) · script-validator/ (ScriptValidator: node:vm compile-only parse-back) · packaging/ (export/release archive writer: dependency-free, timestamp-free store-only ZIP + reader)
-  cli/                         Thin CLI adapter (help · doctor · discover · orchestrate [--requirements|--preflight] · build [--apply|--force] · install [--from|--apply|--force] · diagnose [--mclogs] · quests [--apply|--force] · kubejs [--apply|--force] · updates · migrate · export [--format|--apply|--force] · release [--from|--format|--apply|--force] · assistant [--expert|--instance|--no-llm])
+    logging/ · instance-fs/ (+binary write-bytes/readBytes) · modrinth/ (ModSourceProvider: + version changelog/date_published) · nvidia/ (ChatModel: OpenAI-compatible NVIDIA NIM, + tool-calling) · mclogs/ (LogAnalysisProvider: mclo.gs second opinion) · packwiz/ (PackFormat: + pure assemble) · download/ (JarTransport: fetch-based jar bytes + User-Agent) · launcher/ (GameLauncher: node:child_process spawn + JDK probe via JAVA_HOME/MPA_JDKS/PATH + newest crash-report read) · script-validator/ (ScriptValidator: node:vm compile-only parse-back) · packaging/ (export/release archive writer: dependency-free, timestamp-free store-only ZIP + reader)
+  cli/                         Thin CLI adapter (help · doctor · discover · orchestrate [--requirements|--preflight] · build [--apply|--force] · install [--from|--apply|--force] · launch [--apply|--arg|--json] · diagnose [--mclogs] · quests [--apply|--force] · kubejs [--apply|--force] · updates · migrate · export [--format|--apply|--force] · release [--from|--format|--apply|--force] · assistant [--expert|--instance|--no-llm])
 
 docs/
   VISION.md                    THE objective (single source of truth)
@@ -96,6 +97,7 @@ docs/
     0004-modrinth-first-data-source.md
     0005-packwiz-and-mrpack-pack-format.md
     0006-native-packwiz-io.md
+    0007-local-launch-adapter.md
 
 memory/
   constitution.md              Supreme gate — non-negotiable principles
@@ -133,6 +135,8 @@ specs/
   0015-pack-export/            Phase 7 (done): pinned PackState → shareable .mrpack / CurseForge manifest pack (pure byte-stable projection, parse-back-validated, unmappable mods surfaced) via a store-only ZIP, dry-run default
     spec.md · plan.md · tasks.md
   0016-changelogs-sharing/     Phase 7 (done): two PackStates → changelog (reuses 0013 diff; initial-release when no baseline) + Markdown, bundled with the 0015 export (archive + CHANGELOG.md) into a byte-stable release; dry-run default
+    spec.md · plan.md · tasks.md
+  0019-launch-diagnose-loop/   Phase 4 (done): pinned LaunchProfile → resolve command via GameLauncher port (exact-major JDK + pinned Java/-Xmx) or no-JDK guidance; opt-in/confirmed spawn (dry-run default), auto-routes a crash into 0010 diagnosis (closes MVP Blocker C); ADR 0007
     spec.md · plan.md · tasks.md
 
 templates/
@@ -257,9 +261,21 @@ roadmap/
   `readBytes` (the text API + every existing caller untouched) — dry-run by default, backup before
   write, `--force` to replace a differing jar (P4); the op is **idempotent** (a jar already present with
   the correct hash is skipped, no fetch, FR-3). In-process, owning the verify/reproducibility guarantees
-  end-to-end — no external `packwiz-installer`. Whole-instance/world backups, uploading/publishing, and
-  **Phase 8 (Productization / SaaS)** are next; **NL quest/script description (spec `0020`) rides this `0017`
-  assistant, funnelling through the existing `0011`/`0012` validators** — pending.
+  end-to-end — no external `packwiz-installer`. **Spec [`0019`](./specs/0019-launch-diagnose-loop/spec.md)
+  (done) closes MVP Blocker C — the build is now *launchable*:** the `launch` CLI (`src/core/launch/`)
+  reads the build's pinned `mpa-launch.json` (parse-validated, P3), and behind an injectable
+  **`GameLauncher`** port (`src/integration/launcher/`, env-sensitive spawn + JDK probe; CI needs no JRE,
+  FR-5) the deterministic core **resolves the exact command** — selecting a JDK by **exact major match**
+  against the pinned Java + carrying the pinned `-Xmx`/JVM args (spec `0008`/`0002`) — or, when no
+  compatible JDK is present, surfaces **actionable install guidance citing DOMAIN §2, never a guessed
+  path** (FR-4/P5). Launch is **opt-in + confirmed**: dry-run prints the command and spawns nothing;
+  `--apply` spawns, and a **crashed outcome auto-routes the captured log/crash report into the `0010`
+  diagnosis** (ranked, with remediation, reconciling `0007` suspicions — FR-2). Launch writes no configs
+  (only the game's own output, FR-6); the mechanism choice is [ADR 0007](./docs/decisions/0007-local-launch-adapter.md).
+  Whole-instance/world backups, uploading/publishing, **hosted/sandboxed launch runners + full client
+  bootstrap (assets/auth)**, and **Phase 8 (Productization / SaaS)** are next; **NL quest/script
+  description (spec `0020`) rides this `0017` assistant, funnelling through the existing `0011`/`0012`
+  validators** — pending.
 - **Running TS:** dev/test/CLI run TypeScript directly on Node ≥ 22.18 (native type
   stripping); build (`tsc`) emits `dist/`. Source uses **`.ts` import extensions**
   (rewritten to `.js` on build) + **erasable-only syntax** (no enums/parameter-properties).

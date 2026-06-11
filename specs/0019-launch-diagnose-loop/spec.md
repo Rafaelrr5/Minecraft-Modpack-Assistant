@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | **Spec ID** | `0019` |
-| **Status** | `draft` |
+| **Status** | `done` |
 | **Roadmap phase** | [Phase 4 — Build, Launch & Crash Diagnosis](../../roadmap/phase-4-build-launch-crash-diagnosis.md) — closes the build→launch→diagnose loop (local; hosted variant → Phase 8) |
 | **Author / date** | Project owner + Claude · 2026-06-10 |
 | **Related specs** | Depends on `0008` (launch profile: pinned Java + `-Xmx`), `0018` (runnable instance), `0010` (crash diagnosis), `0003` (guarded `InstanceFs`, logger). Consumed by `0017` (assistant). |

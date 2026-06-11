@@ -8,5 +8,6 @@ export * from './integration/logging/index.ts';
 export * from './integration/instance-fs/index.ts';
 export * from './integration/modrinth/index.ts';
 export * from './integration/nvidia/index.ts';
+export * from './integration/google/index.ts';
 export * from './integration/mclogs/index.ts';
 export * from './integration/packwiz/index.ts';

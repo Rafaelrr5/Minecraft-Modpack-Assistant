@@ -10,7 +10,7 @@ import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
 
-import { type InstanceFs, parseSnbt, type QuestDefinition } from '../../core/index.ts';
+import { type ChatModel, type InstanceFs, parseSnbt, type QuestDefinition } from '../../core/index.ts';
 import { GuardedInstanceFs } from '../../integration/instance-fs/index.ts';
 import { runQuests, runQuestsAuthoring, selectAuthoringChatModel } from './quests.ts';
 import { helpText } from './help.ts';
@@ -181,12 +181,28 @@ test('0020: an invalid drafted definition exits 1 and never writes (AC-2)', asyn
   assert.match(out, /unknown-namespace/);
 });
 
-test('0020: --describe with no NVIDIA_API_KEY degrades to a clear message (no model)', () => {
+test('0020: --describe with no provider key degrades to a clear message (no model)', () => {
   const choice = selectAuthoringChatModel({}, () => {
     throw new Error('should not construct without a key');
   });
   assert.equal(choice.chatModel, undefined);
   assert.match(choice.note, /NVIDIA_API_KEY|--def/);
+});
+
+test('0021: --describe routes to Google when MPA_LLM_PROVIDER=google + a Google key is set', () => {
+  const googleStub: ChatModel = {
+    id: 'google',
+    complete: () => Promise.resolve({ content: '', model: 'gemini', finishReason: 'stop' }),
+  };
+  const choice = selectAuthoringChatModel(
+    { MPA_LLM_PROVIDER: 'google', GEMINI_API_KEY: 'AIza-y' },
+    () => {
+      throw new Error('NVIDIA factory must not be used');
+    },
+    () => googleStub,
+  );
+  assert.equal(choice.chatModel, googleStub);
+  assert.match(choice.note, /Google/);
 });
 
 test('0020: help documents the --describe authoring flag', () => {

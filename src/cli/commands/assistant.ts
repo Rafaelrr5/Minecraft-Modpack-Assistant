@@ -17,7 +17,14 @@ import { createModrinthProvider } from '../../integration/modrinth/index.ts';
 import { GuardedInstanceFs } from '../../integration/instance-fs/index.ts';
 import { PackwizFormat } from '../../integration/packwiz/index.ts';
 import { createNvidiaChatModel } from '../../integration/nvidia/index.ts';
+import { createGoogleChatModel } from '../../integration/google/index.ts';
 import { ConsoleLogger } from '../../integration/logging/console-logger.ts';
+import {
+  describeNoProvider,
+  type LlmProvider,
+  providerLabel,
+  resolveLlmProvider,
+} from './chat-model-select.ts';
 
 export interface AssistantCliOptions {
   /** Expert mode (terse, bulk input, raw artifacts); otherwise beginner. */
@@ -53,25 +60,33 @@ export interface ChatModelChoice {
 }
 
 /**
- * Decide whether to use the NVIDIA chat model. Pure and injectable (env + factory) so the
- * missing-key fallback is testable without network. Never constructs a model without a key, and
- * never throws — a construction failure degrades to deterministic mode (FR-6).
+ * Decide which chat model (if any) backs this guided session. Pure and injectable (env + factories)
+ * so the missing-key / provider-switch fallbacks are testable without network. Honors the
+ * `MPA_LLM_PROVIDER` switch (spec 0021); never constructs a model without a key, and never throws —
+ * a construction failure degrades to deterministic mode (FR-6).
  */
 export function selectChatModel(
   options: AssistantCliOptions,
   env: Record<string, string | undefined> = process.env,
-  create: () => ChatModel = createNvidiaChatModel,
+  createNvidia: () => ChatModel = createNvidiaChatModel,
+  createGoogle: () => ChatModel = createGoogleChatModel,
 ): ChatModelChoice {
   if (options.noLlm) {
     return { note: 'Language model disabled (--no-llm); running in deterministic mode.' };
   }
-  if (!env.NVIDIA_API_KEY) {
-    return {
-      note: 'No NVIDIA_API_KEY is set — running in deterministic mode (set it to enable the guided LLM session).',
-    };
+  const resolution = resolveLlmProvider(env);
+  if (!resolution.provider) {
+    return { note: `${describeNoProvider(resolution)} Running in deterministic mode.` };
   }
+  const factories: Record<LlmProvider, () => ChatModel> = {
+    nvidia: createNvidia,
+    google: createGoogle,
+  };
   try {
-    return { chatModel: create(), note: 'Using the NVIDIA chat model for this guided session.' };
+    return {
+      chatModel: factories[resolution.provider](),
+      note: `Using the ${providerLabel(resolution.provider)} chat model for this guided session.`,
+    };
   } catch (error) {
     return {
       note: `Could not initialise the language model (${

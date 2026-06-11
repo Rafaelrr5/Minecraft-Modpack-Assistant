@@ -26,6 +26,13 @@ import {
 } from '../../core/index.ts';
 import { GuardedInstanceFs } from '../../integration/instance-fs/index.ts';
 import { createNvidiaChatModel } from '../../integration/nvidia/index.ts';
+import { createGoogleChatModel } from '../../integration/google/index.ts';
+import {
+  describeNoProvider,
+  type LlmProvider,
+  providerLabel,
+  resolveLlmProvider,
+} from './chat-model-select.ts';
 
 export interface QuestsOptions {
   /** The instance to write into (required). */
@@ -62,21 +69,31 @@ export interface AuthoringChatChoice {
 
 /**
  * Decide whether a `ChatModel` is available for the `--describe` path (spec 0020). Pure and
- * injectable (env + factory) so the missing-key path is testable without network. The NL path needs
- * a model; a missing key/construction error degrades to a clear message pointing at `--def` (the
- * structured path never needs a model) — shared by `quests` and `kubejs`.
+ * injectable (env + factories) so the missing-key path is testable without network. Honors the
+ * `MPA_LLM_PROVIDER` switch (spec 0021). The NL path needs a model; a missing key/wrong provider/
+ * construction error degrades to a clear message pointing at `--def` (the structured path never
+ * needs a model) — shared by `quests` and `kubejs`.
  */
 export function selectAuthoringChatModel(
   env: Record<string, string | undefined> = process.env,
-  create: () => ChatModel = createNvidiaChatModel,
+  createNvidia: () => ChatModel = createNvidiaChatModel,
+  createGoogle: () => ChatModel = createGoogleChatModel,
 ): AuthoringChatChoice {
-  if (!env.NVIDIA_API_KEY) {
+  const resolution = resolveLlmProvider(env);
+  if (!resolution.provider) {
     return {
-      note: 'Describing content needs a language model, but NVIDIA_API_KEY is not set. Set it, or pass a structured definition with --def.',
+      note: `Describing content needs a language model. ${describeNoProvider(resolution)} Pass a structured definition with --def instead.`,
     };
   }
+  const factories: Record<LlmProvider, () => ChatModel> = {
+    nvidia: createNvidia,
+    google: createGoogle,
+  };
   try {
-    return { chatModel: create(), note: 'Drafting from your description with the NVIDIA model…' };
+    return {
+      chatModel: factories[resolution.provider](),
+      note: `Drafting from your description with the ${providerLabel(resolution.provider)} model…`,
+    };
   } catch (error) {
     return {
       note: `Could not initialise the language model (${

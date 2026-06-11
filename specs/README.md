@@ -82,6 +82,7 @@ remaining phases get their specs when work on them begins (see the
 | [0018](./0018-runnable-build/spec.md) | Runnable Build — fetch each pinned mod jar and **hash-verify before writing** it into `mods/` via the guarded `InstanceFs`, making the `0008` build directly launchable (closes MVP Blocker B) | 4 | done |
 | [0019](./0019-launch-diagnose-loop/spec.md) | Launch & Auto-Diagnose Loop — opt-in, confirmed local launch with the pinned Java + `-Xmx`, capture logs, auto-route failures into `0010` diagnosis; closes the build→launch→diagnose loop (closes MVP Blocker C; hosted variant → Phase 8) | 4 | done |
 | [0020](./0020-nl-quest-script-authoring/spec.md) | NL Quest & Script Authoring — draft structured `QuestDefinition`/`ScriptDefinition` from a high-level description (via `0017`), then funnel through the existing `0011`/`0012` validators + parse-back before any guarded write (VISION #6) | 5 | done |
+| [0021](./0021-google-chat-model/spec.md) | Google (Gemini) Chat-Model Provider — second `ChatModel` adapter via Gemini's **OpenAI-compatible** endpoint (env `GEMINI_API_KEY`/`GOOGLE_API_KEY`, Bearer, no SDK) + an `MPA_LLM_PROVIDER` switch (`nvidia`\|`google`, auto-detect) shared by `assistant` and `quests`/`kubejs --describe`; reuses the `0009` port, core untouched | 4 | done |
 
 > Specs `0003`–`0005` are the **Phase 0 foundation** (authored when the phase was picked up,
 > per the constitution). Future specs (e.g. mod orchestration, conflict resolution, crash

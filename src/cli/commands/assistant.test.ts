@@ -60,6 +60,38 @@ test('selectChatModel degrades gracefully if model construction throws', () => {
   assert.match(choice.note.toLowerCase(), /deterministic|could not/);
 });
 
+const googleStub: ChatModel = {
+  id: 'google',
+  complete: () => Promise.resolve({ content: '', model: 'gemini', finishReason: 'stop' }),
+};
+
+test('selectChatModel (0021) auto-selects Google when only a Google key is present', () => {
+  const choice = selectChatModel({}, { GEMINI_API_KEY: 'AIza-y' }, () => stubModel, () => googleStub);
+  assert.equal(choice.chatModel, googleStub);
+  assert.match(choice.note, /Google/);
+});
+
+test('selectChatModel (0021) honors MPA_LLM_PROVIDER=google over a present NVIDIA key', () => {
+  const choice = selectChatModel(
+    {},
+    { MPA_LLM_PROVIDER: 'google', NVIDIA_API_KEY: 'nvapi-x', GEMINI_API_KEY: 'AIza-y' },
+    () => stubModel,
+    () => googleStub,
+  );
+  assert.equal(choice.chatModel, googleStub);
+});
+
+test('selectChatModel (0021) degrades on an unknown MPA_LLM_PROVIDER', () => {
+  const choice = selectChatModel(
+    {},
+    { MPA_LLM_PROVIDER: 'openai', NVIDIA_API_KEY: 'nvapi-x' },
+    () => stubModel,
+    () => googleStub,
+  );
+  assert.equal(choice.chatModel, undefined);
+  assert.match(choice.note.toLowerCase(), /deterministic/);
+});
+
 test('help lists the assistant command', () => {
   assert.match(helpText(), /\n\s*assistant\b/);
 });

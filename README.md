@@ -24,7 +24,7 @@ Phase 4 also added **Crash
 Diagnosis** (`0010`): `diagnose` reads a crash report / log (read-only) and categorizes it into the
 crash taxonomy with concrete remediation, reconciling pre-flight's *suspected* conflicts and
 offering an opt-in **mclo.gs** second opinion. It opened the **agent/LLM boundary** too — a
-provider-agnostic `ChatModel` port + an OpenAI-compatible **NVIDIA** adapter (`0009`) — now **consumed**
+provider-agnostic `ChatModel` port + OpenAI-compatible **NVIDIA** (`0009`) and **Google Gemini** (`0021`) adapters — now **consumed**
 by the **Conversational Assistant** (`0017`): the `assistant` command runs a guided NL session that drives
 discovery→orchestration→requirements→pre-flight→build via **native tool-calling**, validating every model
 action against a fixed registry before running it, keeping the deterministic core the fact-authority,
@@ -162,7 +162,7 @@ npm run cli -- build --loader neoforge --mc 1.21.1 --mods create --instance ./my
 npm run cli -- build --loader neoforge --mc 1.21.1 --mods create --instance ./my-pack --apply  # write it (backup taken first)
 npm run cli -- quests --instance ./my-pack --def ./quests.json          # dry-run validated FTB Quests SNBT
 npm run cli -- quests --instance ./my-pack --def ./quests.json --apply  # write it (backup taken first)
-npm run cli -- quests --instance ./my-pack --describe "a 3-step farming quest line rewarding bread"  # NL draft → validate → dry-run (needs NVIDIA_API_KEY)
+npm run cli -- quests --instance ./my-pack --describe "a 3-step farming quest line rewarding bread"  # NL draft → validate → dry-run (needs an LLM key: NVIDIA_API_KEY or GEMINI_API_KEY; pick with MPA_LLM_PROVIDER)
 npm run cli -- kubejs --instance ./my-pack --def ./scripts.json --quests ./quests.json          # dry-run validated KubeJS scripts
 npm run cli -- kubejs --instance ./my-pack --def ./scripts.json --quests ./quests.json --apply  # write it (backup taken first)
 npm run cli -- kubejs --instance ./my-pack --quests ./quests.json --describe "reward a diamond when bake_bread completes"  # NL draft → validate → dry-run

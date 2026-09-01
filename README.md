@@ -104,6 +104,7 @@ code. *No capability without a spec.* → [why](./docs/decisions/0001-spec-drive
 | --- | --- | --- |
 | **Vision** | [`docs/VISION.md`](./docs/VISION.md) | The general objective (single source of truth). |
 | **Operating guide** | [`CLAUDE.md`](./CLAUDE.md) | SDD workflow, repo map, stack, project memory, guardrails. |
+| **Implementation log** | [`docs/IMPLEMENTATION-LOG.md`](./docs/IMPLEMENTATION-LOG.md) | What each spec actually shipped (history; not auto-loaded). |
 | **Glossary** | [`docs/GLOSSARY.md`](./docs/GLOSSARY.md) | Domain & project terms. |
 | **Architecture** | [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) | Modules, core domain model, agent/LLM boundary. |
 | **Domain knowledge** | [`docs/DOMAIN-KNOWLEDGE.md`](./docs/DOMAIN-KNOWLEDGE.md) | Sourced knowledge base (cite this for facts). |

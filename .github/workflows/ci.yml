@@ -35,3 +35,9 @@ jobs:
 
       - name: Test
         run: npm test
+
+      - name: Desktop type-check
+        run: npm run desktop:typecheck
+
+      - name: Desktop build
+        run: npm run desktop:build

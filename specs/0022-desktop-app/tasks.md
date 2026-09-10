@@ -87,6 +87,13 @@
 
 ### Packaging, polish, docs
 
+- [ ] **T-0022-15 — Desktop CI gate**
+  - **Deliverable:** required `desktop:typecheck` and `desktop:build` steps in the existing
+    CI job; lockfile synchronized with the already-declared desktop dependencies.
+  - **Maps to:** FR-9, AC-9.
+  - **Done when:** `npm ci`, `npm run check`, `npm run desktop:typecheck` and
+    `npm run desktop:build` pass; workflow retains the core/CLI gate without a GUI or installer step.
+
 - [ ] **T-0022-12 — Packaging:** `desktop:dist` → Windows installer. **Maps to:** FR-8, AC-7.
   **Done when:** an installer is produced on the host OS.
 - [ ] **T-0022-13 — Polish:** apply `frontend-design`; cohesive, distinctive UI; dual-audience.

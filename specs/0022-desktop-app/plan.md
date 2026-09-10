@@ -137,10 +137,12 @@ and the *plan* phase of writes) touch nothing.
   imports no `desktop` specifier (alongside the existing `cli`/`integration` checks).
 - **Generated-artifact validation:** unchanged — the core's existing SNBT/JS/manifest parse-back
   tests still guarantee P3; the desktop calls those same generators.
-- **Desktop build:** `desktop:typecheck` (electron-vite/tsc over the desktop tsconfig) and
-  `desktop:build`/`desktop:dist` are run on demand (need the heavy deps + a display for the GUI);
-  kept out of `npm run check` so the existing CI stays green (FR-9). GUI e2e (Playwright) is a
-  flagged follow-up.
+- **Desktop CI gate:** the existing `.github/workflows/ci.yml` job runs
+  `desktop:typecheck` (tsc over the desktop tsconfig) and `desktop:build` (electron-vite)
+  after the core/CLI steps, with no display or GUI launch. Keep the lockfile synchronized
+  with the declared desktop dependencies so `npm ci` works on a clean checkout (AC-9).
+  These scripts remain separate from `npm run check` (FR-9). Installer packaging
+  (`desktop:dist`) stays on demand; GUI e2e (Playwright) remains a flagged follow-up.
 
 Maps to AC: AC-7/AC-8 (check green + delegation), AC-2/AC-4 (dry-run + validators), AC-3 (guard).
 

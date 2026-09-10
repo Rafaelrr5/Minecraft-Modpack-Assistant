@@ -89,7 +89,8 @@ game ([ADR 0008](../../docs/decisions/0008-desktop-app-electron.md), amending
   first), via a reproducible desktop build separate from the core build.
 - **FR-9** — The desktop build/tooling MUST NOT break the existing `npm run check`: the
   Electron-coupled code is excluded from the root typecheck/lint, while the Electron-free
-  composition root and IPC contract are covered by it.
+  composition root and IPC contract are covered by it. The existing CI workflow MUST also
+  run the desktop typecheck and build as separate required steps, without launching the GUI.
 
 ## 6. Non-functional requirements
 
@@ -144,6 +145,10 @@ game ([ADR 0008](../../docs/decisions/0008-desktop-app-electron.md), amending
 - **AC-8** — Given any capability reachable from the CLI, When used in the desktop app, Then it is
   driven by the **same** core capability function (no duplicated logic), verified by the
   composition root delegating to the core entry points (FR-1).
+- **AC-9** — Given a clean dependency install (`npm ci`), When the existing CI workflow runs,
+  Then the core/CLI typecheck, lint, build and tests remain required, alongside
+  `npm run desktop:typecheck` and `npm run desktop:build`; a failure in either desktop step
+  fails the job. No GUI launch or installer packaging is required in CI (FR-9).
 
 ## 9. Out of scope
 

@@ -199,3 +199,29 @@ Whether you're a person or an AI agent: start with [`CLAUDE.md`](./CLAUDE.md), f
 [constitution](./memory/constitution.md) — especially the **safety guardrails** (backup +
 consent + dry-run before touching any game instance). Pick up work via the
 [roadmap](./roadmap/README.md).
+
+## Known limitations
+
+Honest state of the project, so nothing here is a surprise:
+
+- **Modrinth only.** CurseForge is behind the same provider interface but not
+  implemented — packs whose mods live only on CurseForge won't resolve
+  ([ADR 0004](./docs/decisions/0004-modrinth-first-data-source.md)).
+- **Conflict detection is static.** It reads declared metadata (ids, dependency
+  ranges, sides, known-bad combos); it does not run the game. It separates
+  *certain* from *suspected* and never claims more than the evidence supports.
+- **No published npm package yet.** Run it from a clone (`npm run cli -- …`).
+- **The desktop app (Electron, spec 0022) is outside `npm run check`** — it has
+  its own `desktop:typecheck`/`desktop:build` gates in CI, so a green `check`
+  does not cover the GUI.
+- **NL features need an API key.** Without `NVIDIA_API_KEY` or `GEMINI_API_KEY`,
+  `assistant` and `--describe` fall back to the deterministic flow.
+- **Windows-developed, cross-platform by construction.** Nothing is
+  Windows-specific in the core, but Linux/macOS get less day-to-day exercise.
+
+Good first contributions: a CurseForge `ModSourceProvider`, more entries in the
+known-bad-combo table, and additional recorded contract-test fixtures.
+
+## License
+
+[MIT](./LICENSE).

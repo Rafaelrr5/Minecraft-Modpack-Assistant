@@ -80,6 +80,12 @@ its prerequisite and is already in place.)
 - [x] `PackState` can round-trip a tiny sample pack. (packwiz write→read semantic equality.)
 - [x] CLI runs with help + an environment/"doctor" check; no game-instance writes occur.
 
+### Safety maintenance — spec 0003 FR-9
+
+Canonical InstanceFs containment is implemented for reads, mutations and backups, with
+Windows junction regressions passing locally and directory/file symlink regressions
+passing on Linux CI (Windows skips those on `EPERM`).
+
 ## 9. Success metrics
 
 - A new feature spec can be implemented **without touching plumbing**.

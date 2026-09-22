@@ -83,6 +83,18 @@ Domain types (conceptual; exact fields in code, extend
   - `apply(plan, { confirm, backupDir })` → **refuses** unless `confirm === true`; when
     confirmed, **creates backup of every target first**, then applies. Backup-before-write
     ordering is invariant test asserts (AC-4).
+  - Resolve the selected instance root to its canonical filesystem location, allowing a
+    missing suffix for new builds. Validate lexical containment first, then inspect each
+    existing descendant with `lstat`/`realpath`; reject external, dangling or looping links.
+    Missing descendants are allowed only after their existing ancestors pass validation.
+  - Reuse that guard for reads, changes and backup destinations. Validate the whole plan
+    before creating backups; use checked canonical paths and recheck at I/O boundaries.
+    Preserve final-link deletion as unlinking the link, not deleting its referent.
+    Explicit external backup roots remain supported but authorize no descendant escape.
+  - Test real Windows junctions and portable directory/file symlinks in disposable fixtures.
+    Only symlink creation denied by the OS may be skipped; Windows junction tests must run
+    on Windows. Document the residual concurrent replacement (TOCTOU) and hard-link limits;
+    do not claim these path checks are atomic isolation from a hostile local process.
 
 ## 5. External integrations
 

@@ -88,6 +88,21 @@ Prefer test-first for deterministic core.
 
 ## Definition of Done (feature)
 
+### Instance containment correction (Kanban t_d67c3018)
+
+- [x] **T-0003-10 — Canonical filesystem containment** (FR-9, AC-6): reproduce
+  junction escape with a failing real-filesystem test; guard reads, all mutations and
+  backups, retaining safe internal links and missing nested build directories.
+- [x] **T-0003-11 — Containment regression verification** (AC-6): exercise symlinks,
+  Windows junctions, backup escapes and whole-plan refusal; run `npm run check` and
+  record executed platform coverage and limitations.
+
+Windows verification: the junction regression failed before the fix with "Missing expected
+rejection" and passes after the fix. `npm run check` passes locally. Directory/file symlink
+tests skip on non-admin Windows (`EPERM`). Linux CI (ubuntu-latest) runs the five directory
+and two file symlink cases and passes them (403 pass, 0 fail; junction cases skip there).
+Together the two platforms cover symlinks and junctions. No privilege changes were made.
+
 - [x] AC-1…AC-5 met and demonstrated.
 - [x] All Constitution gates in [`spec.md`](./spec.md) pass.
 - [x] `build` + `lint` + `test` green locally and in CI; Java mapping test-covered.

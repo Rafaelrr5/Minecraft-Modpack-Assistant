@@ -8,12 +8,13 @@
  *    reason instead of mutating anything.
  *  - **Backup before write.** When confirmed, every existing target is copied into the backup
  *    directory *before* any write/delete happens (a two-pass apply).
- *  - **No path escape.** Changes that resolve outside the instance directory are rejected.
+ *  - **No path escape.** Reads, changes and backup destinations are checked against
+ *    canonical roots, including symbolic links and Windows junctions.
  *
- * Nothing in Phase 0 wires a feature through this; it exists so the contract is enforced in
- * one place the moment a feature needs to write.
+ * Path checks are not an atomic sandbox against concurrent hostile filesystem replacement
+ * or hard-link aliasing (spec 0003 FR-9).
  */
-import { access, copyFile, mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { access, copyFile, lstat, mkdir, readFile, realpath, rm, stat, writeFile } from 'node:fs/promises';
 import * as path from 'node:path';
 
 import type {
@@ -34,6 +35,55 @@ async function exists(p: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+function isWithin(root: string, target: string): boolean {
+  const relative = path.relative(root, target);
+  return relative !== '..' && !relative.startsWith('..' + path.sep) && !path.isAbsolute(relative);
+}
+
+/** Resolve an explicitly selected root, including a missing suffix for new builds. */
+async function canonicalRoot(root: string): Promise<string> {
+  try {
+    await lstat(root);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+    const parent = path.dirname(root);
+    if (parent === root) throw error;
+    return path.join(await canonicalRoot(parent), path.basename(root));
+  }
+  // Outside the catch: dangling links must not be mistaken for missing directories.
+  return realpath(root);
+}
+
+/** Check each existing component; a missing suffix is safe only after its ancestors. */
+async function containedPath(root: string, target: string, label: string): Promise<string> {
+  const refuse = () => new Error(`Refusing path outside the ${label}: ${target}`);
+  if (!isWithin(root, target)) throw refuse();
+  const parts = path.relative(root, target).split(path.sep).filter(Boolean);
+  let current = root;
+  for (const [index, part] of parts.entries()) {
+    current = path.join(current, part);
+    try {
+      await lstat(current);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+      return path.join(current, ...parts.slice(index + 1));
+    }
+    current = await realpath(current);
+    if (!isWithin(root, current)) throw refuse();
+  }
+  return current;
+}
+
+async function instancePath(instanceDir: string, relPath: string): Promise<string> {
+  const base = path.resolve(instanceDir);
+  const target = path.resolve(base, relPath);
+  if (!isWithin(base, target)) {
+    throw new Error(`Refusing path outside the instance directory: ${relPath}`);
+  }
+  const root = await canonicalRoot(base);
+  return containedPath(root, path.resolve(root, path.relative(base, target)), 'instance directory');
 }
 
 export interface GuardedInstanceFsOptions {
@@ -77,11 +127,7 @@ export class GuardedInstanceFs implements InstanceFs {
   }
 
   async readText(instanceDir: string, relPath: string): Promise<string | null> {
-    const base = path.resolve(instanceDir);
-    const target = path.resolve(base, relPath);
-    if (target !== base && !target.startsWith(base + path.sep)) {
-      throw new Error(`Refusing to read outside the instance directory: ${relPath}`);
-    }
+    const target = await instancePath(instanceDir, relPath);
     try {
       return await readFile(target, 'utf8');
     } catch {
@@ -90,11 +136,7 @@ export class GuardedInstanceFs implements InstanceFs {
   }
 
   async readBytes(instanceDir: string, relPath: string): Promise<Uint8Array | null> {
-    const base = path.resolve(instanceDir);
-    const target = path.resolve(base, relPath);
-    if (target !== base && !target.startsWith(base + path.sep)) {
-      throw new Error(`Refusing to read outside the instance directory: ${relPath}`);
-    }
+    const target = await instancePath(instanceDir, relPath);
     try {
       return await readFile(target); // no encoding → raw bytes (Buffer is a Uint8Array)
     } catch {
@@ -120,23 +162,27 @@ export class GuardedInstanceFs implements InstanceFs {
     }
 
     const base = path.resolve(plan.instanceDir);
+    const root = await canonicalRoot(base);
+    const requestedBackup = path.resolve(options.backupDir ?? path.join(base, '.mpa-backups', this.#now()));
+    const backupRoot = isWithin(base, requestedBackup)
+      ? await instancePath(base, path.relative(base, requestedBackup))
+      : await canonicalRoot(requestedBackup);
 
-    // Guard: no change may resolve outside the instance directory.
+    // Validate the entire plan AND backup destinations before creating anything.
+    const entries = [];
     for (const change of plan.changes) {
-      const target = path.resolve(base, change.relPath);
-      if (target !== base && !target.startsWith(base + path.sep)) {
-        throw new Error(`Refusing change outside the instance directory: ${change.relPath}`);
-      }
+      const target = await instancePath(base, change.relPath);
+      const relative = path.relative(base, path.resolve(base, change.relPath));
+      const dest = await containedPath(backupRoot, path.resolve(backupRoot, relative), 'backup directory');
+      entries.push({ change, target, dest });
     }
-
-    const backupRoot = options.backupDir ?? path.join(base, '.mpa-backups', this.#now());
     await mkdir(backupRoot, { recursive: true });
 
     // Pass 1 — back up every existing target BEFORE writing anything.
-    for (const change of plan.changes) {
-      const target = path.resolve(base, change.relPath);
+    for (const { target, dest } of entries) {
+      await containedPath(root, target, 'instance directory');
+      await containedPath(backupRoot, dest, 'backup directory');
       if (await exists(target)) {
-        const dest = path.join(backupRoot, change.relPath);
         await mkdir(path.dirname(dest), { recursive: true });
         await copyFile(target, dest);
       }
@@ -144,8 +190,8 @@ export class GuardedInstanceFs implements InstanceFs {
 
     // Pass 2 — apply the changes.
     const written: string[] = [];
-    for (const change of plan.changes) {
-      const target = path.resolve(base, change.relPath);
+    for (const { change, target } of entries) {
+      await containedPath(root, target, 'instance directory');
       if (change.kind === 'write') {
         await mkdir(path.dirname(target), { recursive: true });
         await writeFile(target, change.contents, 'utf8');
@@ -153,12 +199,16 @@ export class GuardedInstanceFs implements InstanceFs {
         await mkdir(path.dirname(target), { recursive: true });
         await writeFile(target, change.contents); // raw bytes — no text encoding
       } else {
-        await rm(target, { force: true });
+        // Validate the referent, but unlink a final link rather than deleting its referent.
+        const original = path.resolve(base, change.relPath);
+        await instancePath(base, change.relPath);
+        const parent = await instancePath(base, path.relative(base, path.dirname(original)));
+        await rm(path.join(parent, path.basename(original)), { force: true });
       }
       written.push(change.relPath);
     }
 
     this.#log.info('apply complete', { backupPath: backupRoot, written: written.length });
-    return { applied: true, backupPath: backupRoot, written };
+    return { applied: true, backupPath: options.backupDir ?? requestedBackup, written };
   }
 }

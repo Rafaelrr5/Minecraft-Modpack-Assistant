@@ -74,6 +74,12 @@ audiences (Constitution
   write through it yet.
 - **FR-8** — User-facing output SHOULD be available both as human-readable text (beginner)
   + structured JSON (expert) where it carry data (e.g. `doctor --json`).
+- **FR-9** — Instance reads and confirmed changes MUST reject paths redirected outside
+  the selected instance by symbolic links or Windows junctions, including missing write
+  targets below linked directories. Safe internal links remain supported. Default backups
+  stay inside the instance; an explicitly selected external backup root is authorized only
+  for backups, with the same containment rule for its descendants. Unresolvable links fail
+  closed. Validation of the complete plan precedes backup creation and instance mutation.
 
 ## 6. Non-functional requirements
 
@@ -110,6 +116,14 @@ audiences (Constitution
   created before** write applied.
 - **AC-5** — Given codebase, When architecture check run, Then **no `core/**` module
   import `cli/**`** (UI-agnostic core proven).
+- **AC-6** — Real temporary-directory tests demonstrate rejection of external symlinks
+  and Windows junctions in `readText`, `readBytes`, text/binary writes, deletion and backup
+  destinations; external bytes remain untouched and no partial plan is applied. Internal
+  links and ordinary missing nested targets continue to work. `npm run check` passes.
+
+The containment contract assumes no hostile concurrent replacement of filesystem entries
+during an operation; portable Node path APIs do not provide an atomic filesystem sandbox.
+Hard-link aliasing is not covered by this symbolic-link/junction correction.
 
 ## 9. Out of scope
 

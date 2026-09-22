@@ -58,7 +58,17 @@
     `package.json`; `electron.vite.config.ts`; `electron-builder.yml`; `src/desktop/tsconfig.json`;
     exclude `src/desktop/{main,preload,renderer}/**` from root `tsconfig*.json`; add eslint ignores.
   - **Maps to:** FR-8, FR-9, AC-7.
-  - **Done when:** `npm run check` stays green; `npm install` + `desktop:typecheck` pass locally.
+  - **CI hardening (t_3ab2db5f):** synchronize `package-lock.json` with the declared desktop
+    dependencies. Require `desktop:typecheck` and `desktop:build` in the existing CI job,
+    in addition to the unchanged core/CLI gates. This supersedes the on-demand-only desktop
+    checks in plan section 7; GUI execution and installer packaging remain separate.
+  - **Done when:** a clean dependency install with `npm ci`, `npm run check`,
+    `npm run desktop:typecheck`, and `npm run desktop:build` all pass; the resulting commit's
+    remote CI passes too. Commit/push and remote verification require explicit authorization.
+  - **Local verification:** Windows, Node 24.19.0 / npm 11.17.0: `npm ci` passed twice without
+    changing the lockfile; `npm run check` passed (392 tests, none skipped); desktop typecheck
+    and build passed. No GUI runtime or installer claim. The task remains open pending an
+    authorized commit and clean-checkout/remote CI verification on the CI Node 22 environment.
 
 - [ ] **T-0022-07 — Main process + preload**
   - **Deliverable:** `main/index.ts` (BrowserWindow w/ contextIsolation, no nodeIntegration,

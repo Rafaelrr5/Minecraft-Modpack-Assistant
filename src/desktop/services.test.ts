@@ -19,6 +19,16 @@ import {
   parseMinecraftVersion,
 } from '../core/index.ts';
 import { createDesktopServices } from './services.ts';
+import { FakeProvider } from '../core/orchestration/__fixtures__/fake-provider.ts';
+import { fakeLoaderVersions } from '../core/orchestration/__fixtures__/fake-loader-versions.ts';
+
+test('desktop automatic loader selection uses the injected metadata port', async () => {
+  const loaderVersions = fakeLoaderVersions({ versions: { 'fabric@1.21.1': '0.16.10' } });
+  const services = createDesktopServices({ provider: new FakeProvider([]), loaderVersions });
+  const result = await services.orchestrate({ loader: 'fabric', minecraft: '1.21.1', include: [] });
+  assert.equal(result.data?.packState.loader.version, '0.16.10');
+  assert.deepEqual(loaderVersions.calls, ['fabric@1.21.1']);
+});
 
 /** A configurable, write-recording fake of the guarded instance FS. `apply` flips `applied`. */
 class FakeInstanceFs implements InstanceFs {

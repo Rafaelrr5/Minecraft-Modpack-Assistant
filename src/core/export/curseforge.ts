@@ -9,6 +9,7 @@
  * and is a pure, deterministic projection of `PackState` (Constitution P7). Format facts follow
  * DOMAIN-KNOWLEDGE §8 [S20].
  */
+import { assertConcreteLoaderVersion } from '../domain/loader.ts';
 import type { PackState, PackStateMod } from '../domain/pack-state.ts';
 import type { CurseForgeFileRef, CurseForgeManifest, UnmappableMod } from './types.ts';
 import { validateJson } from './mrpack.ts';
@@ -46,6 +47,9 @@ export function buildCurseForgeManifest(state: PackState): {
   readonly manifest: CurseForgeManifest;
   readonly unmappable: readonly UnmappableMod[];
 } {
+  // `modLoaders[].id` embeds the loader version, so it must be a concrete build (spec 0006 FR-9).
+  assertConcreteLoaderVersion(state.loader, 'buildCurseForgeManifest');
+
   const files: CurseForgeFileRef[] = [];
   const unmappable: UnmappableMod[] = [];
   for (const mod of state.mods) {

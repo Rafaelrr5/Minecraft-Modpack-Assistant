@@ -55,7 +55,7 @@ export function resolved(def: ResolvedDef): ResolvedMod {
 const BRIEF: ModpackBrief = {
   theme: 'test',
   minecraftVersion: parseMinecraftVersion('1.21.1'),
-  loader: { family: 'neoforge', version: 'recommended' },
+  loader: { family: 'neoforge', version: '21.1.62' }, // synthetic pin; no compatibility claim
   audienceLevel: 'expert',
   distribution: 'singleplayer',
   mustHaveMechanics: [],

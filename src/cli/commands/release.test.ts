@@ -26,7 +26,7 @@ function ports(exporter: PackExporter = throwingExporter): ReleasePorts {
 }
 
 function baseOptions(over: Partial<ReleaseOptions> = {}): ReleaseOptions {
-  return { loader: 'neoforge', minecraft: '1.21.1', include: ['sodium'], format: 'mrpack', ...over };
+  return { loader: 'neoforge', loaderVersion: '21.1.62' /* synthetic pin */, minecraft: '1.21.1', include: ['sodium'], format: 'mrpack', ...over };
 }
 
 test('release is dry-run by default — shows an initial-release plan, writes nothing (AC-5)', async () => {

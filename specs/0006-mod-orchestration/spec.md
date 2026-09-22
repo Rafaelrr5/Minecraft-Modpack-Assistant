@@ -75,6 +75,31 @@ Both audiences (Constitution
 - **FR-7** — Resolution MUST go through provider-agnostic `ModSourceProvider` (Modrinth first);
   no provider-specific type cross capability boundary (Constitution P6).
 
+### Loader pinning correction (Kanban t_705612d2)
+
+- **FR-8** — Discovery may request a recommended loader build, but resolution MUST replace
+  that request with a concrete loader version before producing a distributable `PackState`.
+  Resolve against loader metadata for the selected Minecraft version; never invent a pin.
+  Experts may supply a concrete version explicitly. An unavailable or malformed resolution
+  MUST fail with actionable guidance and produce no applicable build/export.
+- **FR-9** — packwiz, build launch profiles, `.mrpack`, CurseForge and release MUST preserve
+  the same concrete loader version. Their public boundaries MUST reject unresolved aliases
+  (`recommended`, `latest`), ranges, empty values and malformed version tokens, including
+  legacy packwiz input. No output writer may silently resolve an alias.
+- **FR-10** — Migration MUST resolve a loader for the new Minecraft/family target or accept
+  an explicit target pin, rather than reusing a potentially incompatible source version.
+  Mod-only updates and build MUST preserve the established pin.
+
+Additional acceptance: test all four families; metadata failure/invalid payload/unsupported
+target produce no pin; explicit pins survive unchanged; parse-back confirms identical versions
+through packwiz, launch profile, both exports and release; legacy aliases cannot reach writes.
+CLI and desktop/assistant composition use the same injected loader-resolution boundary.
+
+Constitution re-check: P1 extends the existing pinning capability before implementation;
+P2/P6 keep network behind a port; P3 validates metadata and artifact boundaries; P4 leaves
+dry-run/confirmation/backup unchanged; P5/P7 forbid invented or floating pins; P8 supports
+automatic beginner resolution and explicit expert input; P9 adds no general dependency engine.
+
 ## 6. Non-functional requirements
 
 - **Read-only to the game.** Orchestration MUST NOT modify user's `.minecraft` instance; emit

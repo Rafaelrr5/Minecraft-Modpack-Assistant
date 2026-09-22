@@ -20,7 +20,7 @@ function currentPack(currentMc: string, loader: LoaderFamily, defs: readonly Res
   const brief: ModpackBrief = {
     theme: 'test',
     minecraftVersion: parseMinecraftVersion(currentMc),
-    loader: { family: loader, version: 'recommended' },
+    loader: { family: loader, version: '20.1.1' }, // synthetic source pin, not compatibility evidence
     audienceLevel: 'expert',
     distribution: 'singleplayer',
     mustHaveMechanics: [],
@@ -51,7 +51,7 @@ test('AC-1/AC-6: every mod with a target build migrates, yielding a complete mig
     { slug: 'b', projectId: 'b', versions: [nfVersion('b-n', '1.21.1')] },
   ]);
 
-  const report = await planMigration(current, { loader: 'neoforge', minecraft: '1.21.1' }, provider);
+  const report = await planMigration(current, { loader: 'neoforge', minecraft: '1.21.1', loaderVersion: '21.1.62' /* synthetic target pin */ }, provider);
 
   assert.equal(report.summary.migratable, 2);
   assert.equal(report.summary.blocked, 0);
@@ -64,14 +64,14 @@ test('AC-1/AC-6: every mod with a target build migrates, yielding a complete mig
 test('AC-3: the required Java change is reported (1.20.1 → 1.21.1 is 17 → 21)', async () => {
   const current = currentPack('1.20.1', 'neoforge', [{ slug: 'a', projectId: 'a' }]);
   const provider = new FakeUpdateProvider([{ slug: 'a', projectId: 'a', versions: [nfVersion('a-n', '1.21.1')] }]);
-  const report = await planMigration(current, { loader: 'neoforge', minecraft: '1.21.1' }, provider);
+  const report = await planMigration(current, { loader: 'neoforge', minecraft: '1.21.1', loaderVersion: '21.1.62' /* synthetic target pin */ }, provider);
   assert.deepEqual(report.java, { from: 17, to: 21, changed: true });
 });
 
 test('AC-3: a migration within the same Java band reports unchanged', async () => {
   const current = currentPack('1.21', 'neoforge', [{ slug: 'a', projectId: 'a' }]);
   const provider = new FakeUpdateProvider([{ slug: 'a', projectId: 'a', versions: [nfVersion('a-n', '1.21.1')] }]);
-  const report = await planMigration(current, { loader: 'neoforge', minecraft: '1.21.1' }, provider);
+  const report = await planMigration(current, { loader: 'neoforge', minecraft: '1.21.1', loaderVersion: '21.1.62' /* synthetic target pin */ }, provider);
   assert.equal(report.java.changed, false);
   assert.equal(report.java.to, 21);
 });
@@ -85,7 +85,7 @@ test('AC-2/AC-6: a mod with no target build is blocked and no migrated state is 
     { slug: 'c', projectId: 'c', versions: [nfVersion('c-old', '1.20.1')] }, // no 1.21.1 build
   ]);
 
-  const report = await planMigration(current, { loader: 'neoforge', minecraft: '1.21.1' }, provider);
+  const report = await planMigration(current, { loader: 'neoforge', minecraft: '1.21.1', loaderVersion: '21.1.62' /* synthetic target pin */ }, provider);
 
   const c = report.migrations.find((m) => m.slug === 'c');
   assert.equal(c?.status, 'blocked');
@@ -98,7 +98,7 @@ test('AC-2/AC-6: a mod with no target build is blocked and no migrated state is 
 
 test('AC-4: an unsupported loader/version target blocks the migration with a sourced reason', async () => {
   const current = currentPack('1.18.2', 'forge', [{ slug: 'a', projectId: 'a' }]);
-  // The provider would serve a build, but NeoForge has no build below 1.20.2 (domain rule).
+  // The provider would serve a build, but the implemented NeoForge support floor is 1.20.2.
   const provider = new FakeUpdateProvider([{ slug: 'a', projectId: 'a', versions: [nfVersion('a-n', '1.19.2')] }]);
 
   const report = await planMigration(current, { loader: 'neoforge', minecraft: '1.19.2' }, provider);
@@ -122,7 +122,7 @@ test('AC-5: a declared incompatibility at the new version is reported by pre-fli
     { slug: 'b', projectId: 'b', versions: [nfVersion('b-n', '1.21.1')] },
   ]);
 
-  const report = await planMigration(current, { loader: 'neoforge', minecraft: '1.21.1' }, provider);
+  const report = await planMigration(current, { loader: 'neoforge', minecraft: '1.21.1', loaderVersion: '21.1.62' /* synthetic target pin */ }, provider);
   assert.ok(report.conflicts.length >= 1);
   assert.equal(report.conflicts[0]?.category, 'declared-incompatibility');
 });
@@ -134,7 +134,7 @@ test('FR-8: a provider failure on a mod surfaces as provider-error and blocks a 
   const provider = new FakeUpdateProvider([
     { slug: 'a', projectId: 'a', versions: [nfVersion('a-n', '1.21.1')], throwOnList: true },
   ]);
-  const report = await planMigration(current, { loader: 'neoforge', minecraft: '1.21.1' }, provider);
+  const report = await planMigration(current, { loader: 'neoforge', minecraft: '1.21.1', loaderVersion: '21.1.62' /* synthetic target pin */ }, provider);
   assert.equal(report.migrations[0]?.status, 'provider-error');
   assert.equal(report.canMigrate, false);
 });
@@ -144,7 +144,7 @@ test('FR-8: a provider failure on a mod surfaces as provider-error and blocks a 
 test('renderMigrationReport leads with the verdict and the Java change, read-only', async () => {
   const current = currentPack('1.20.1', 'neoforge', [{ slug: 'a', projectId: 'a' }]);
   const provider = new FakeUpdateProvider([{ slug: 'a', projectId: 'a', versions: [nfVersion('a-n', '1.21.1')] }]);
-  const report = await planMigration(current, { loader: 'neoforge', minecraft: '1.21.1' }, provider);
+  const report = await planMigration(current, { loader: 'neoforge', minecraft: '1.21.1', loaderVersion: '21.1.62' /* synthetic target pin */ }, provider);
   const text = renderMigrationReport(report);
   assert.match(text, /Migration report → neoforge · Minecraft 1\.21\.1/);
   assert.match(text, /All 1 mod\(s\) can migrate/);

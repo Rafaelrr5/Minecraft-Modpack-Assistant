@@ -13,7 +13,8 @@ import type { DraftBrief, Slot } from './types.ts';
 
 /**
  * The sentinel a defaulted loader carries instead of a fabricated version. Phase 2 resolves it
- * to the latest compatible build; until then we do not pretend to know a pinned version.
+ * to a stable build from official metadata (Forge prefers its recommended promotion). No automatic
+ * prerelease fallback; until resolution succeeds this is a request, not a pinned version.
  */
 export const RECOMMENDED_LOADER_VERSION = 'recommended';
 

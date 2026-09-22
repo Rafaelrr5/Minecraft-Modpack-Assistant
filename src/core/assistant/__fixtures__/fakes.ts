@@ -19,6 +19,7 @@ import type {
 } from '../../ports/index.ts';
 import type { AssistantDeps, AssistantIo } from '../types.ts';
 import { FakeProvider } from '../../orchestration/__fixtures__/fake-provider.ts';
+import { fakeLoaderVersions } from '../../orchestration/__fixtures__/fake-loader-versions.ts';
 
 export const noopLogger: Logger = {
   debug() {},
@@ -180,6 +181,7 @@ export function fakeIo(answers: readonly string[]): FakeIo {
 export function makeDeps(over: Partial<AssistantDeps> = {}): AssistantDeps {
   const base: AssistantDeps = {
     provider: new FakeProvider([]),
+    loaderVersions: fakeLoaderVersions({ versions: { 'neoforge@1.21.1': '21.1.62', 'fabric@1.21.1': '0.16.10', 'forge@1.21.1': '52.1.0', 'quilt@1.21.1': '0.26.4' } }),
     instanceFs: fakeInstanceFs(),
     packFormat: fakePackFormat,
     logger: noopLogger,

@@ -19,7 +19,7 @@ const throwingExporter: PackExporter = {
 };
 
 function baseOptions(over: Partial<ExportOptions> = {}): ExportOptions {
-  return { loader: 'neoforge', minecraft: '1.21.1', include: ['sodium'], format: 'mrpack', ...over };
+  return { loader: 'neoforge', loaderVersion: '21.1.62' /* synthetic pin */, minecraft: '1.21.1', include: ['sodium'], format: 'mrpack', ...over };
 }
 
 test('export is dry-run by default — prints the plan and writes nothing (AC-7)', async () => {

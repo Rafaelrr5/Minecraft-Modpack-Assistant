@@ -9,8 +9,9 @@
  * Unresolved / incompatible cases become issues — never silent guesses (Constitution P5, FR-4).
  */
 import type { ModpackBrief, ResolvedMod } from '../domain/index.ts';
-import type { Logger, ModSourceProvider } from '../ports/index.ts';
+import type { Logger, LoaderVersionProvider, ModSourceProvider } from '../ports/index.ts';
 import { pickCompatibleFile } from './compatibility.ts';
+import { resolveLoaderPin } from './loader-resolution.ts';
 import { categorize } from './categorize.ts';
 import { toPackState } from './pin.ts';
 import { recommendSeeds } from './recommend.ts';
@@ -24,6 +25,14 @@ const DEFAULT_RECOMMEND_LIMIT = 5;
 
 export interface ResolveOptions {
   readonly logger?: Logger;
+  /**
+   * Official loader metadata, used **only** when the brief carries an unresolved loader selection
+   * (e.g. discovery's `recommended`) — spec 0006 FR-8. Omitting it while the brief is unresolved is
+   * an actionable error, never a silent guess.
+   */
+  readonly loaderVersions?: LoaderVersionProvider;
+  /** An explicit concrete loader pin from the caller; wins over the brief and the metadata. */
+  readonly loaderVersion?: string;
 }
 
 interface QueueItem {
@@ -40,7 +49,17 @@ export async function resolveModpack(
 ): Promise<OrchestrationResult> {
   const log = options.logger?.child({ module: 'orchestration' });
   const minecraftRaw = brief.minecraftVersion.raw;
-  const loader = brief.loader;
+
+  // 0. Turn the brief's loader *selection* into a concrete pin before anything is produced from it
+  //    (spec 0006 FR-8). Mod compatibility keys off the family, so this only affects the pin.
+  const loader = await resolveLoaderPin({
+    loader: brief.loader,
+    minecraftVersion: minecraftRaw,
+    ...(options.loaderVersion !== undefined ? { explicitVersion: options.loaderVersion } : {}),
+    ...(options.loaderVersions ? { provider: options.loaderVersions } : {}),
+    ...(options.logger ? { logger: options.logger } : {}),
+  });
+  const pinnedBrief: ModpackBrief = { ...brief, loader };
 
   // 1. Seed: the user's list plus, optionally, recommendations from the brief.
   const seeds: string[] = [...(request.include ?? [])];
@@ -141,8 +160,8 @@ export async function resolveModpack(
   // 4. Categorize and pin.
   const mods = [...resolved.values()];
   return {
-    modpack: { brief, mods },
-    packState: toPackState(brief, mods),
+    modpack: { brief: pinnedBrief, mods },
+    packState: toPackState(pinnedBrief, mods),
     categories: categorize(mods),
     issues,
   };

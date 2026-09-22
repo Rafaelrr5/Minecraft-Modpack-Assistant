@@ -11,12 +11,14 @@ import {
   type ExportArtifact,
   type ExportFormat,
   type ModSourceProvider,
+  type LoaderVersionProvider,
   type PackState,
   assembleExport,
   renderExportPlan,
   resolveModpack,
 } from '../../core/index.ts';
 import { createModrinthProvider } from '../../integration/modrinth/index.ts';
+import { createOfficialLoaderVersions } from '../../integration/loader-versions/official-loader-versions.ts';
 import { PackagingExporter } from '../../integration/packaging/index.ts';
 import { briefFromOptions, type OrchestrateOptions } from './orchestrate.ts';
 
@@ -50,6 +52,7 @@ export async function runExport(
   provider: ModSourceProvider,
   exporter: PackExporter,
   write: (text: string) => void,
+  loaderVersions?: LoaderVersionProvider,
 ): Promise<number> {
   const brief = briefFromOptions(options);
   const result = await resolveModpack(
@@ -60,6 +63,7 @@ export async function runExport(
       ...(options.recommendLimit !== undefined ? { recommendLimit: options.recommendLimit } : {}),
     },
     provider,
+    loaderVersions ? { loaderVersions } : {},
   );
 
   if (result.issues.length > 0) {
@@ -104,5 +108,6 @@ export async function runExportCli(options: ExportOptions): Promise<number> {
     createModrinthProvider(),
     new PackagingExporter(),
     (text) => process.stdout.write(text),
+    createOfficialLoaderVersions(),
   );
 }

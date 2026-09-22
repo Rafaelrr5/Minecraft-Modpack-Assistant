@@ -18,6 +18,12 @@ export interface MigrationTarget {
   readonly loader: LoaderFamily;
   /** Raw target Minecraft version, e.g. `1.21.1`. */
   readonly minecraft: string;
+  /**
+   * An explicit concrete loader build for the **target** (spec 0006 FR-10). Omitted → the migration
+   * resolves one from official loader metadata for the new target; the source pack's loader version
+   * is never carried over, since it may not even exist at the new Minecraft version.
+   */
+  readonly loaderVersion?: string;
 }
 
 /** Per-mod migration verdict (FR-2). */
@@ -66,7 +72,11 @@ export interface MigrationReport {
   /** Pre-flight findings over the migratable set at the new version (FR-5). */
   readonly conflicts: readonly Conflict[];
   readonly summary: MigrationSummary;
-  /** True when nothing is blocked and the loader supports the target. */
+  /** The concrete loader build resolved (or explicitly given) for the target — absent when none. */
+  readonly loaderPin?: string;
+  /** Why no target loader build could be pinned (FR-10): surfaced, never papered over. */
+  readonly loaderPinIssue?: string;
+  /** True when nothing is blocked, the loader supports the target, and a target build is pinned. */
   readonly canMigrate: boolean;
   /** The pinned migrated pack — only when `canMigrate` (never a partial migration, FR-6). */
   readonly migratedState?: PackState;

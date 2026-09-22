@@ -77,7 +77,9 @@ export async function runFallbackSession(
     ? { include: modsLine.split(',').map((s) => s.trim()).filter((s) => s.length > 0) }
     : { recommend: true };
 
-  io.write((await registry.get('resolve_mods')!.handler(resolveArgs, ctx)).summary);
+  const resolution = await registry.get('resolve_mods')!.handler(resolveArgs, ctx);
+  io.write(resolution.summary);
+  if (!resolution.ok) return state;
   io.write((await registry.get('run_preflight')!.handler({ environment: side }, ctx)).summary);
   io.write((await registry.get('predict_requirements')!.handler({ target: side }, ctx)).summary);
 

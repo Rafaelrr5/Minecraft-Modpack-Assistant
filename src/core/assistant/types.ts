@@ -14,6 +14,7 @@ import type {
   ChatModel,
   InstanceFs,
   Logger,
+  LoaderVersionProvider,
   ModSourceProvider,
   PackFormat,
 } from '../ports/index.ts';
@@ -31,6 +32,7 @@ export interface AssistantDeps {
   /** Absent → deterministic fallback (FR-6). Present → native tool-calling guided session. */
   readonly chatModel?: ChatModel;
   readonly provider: ModSourceProvider;
+  readonly loaderVersions?: LoaderVersionProvider;
   readonly instanceFs: InstanceFs;
   readonly packFormat: PackFormat;
   readonly logger: Logger;

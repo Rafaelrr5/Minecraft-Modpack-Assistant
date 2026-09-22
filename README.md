@@ -114,6 +114,7 @@ code. *No capability without a spec.* → [why](./docs/decisions/0001-spec-drive
 | **Templates** | [`templates/`](./templates/) | Standardized spec/plan/tasks/ADR templates. |
 | **Roadmap** | [`roadmap/`](./roadmap/README.md) | Phased delivery plan (Phase 0 → 8). |
 | **Source** | [`src/`](./src/) | The implementation: `core/` (UI-agnostic domain + ports), `integration/` (adapters), `cli/`, `desktop/` (Electron GUI — spec 0022). |
+| **Loader pinning** | [`loader-version-provider.ts`](./src/core/ports/loader-version-provider.ts), [`loader-resolution.ts`](./src/core/orchestration/loader-resolution.ts), [`loader-versions/`](./src/integration/loader-versions/) | Official metadata adapter, offline fixtures/contracts and cross-format roundtrip tests; concrete-version rejection tests also live in `src/core/export/loader-pinning.test.ts`. |
 
 ## The roadmap at a glance
 
@@ -171,12 +172,26 @@ npm run cli -- kubejs --instance ./my-pack --def ./scripts.json --quests ./quest
 npm run cli -- kubejs --instance ./my-pack --def ./scripts.json --quests ./quests.json --apply  # write it (backup taken first)
 npm run cli -- kubejs --instance ./my-pack --quests ./quests.json --describe "reward a diamond when bake_bread completes"  # NL draft → validate → dry-run
 npm run cli -- updates --loader neoforge --mc 1.21.1 --mods create,jei  # available updates + changelogs + regression check (read-only)
-npm run cli -- migrate --loader neoforge --from-mc 1.20.1 --to-mc 1.21.1 --mods create,jei  # plan a version migration (read-only)
+npm run cli -- migrate --loader neoforge --from-mc 1.20.2 --to-mc 1.21.1 --mods create,jei  # plan a version migration (read-only)
 npm run cli -- export --loader neoforge --mc 1.21.1 --mods create,jei                       # dry-run an .mrpack export plan
 npm run cli -- export --loader neoforge --mc 1.21.1 --mods create,jei --apply --out pack.mrpack  # write the .mrpack archive
 npm run cli -- release --loader neoforge --mc 1.21.1 --mods create,jei --from ./prev-pack         # dry-run a release (changelog + bundle)
 npm run cli -- release --loader neoforge --mc 1.21.1 --mods create,jei --apply --out pack.mrpack  # write the release bundle (archive + CHANGELOG.md)
 ```
+
+**Loader builds:** commands resolve an omitted loader version from official metadata,
+**stable-only**, before producing pinned state. Forge prefers its recommended promotion;
+there is no hardcoded loader-build default or automatic prerelease fallback. If metadata
+is unavailable or has no eligible build, resolution stops with guidance rather than writing
+a floating loader. Use `--loader-version <concrete-build>` on `orchestrate`, `build`,
+`updates`, `export`, `release`, or `migrate` to supply a pin. Migration uses that flag for
+the **source**, and `--to-loader-version <concrete-build>` for the **target**; without the
+latter, it resolves the target independently (never reuses the source build).
+Explicit pins, including prereleases, are preserved verbatim after **syntactic validation**:
+this does not verify that a build exists or is compatible. Legacy `recommended`/`latest`
+sentinels, ranges and wildcards in pack state are rejected by artifact boundaries, not
+silently upgraded. Re-resolve the brief or supply a verified concrete build before retrying.
+See [loader metadata and pinning](./docs/DOMAIN-KNOWLEDGE.md#15-loader-build-resolution-and-pinning).
 
 The friendly **desktop app** (Electron — spec 0022) builds with a separate toolchain (kept out of
 `npm run check`); install dependencies first, then:

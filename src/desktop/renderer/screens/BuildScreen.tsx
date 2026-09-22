@@ -14,6 +14,7 @@ type LoaderChoice = (typeof LOADERS)[number];
 export function BuildScreen(): JSX.Element {
   const [minecraft, setMinecraft] = useState('1.21.1');
   const [loader, setLoader] = useState<LoaderChoice>('neoforge');
+  const [loaderVersion, setLoaderVersion] = useState('');
   const [include, setInclude] = useState('sodium, lithium');
   const [instancePath, setInstancePath] = useState('');
   const [force, setForce] = useState(false);
@@ -24,6 +25,7 @@ export function BuildScreen(): JSX.Element {
   const baseOptions = (): BuildOptions => ({
     minecraft,
     loader,
+    ...(loaderVersion !== '' ? { loaderVersion } : {}),
     include: include
       .split(',')
       .map((s) => s.trim())
@@ -68,6 +70,10 @@ export function BuildScreen(): JSX.Element {
               </option>
             ))}
           </select>
+        </label>
+        <label>
+          Loader version (optional expert pin)
+          <input value={loaderVersion} onChange={(e) => setLoaderVersion(e.target.value)} placeholder="Automatic — official stable build" />
         </label>
         <label className="span-2">
           Mods (comma-separated slugs)

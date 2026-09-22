@@ -55,7 +55,7 @@ function modpack(minecraftRaw: string, mods: readonly ModSpec[]): Modpack {
   const brief: ModpackBrief = {
     theme: 'test',
     minecraftVersion: parseMinecraftVersion(minecraftRaw),
-    loader: { family: 'neoforge', version: 'recommended' },
+    loader: { family: 'neoforge', version: '21.1.62' }, // synthetic across MC cases; only Java/RAM tested
     audienceLevel: 'expert',
     distribution: 'singleplayer',
     mustHaveMechanics: [],

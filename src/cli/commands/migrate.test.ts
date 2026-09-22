@@ -19,7 +19,7 @@ test('runMigrate resolves the current set, plans the migration, and renders it (
 
   let out = '';
   const report = await runMigrate(
-    { loader: 'neoforge', fromMinecraft: '1.20.1', toMinecraft: '1.21.1', include: ['a'] },
+    { loader: 'neoforge', loaderVersion: '20.1.1', toLoaderVersion: '21.1.62', fromMinecraft: '1.20.1', toMinecraft: '1.21.1', include: ['a'] } /* synthetic source/target pins, not compatibility evidence */,
     provider,
     (text) => {
       out += text;
@@ -45,7 +45,7 @@ test('runMigrate reports a blocker when a mod has no build for the target', asyn
   ]);
   let out = '';
   const report = await runMigrate(
-    { loader: 'neoforge', fromMinecraft: '1.20.1', toMinecraft: '1.21.1', include: ['a'] },
+    { loader: 'neoforge', loaderVersion: '20.1.1', toLoaderVersion: '21.1.62', fromMinecraft: '1.20.1', toMinecraft: '1.21.1', include: ['a'] } /* synthetic source/target pins, not compatibility evidence */,
     provider,
     (t) => {
       out += t;

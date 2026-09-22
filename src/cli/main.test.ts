@@ -3,6 +3,19 @@ import assert from 'node:assert/strict';
 
 import { run } from './main.ts';
 
+test('CLI loader flags execute real offline resolution and migration', async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = () => Promise.reject(new Error('network forbidden'));
+  try {
+    const resolved = await captureStdout(() => run(['orchestrate', '--loader', 'fabric', '--mc', '1.21.1', '--loader-version', '0.16.10']));
+    assert.equal(resolved.code, 0);
+    assert.match(resolved.out, /fabric 0.16.10/);
+    const migrated = await captureStdout(() => run(['migrate', '--loader', 'fabric', '--from-mc', '1.20.1', '--to-mc', '1.21.1', '--loader-version', '0.15.0', '--to-loader-version', '0.16.10', '--json']));
+    assert.equal(migrated.code, 0);
+    assert.equal(JSON.parse(migrated.out).migratedState.loader.version, '0.16.10');
+  } finally { globalThis.fetch = originalFetch; }
+});
+
 async function captureStdout(fn: () => Promise<number>): Promise<{ code: number; out: string }> {
   const original = process.stdout.write;
   let out = '';

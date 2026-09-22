@@ -150,7 +150,7 @@ export function packStateOf(
     name: opts.name ?? 'test-pack',
     packVersion: '1.0.0',
     minecraft: parseMinecraftVersion(opts.minecraft ?? '1.21.1'),
-    loader: { family: opts.loader ?? 'neoforge', version: 'recommended' },
+    loader: { family: opts.loader ?? 'neoforge', version: '21.1.62' }, // synthetic across families; not compatibility evidence
     mods: mods.map(packMod),
   };
 }

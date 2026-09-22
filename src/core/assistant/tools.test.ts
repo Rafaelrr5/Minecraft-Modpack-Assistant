@@ -11,6 +11,26 @@ import { createToolRegistry, validateArgs } from './tools.ts';
 import type { AssistantDeps, AssistantOptions, SessionState } from './types.ts';
 import type { InstanceFs, Logger, PackFormat } from '../ports/index.ts';
 import { FakeProvider } from '../orchestration/__fixtures__/fake-provider.ts';
+import { fakeLoaderVersions } from '../orchestration/__fixtures__/fake-loader-versions.ts';
+
+test('assistant expert pin is accepted and metadata failure is a no-write tool result', async () => {
+  const loaderVersions = fakeLoaderVersions({ failWith: 'offline metadata' });
+  const reg = createToolRegistry({ ...deps(), loaderVersions });
+  const state = freshState();
+  const args = { theme: 'test', minecraftVersion: '1.21.1', loader: 'fabric', distribution: 'singleplayer', loaderVersion: '0.16.10' };
+  assert.equal(validateArgs(reg.get('build_brief')!.parameters, args).ok, true);
+  assert.equal((await reg.get('build_brief')!.handler(args, ctx(state))).ok, true);
+  assert.equal((await reg.get('resolve_mods')!.handler({ include: [] }, ctx(state))).ok, true);
+  assert.equal(state.resolved?.packState.loader.version, '0.16.10');
+  assert.deepEqual(loaderVersions.calls, []);
+  assert.equal((await reg.get('build_brief')!.handler({ ...args, loaderVersion: 'recommended' }, ctx(state))).ok, false);
+  await reg.get('build_brief')!.handler({ ...args, loaderVersion: undefined }, ctx(state));
+  const failure = await reg.get('resolve_mods')!.handler({ include: [] }, ctx(state));
+  assert.equal(failure.ok, false);
+  assert.match(failure.summary, /offline metadata/);
+  assert.equal(state.resolved, undefined);
+  assert.equal(state.buildPlan, undefined);
+});
 
 const noopLogger: Logger = {
   debug() {},
@@ -40,7 +60,7 @@ const fakeInstanceFs: InstanceFs = {
 };
 
 function deps(provider = new FakeProvider([])): AssistantDeps {
-  return { provider, instanceFs: fakeInstanceFs, packFormat: fakePackFormat, logger: noopLogger };
+  return { provider, loaderVersions: fakeLoaderVersions({ versions: { 'neoforge@1.21.1': '21.1.62' } }), instanceFs: fakeInstanceFs, packFormat: fakePackFormat, logger: noopLogger };
 }
 
 function freshState(): SessionState {

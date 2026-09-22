@@ -25,7 +25,7 @@ test('runUpdates resolves the set, reports an available update + changelog, read
 
   let out = '';
   const report = await runUpdates(
-    { loader: 'neoforge', minecraft: '1.21.1', include: ['a'] },
+    { loader: 'neoforge', loaderVersion: '21.1.62' /* synthetic pin */, minecraft: '1.21.1', include: ['a'] },
     provider,
     (text) => {
       out += text;
@@ -44,7 +44,7 @@ test('runUpdates --json emits the machine-readable report', async () => {
     { slug: 'x', projectId: 'x', versions: [{ versionId: 'x-v1', datePublished: '2024-01-01T00:00:00Z', sha1: 'x1' }] },
   ]);
   let out = '';
-  await runUpdates({ loader: 'neoforge', minecraft: '1.21.1', include: ['x'], json: true }, provider, (t) => {
+  await runUpdates({ loader: 'neoforge', loaderVersion: '21.1.62' /* synthetic pin */, minecraft: '1.21.1', include: ['x'], json: true }, provider, (t) => {
     out += t;
   });
   const parsed = JSON.parse(out) as { summary: { total: number } };

@@ -6,6 +6,7 @@
  */
 export * from './types.ts';
 export * from './compatibility.ts';
+export * from './loader-resolution.ts';
 export * from './categorize.ts';
 export * from './pin.ts';
 export * from './recommend.ts';

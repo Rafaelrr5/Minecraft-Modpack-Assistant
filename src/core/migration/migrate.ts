@@ -15,9 +15,9 @@ import {
   parseMinecraftVersion,
   requiredJavaMajor,
 } from '../domain/index.ts';
-import type { Logger, ModSourceProvider } from '../ports/index.ts';
+import type { Logger, LoaderVersionProvider, ModSourceProvider } from '../ports/index.ts';
 import { runPreflight, type TargetEnvironment } from '../conflicts/index.ts';
-import { toPackState } from '../orchestration/index.ts';
+import { resolveLoaderPin, toPackState } from '../orchestration/index.ts';
 import type {
   JavaChange,
   MigrationReport,
@@ -28,6 +28,12 @@ import type {
 export interface PlanMigrationOptions {
   /** Where the pack runs — drives the pre-flight side-mismatch check. Defaults to `client`. */
   readonly environment?: TargetEnvironment;
+  /**
+   * Official loader metadata for the **target** (spec 0006 FR-10). Required unless the target
+   * carries an explicit `loaderVersion`; without either, no target build is pinned and the
+   * migration is reported as incomplete rather than reusing the source pack's loader version.
+   */
+  readonly loaderVersions?: LoaderVersionProvider;
   readonly logger?: Logger;
 }
 
@@ -117,17 +123,43 @@ export async function planMigration(
   const toJava = requiredJavaMajor(targetVersion);
   const java: JavaChange = { from: fromJava, to: toJava, changed: fromJava !== toJava };
 
+  // The target needs its **own** loader build (FR-10): the source pin may not exist at the new
+  // Minecraft version, so it is re-resolved from official metadata (or taken explicitly), never
+  // carried over. A failure is surfaced and blocks the pinned state — it is not filled with a guess.
+  let loaderPin: string | undefined;
+  let loaderPinIssue: string | undefined;
+  if (loaderSupport.supported) {
+    try {
+      loaderPin = (
+        await resolveLoaderPin({
+          loader: { family: target.loader, version: 'recommended' },
+          minecraftVersion: target.minecraft,
+          ...(target.loaderVersion !== undefined ? { explicitVersion: target.loaderVersion } : {}),
+          ...(options.loaderVersions ? { provider: options.loaderVersions } : {}),
+          ...(options.logger ? { logger: options.logger } : {}),
+        })
+      ).version;
+    } catch (error) {
+      loaderPinIssue = error instanceof Error ? error.message : String(error);
+    }
+  } else {
+    loaderPinIssue = `${target.loader} has no build for Minecraft ${target.minecraft}.`;
+  }
+
   const migratedBrief: ModpackBrief = {
     ...modpack.brief,
     minecraftVersion: targetVersion,
-    loader: { family: target.loader, version: 'recommended' },
+    // Keep the unresolved request visible when it could not be pinned; nothing distributable is
+    // produced in that case (`migratedState` stays absent), so no floating loader escapes.
+    loader: { family: target.loader, version: loaderPin ?? 'recommended' },
   };
   const environment: TargetEnvironment = options.environment ?? 'client';
   const conflicts = runPreflight({ modpack: { brief: migratedBrief, mods: migratedMods }, environment })
     .conflicts;
 
-  // A migration is clean only if every mod can move AND the loader supports the target version.
-  const canMigrate = migratableCount === migrations.length && loaderSupport.supported;
+  // Clean only if every mod can move, the loader supports the target, AND a target build is pinned.
+  const canMigrate =
+    migratableCount === migrations.length && loaderSupport.supported && loaderPin !== undefined;
   const migratedState = canMigrate ? toPackState(migratedBrief, migratedMods) : undefined;
 
   const summary = { total: migrations.length, migratable: migratableCount, blocked: blockedCount };
@@ -145,6 +177,8 @@ export async function planMigration(
     migrations,
     conflicts,
     summary,
+    ...(loaderPin !== undefined ? { loaderPin } : {}),
+    ...(loaderPinIssue !== undefined ? { loaderPinIssue } : {}),
     canMigrate,
     ...(migratedState ? { migratedState } : {}),
   };

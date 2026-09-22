@@ -129,6 +129,32 @@ code + rationale, so expert can trace exactly why set looks as it does
   composition deferred (spec open question).
 - **CurseForge-only deps** → surfaced as `unsatisfied-dependency`, never faked (ADR 0004).
 
+## Loader pinning correction (Kanban t_705612d2)
+
+Keep discovery's unresolved selection separate conceptually from `Loader`'s pinned contract.
+Use a shared `isConcreteLoaderVersion`/assertion at pin, build, packwiz read/assemble and both
+export builders. Permit numeric dotted release identifiers with explicit prerelease/build
+suffixes, not whitespace, aliases, ranges or wildcard tokens. Do not silently normalize inputs.
+
+Add a provider-agnostic `LoaderVersionProvider` port and a fetch-injected integration adapter
+for official loader metadata. Resolve `recommended` only at orchestration/migration, with no
+network in core: Fabric/Quilt use game-scoped loader metadata; NeoForge uses its Maven JSON
+version inventory filtered by the sourced Minecraft version scheme; Forge uses game-scoped
+promotions. Stable recommended releases are preferred; absence is an explicit failure rather
+than a fabricated pin. Explicit concrete caller pins are preserved and syntactically validated
+(not represented as catalog-verified compatibility). Output serialization never re-resolves.
+
+Wire optional `loaderVersion` through CLI options (`--loader-version`), and
+`toLoaderVersion` (`--to-loader-version`) for migrations; inject the provider in CLI, desktop
+and assistant composition. Tests inject fakes, never hit live metadata. Existing resolved test
+fixtures must use concrete pins. Reuse spec 0006 rather than allocate a competing spec number.
+
+Official endpoint evidence: Fabric route index https://meta.fabricmc.net/;
+Quilt https://meta.quiltmc.org/ (OpenAPI); NeoForge
+https://maven.neoforged.net/api/maven/versions/releases/net/neoforged/neoforge;
+Forge https://files.minecraftforge.net/net/minecraftforge/forge/promotions_slim.json.
+Record exact supported shapes/limitations in DOMAIN-KNOWLEDGE before relying on them.
+
 ## 10. Rollout / sequencing
 
 1. Domain `ResolvedMod` + `Modpack`; `OrchestrationResult`/issue types.

@@ -89,9 +89,12 @@ test('AC-3: the session pack state equals a direct resolveModpack call (model ad
   ]);
   const io = fakeIo(['cozy magic 1.21.1 fabric', 'quit']);
 
-  const state = await runAssistantSession(io, makeDeps({ provider, chatModel }), { now: FIXED_NOW });
+  const deps = makeDeps({ provider, chatModel });
+  const state = await runAssistantSession(io, deps, { now: FIXED_NOW });
 
-  const direct = await resolveModpack(state.brief!, { include: ['mod-a'] }, provider);
+  const direct = await resolveModpack(state.brief!, { include: ['mod-a'] }, provider, {
+    ...(deps.loaderVersions ? { loaderVersions: deps.loaderVersions } : {}),
+  });
   assert.deepEqual(state.resolved?.packState, direct.packState);
 });
 

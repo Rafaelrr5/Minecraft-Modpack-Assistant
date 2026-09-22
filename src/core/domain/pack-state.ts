@@ -39,6 +39,7 @@ export interface PackState {
   /** The pack's own version (distinct from the Minecraft version). */
   readonly packVersion: string;
   readonly minecraft: MinecraftVersion;
+  /** Concrete build only; artifact boundaries reject legacy aliases/ranges without repairing them. */
   readonly loader: Loader;
   readonly mods: readonly PackStateMod[];
 }

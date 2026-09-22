@@ -14,6 +14,7 @@ import type {
   PinnedDownload,
   ResolvedMod,
 } from '../domain/index.ts';
+import { assertConcreteLoaderVersion } from '../domain/index.ts';
 
 function pinDownload(file: ModFile): PinnedDownload {
   if (file.hashes.sha512) {
@@ -27,6 +28,10 @@ function pinDownload(file: ModFile): PinnedDownload {
 
 /** Build the pinned `PackState` for a brief and its resolved mods. */
 export function toPackState(brief: ModpackBrief, mods: readonly ResolvedMod[]): PackState {
+  // The pack state is *the* distributable artifact every later phase projects from: it must carry a
+  // concrete loader build, never a selection request (spec 0006 FR-8/FR-9).
+  assertConcreteLoaderVersion(brief.loader, 'toPackState');
+
   const packMods: PackStateMod[] = mods.map((resolved) => {
     const entry: PackStateMod = {
       name: resolved.mod.name,

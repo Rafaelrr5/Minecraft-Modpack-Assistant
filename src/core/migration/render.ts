@@ -29,6 +29,9 @@ export function renderMigrationReport(report: MigrationReport): string {
     lines.push(`  All ${summary.total} mod(s) can migrate. ✔`);
   } else if (!loaderSupport.supported) {
     lines.push(`  Migration blocked: ${loaderSupport.reason ?? 'loader does not support the target.'}`);
+  } else if (report.loaderPinIssue !== undefined) {
+    // No concrete target loader build → nothing distributable is produced (spec 0006 FR-10).
+    lines.push(`  Migration blocked: ${report.loaderPinIssue}`);
   } else {
     lines.push(
       `  Migration blocked: ${summary.blocked} of ${summary.total} mod(s) have no build for the target.`,
@@ -41,6 +44,9 @@ export function renderMigrationReport(report: MigrationReport): string {
       ? `  Java: ${java.from} → ${java.to} (changes — update your runtime).`
       : `  Java: ${java.to} (unchanged).`,
   );
+  if (report.loaderPin !== undefined) {
+    lines.push(`  Loader: ${target.loader} ${report.loaderPin} (pinned for the target).`);
+  }
 
   lines.push('');
   for (const m of migrations) lines.push(renderOne(m));

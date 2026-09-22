@@ -69,6 +69,7 @@ export async function run(argv: readonly string[]): Promise<number> {
       args: [...rest],
       options: {
         loader: { type: 'string' },
+        'loader-version': { type: 'string' },
         mc: { type: 'string' },
         mods: { type: 'string' },
         recommend: { type: 'boolean', default: false },
@@ -100,6 +101,7 @@ export async function run(argv: readonly string[]): Promise<number> {
 
     const options: OrchestrateOptions = {
       loader: values.loader,
+      ...(values['loader-version'] !== undefined ? { loaderVersion: values['loader-version'] } : {}),
       minecraft: values.mc,
       include,
       recommend: values.recommend === true,
@@ -123,6 +125,7 @@ export async function run(argv: readonly string[]): Promise<number> {
       args: [...rest],
       options: {
         loader: { type: 'string' },
+        'loader-version': { type: 'string' },
         mc: { type: 'string' },
         mods: { type: 'string' },
         recommend: { type: 'boolean', default: false },
@@ -158,6 +161,7 @@ export async function run(argv: readonly string[]): Promise<number> {
 
     const options: BuildOptions = {
       loader: values.loader,
+      ...(values['loader-version'] !== undefined ? { loaderVersion: values['loader-version'] } : {}),
       minecraft: values.mc,
       include,
       recommend: values.recommend === true,
@@ -236,6 +240,7 @@ export async function run(argv: readonly string[]): Promise<number> {
       args: [...rest],
       options: {
         loader: { type: 'string' },
+        'loader-version': { type: 'string' },
         mc: { type: 'string' },
         mods: { type: 'string' },
         recommend: { type: 'boolean', default: false },
@@ -271,6 +276,7 @@ export async function run(argv: readonly string[]): Promise<number> {
 
     const options: ExportOptions = {
       loader: values.loader,
+      ...(values['loader-version'] !== undefined ? { loaderVersion: values['loader-version'] } : {}),
       minecraft: values.mc,
       include,
       recommend: values.recommend === true,
@@ -294,6 +300,7 @@ export async function run(argv: readonly string[]): Promise<number> {
       args: [...rest],
       options: {
         loader: { type: 'string' },
+        'loader-version': { type: 'string' },
         mc: { type: 'string' },
         mods: { type: 'string' },
         recommend: { type: 'boolean', default: false },
@@ -331,6 +338,7 @@ export async function run(argv: readonly string[]): Promise<number> {
 
     const options: ReleaseOptions = {
       loader: values.loader,
+      ...(values['loader-version'] !== undefined ? { loaderVersion: values['loader-version'] } : {}),
       minecraft: values.mc,
       include,
       recommend: values.recommend === true,
@@ -488,6 +496,7 @@ export async function run(argv: readonly string[]): Promise<number> {
       args: [...rest],
       options: {
         loader: { type: 'string' },
+        'loader-version': { type: 'string' },
         mc: { type: 'string' },
         mods: { type: 'string' },
         side: { type: 'string' },
@@ -511,6 +520,7 @@ export async function run(argv: readonly string[]): Promise<number> {
 
     const options: UpdatesOptions = {
       loader: values.loader,
+      ...(values['loader-version'] !== undefined ? { loaderVersion: values['loader-version'] } : {}),
       minecraft: values.mc,
       include,
       ...(values.side === 'server' || values.side === 'client' ? { side: values.side } : {}),
@@ -524,9 +534,11 @@ export async function run(argv: readonly string[]): Promise<number> {
       args: [...rest],
       options: {
         loader: { type: 'string' },
+        'loader-version': { type: 'string' },
         'from-mc': { type: 'string' },
         'to-mc': { type: 'string' },
         'to-loader': { type: 'string' },
+        'to-loader-version': { type: 'string' },
         mods: { type: 'string' },
         side: { type: 'string' },
         json: { type: 'boolean', default: false },
@@ -557,8 +569,10 @@ export async function run(argv: readonly string[]): Promise<number> {
 
     const options: MigrateOptions = {
       loader: values.loader,
+      ...(values['loader-version'] !== undefined ? { loaderVersion: values['loader-version'] } : {}),
       fromMinecraft: values['from-mc'],
       toMinecraft: values['to-mc'],
+      ...(values['to-loader-version'] !== undefined ? { toLoaderVersion: values['to-loader-version'] } : {}),
       ...(values['to-loader'] !== undefined && isLoaderFamily(values['to-loader'])
         ? { toLoader: values['to-loader'] }
         : {}),

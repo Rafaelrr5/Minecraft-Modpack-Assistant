@@ -5,7 +5,7 @@
  */
 import { parse, stringify } from 'smol-toml';
 
-import { isLoaderFamily } from '../../core/domain/loader.ts';
+import { assertConcreteLoaderVersion, isLoaderFamily } from '../../core/domain/loader.ts';
 import type { Loader } from '../../core/domain/loader.ts';
 import type { MinecraftVersion } from '../../core/domain/minecraft-version.ts';
 import { parseMinecraftVersion } from '../../core/domain/minecraft-version.ts';
@@ -73,6 +73,8 @@ export interface PackTomlData {
 }
 
 export function buildPackToml(data: PackTomlData): string {
+  // `[versions]` is what a launcher installs the loader from — a concrete build only (spec 0006 FR-9).
+  assertConcreteLoaderVersion(data.loader, 'buildPackToml');
   const versions: Record<string, string> = { minecraft: data.minecraft.raw };
   versions[data.loader.family] = data.loader.version;
   const obj: Record<string, unknown> = {
@@ -103,6 +105,9 @@ export function parsePackToml(text: string): PackTomlData {
     family: loaderFamily,
     version: asString(versions[loaderFamily], `versions.${loaderFamily}`),
   };
+  // Reject a legacy/hand-edited sentinel on the way *in* too, so an old tree cannot re-introduce a
+  // floating loader into an update, migration or export (spec 0006 FR-9).
+  assertConcreteLoaderVersion(loader, 'parsePackToml');
 
   const index = asRecord(raw.index, 'pack.toml [index]');
   const author = optString(raw.author);

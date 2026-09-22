@@ -42,7 +42,15 @@ building/launching (Phase 4); CurseForge sourcing (later). Requirements predicti
   [Domain §3.1](../docs/DOMAIN-KNOWLEDGE.md#31-modrinth-first-adapter--see-adr-0004),
   [§4](../docs/DOMAIN-KNOWLEDGE.md#4-mod-metadata--dependency-declarations)).
 - Loader + MC version resolution and pinning into `PackState`
-  ([ADR 0005](../docs/decisions/0005-packwiz-and-mrpack-pack-format.md)).
+  ([ADR 0005](../docs/decisions/0005-packwiz-and-mrpack-pack-format.md)). The implemented
+  `LoaderVersionProvider` adapter resolves Discovery's `recommended` request using official
+  metadata, **stable-only** (Forge prefers its recommended promotion). It has no hardcoded
+  loader-build default and never falls back to a prerelease. Missing/unavailable metadata blocks
+  pinning with actionable guidance. Explicit `--loader-version` pins are preserved verbatim
+  after syntax validation, **not** catalog-existence or compatibility verification; migration
+  resolves the new target independently, or accepts `--to-loader-version`.
+  Legacy sentinels/ranges/wildcards are rejected at build, packwiz, export and release boundaries,
+  not silently repaired. See [Domain §1.5](../docs/DOMAIN-KNOWLEDGE.md#15-loader-build-resolution-and-pinning).
 - Categorization of the resolved set.
 - `requirements` module: **System Requirements Prediction** —
   [spec `0002`](../specs/0002-system-requirements-prediction/spec.md) /

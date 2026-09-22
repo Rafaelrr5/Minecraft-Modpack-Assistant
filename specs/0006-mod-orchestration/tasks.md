@@ -96,6 +96,19 @@ condition. Build deterministic resolver against fake provider first.
 
 ---
 
+## Loader pinning correction (Kanban t_705612d2)
+
+- [x] **T-0006-11** — Shared concrete-loader validation and artifact boundary rejection (FR-9).
+- [x] **T-0006-12** — Injected official metadata loader resolution, offline contract tests and
+  sourced domain documentation, including unavailable/malformed/error cases (FR-8).
+- [x] **T-0006-13** — Thread automatic/explicit pins through orchestration, CLI, assistant,
+  desktop and migration; preserve pins during build and updates (FR-8/FR-10).
+- [x] **T-0006-14** — Cross-format parse-back and no-write regression tests; run `npm run check`
+  and desktop typecheck/build if composition changes. Sync docs and record verified evidence.
+
+Verification: core check and desktop typecheck/build passed locally; all four official metadata
+CLI smoke checks resolved concrete pins. CLAUDE.md map and pinning guardrail synced.
+
 ## Definition of Done (feature)
 
 - [x] AC-1…AC-6 met + demonstrated.

@@ -8,6 +8,8 @@
  */
 import {
   type LoaderFamily,
+  assertConcreteLoaderVersion,
+  type LoaderVersionProvider,
   type ModpackBrief,
   type ModSourceProvider,
   type TargetEnvironment,
@@ -18,8 +20,10 @@ import {
   runUpdateCheck,
 } from '../../core/index.ts';
 import { createModrinthProvider } from '../../integration/modrinth/index.ts';
+import { createOfficialLoaderVersions } from '../../integration/loader-versions/official-loader-versions.ts';
 
 export interface UpdatesOptions {
+  readonly loaderVersion?: string;
   readonly loader: LoaderFamily;
   readonly minecraft: string;
   /** The pack to inspect — the mod slugs/project ids currently in it. */
@@ -31,10 +35,13 @@ export interface UpdatesOptions {
 
 /** Build the minimal brief the resolver needs from CLI flags (expert, no explanations). */
 function briefFromOptions(options: UpdatesOptions): ModpackBrief {
+  if (options.loaderVersion !== undefined) {
+    assertConcreteLoaderVersion({ family: options.loader, version: options.loaderVersion }, 'loader-version');
+  }
   return {
     theme: 'modpack',
     minecraftVersion: parseMinecraftVersion(options.minecraft),
-    loader: { family: options.loader, version: 'recommended' },
+    loader: { family: options.loader, version: options.loaderVersion ?? 'recommended' },
     audienceLevel: 'expert',
     distribution: 'singleplayer',
     mustHaveMechanics: [],
@@ -47,9 +54,10 @@ export async function runUpdates(
   options: UpdatesOptions,
   provider: ModSourceProvider,
   write: (text: string) => void,
+  loaderVersions?: LoaderVersionProvider,
 ): Promise<UpdateReport> {
   const brief = briefFromOptions(options);
-  const result = await resolveModpack(brief, { include: options.include }, provider);
+  const result = await resolveModpack(brief, { include: options.include }, provider, loaderVersions ? { loaderVersions } : {});
   const environment: TargetEnvironment = options.side === 'server' ? 'server' : 'client';
   const report = await runUpdateCheck(result.modpack, provider, { environment });
   write(options.json === true ? `${JSON.stringify(report, null, 2)}\n` : renderUpdateReport(report));
@@ -59,7 +67,7 @@ export async function runUpdates(
 /** Wire to the real Modrinth provider for terminal use. */
 export async function runUpdatesCli(options: UpdatesOptions): Promise<number> {
   const provider = createModrinthProvider();
-  const report = await runUpdates(options, provider, (text) => process.stdout.write(text));
+  const report = await runUpdates(options, provider, (text) => process.stdout.write(text), createOfficialLoaderVersions());
   // A regression an update would introduce is the one thing the user must see — signal via exit code.
   return report.regression.hasRegression ? 1 : 0;
 }

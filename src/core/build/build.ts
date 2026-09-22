@@ -10,6 +10,7 @@
  *   applyInstall   → the guarded write: dry-run by default, backup before write         FR-4
  */
 import type { PackState } from '../domain/index.ts';
+import { assertConcreteLoaderVersion } from '../domain/index.ts';
 import type { RequirementsReport } from '../requirements/index.ts';
 import type { FileChange, InstanceFs, Logger, PackFile, PackFormat } from '../ports/index.ts';
 import {
@@ -32,6 +33,10 @@ export function assembleBuild(
   packFormat: PackFormat,
   logger?: Logger,
 ): BuildArtifacts {
+  // The build is the last stop before a guarded write: refuse a floating loader here so no
+  // instance, packwiz tree or launch profile can carry one (spec 0006 FR-9).
+  assertConcreteLoaderVersion(state.loader, 'assembleBuild');
+
   const launchProfile = toLaunchProfile(state, report);
   const files: PackFile[] = [
     ...packFormat.assemble(state),

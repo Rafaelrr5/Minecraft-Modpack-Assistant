@@ -6,6 +6,7 @@
  */
 import {
   type LoaderFamily,
+  assertConcreteLoaderVersion,
   type ModpackBrief,
   type ModSourceProvider,
   type OrchestrationResult,
@@ -21,10 +22,17 @@ import {
 } from '../../core/index.ts';
 import { createModrinthProvider } from '../../integration/modrinth/index.ts';
 import { GuardedInstanceFs } from '../../integration/instance-fs/index.ts';
+import type { LoaderVersionProvider } from '../../core/ports/index.ts';
+import { createOfficialLoaderVersions } from '../../integration/loader-versions/official-loader-versions.ts';
 
 export interface OrchestrateOptions {
   readonly loader: LoaderFamily;
   readonly minecraft: string;
+  /**
+   * Explicit concrete loader build (`--loader-version 21.1.62`). Omitted → the loader is resolved
+   * from official metadata for `--mc` (spec 0006 FR-8); no floating pin is ever written.
+   */
+  readonly loaderVersion?: string;
   readonly include: readonly string[];
   readonly recommend?: boolean;
   readonly recommendLimit?: number;
@@ -45,15 +53,24 @@ export interface OrchestrateOptions {
 export interface OrchestrateDeps {
   /** Keys already bound in the instance's `options.txt`, `bindingId → key` (spec 0007 FR-7). */
   readonly currentKeybinds?: Readonly<Record<string, string>>;
+  /** Official loader metadata; required unless `--loader-version` is given (spec 0006 FR-8). */
+  readonly loaderVersions?: LoaderVersionProvider;
 }
 
-/** Build the minimal brief orchestration needs from CLI flags (expert, no explanations). */
+/**
+ * Build the minimal brief orchestration needs from CLI flags (expert, no explanations). When the
+ * user gave no `--loader-version`, the loader stays an **unresolved selection request** here and is
+ * pinned by orchestration against official metadata — the CLI never invents a build.
+ */
 export function briefFromOptions(options: OrchestrateOptions): ModpackBrief {
+  if (options.loaderVersion !== undefined) {
+    assertConcreteLoaderVersion({ family: options.loader, version: options.loaderVersion }, 'loader-version');
+  }
   return {
     theme: options.theme ?? 'modpack',
     ...(options.playstyle ? { playstyle: options.playstyle } : {}),
     minecraftVersion: parseMinecraftVersion(options.minecraft),
-    loader: { family: options.loader, version: 'recommended' },
+    loader: { family: options.loader, version: options.loaderVersion ?? 'recommended' },
     audienceLevel: 'expert',
     distribution: 'singleplayer',
     mustHaveMechanics: [],
@@ -77,6 +94,7 @@ export async function runOrchestrate(
       ...(options.recommendLimit !== undefined ? { recommendLimit: options.recommendLimit } : {}),
     },
     provider,
+    deps.loaderVersions ? { loaderVersions: deps.loaderVersions } : {},
   );
   write(renderResult(result));
 
@@ -106,7 +124,7 @@ export function renderResult(result: OrchestrationResult): string {
   const { packState, categories, issues, modpack } = result;
   const lines = [
     `Resolved pack: ${packState.name}`,
-    `  Target: ${packState.loader.family} · Minecraft ${packState.minecraft.raw}`,
+    `  Target: ${packState.loader.family} ${packState.loader.version} · Minecraft ${packState.minecraft.raw}`,
     `  Mods (${modpack.mods.length}):`,
   ];
   for (const m of modpack.mods) {
@@ -135,7 +153,7 @@ export async function runOrchestrateCli(options: OrchestrateOptions): Promise<nu
 
   // For pre-flight, read the instance's options.txt (read-only, via the guarded boundary) so the
   // keybinding remap proposals avoid keys the user already bound (spec 0007 FR-7 / Constitution P4).
-  const deps: OrchestrateDeps = {};
+  const deps: OrchestrateDeps = { loaderVersions: createOfficialLoaderVersions() };
   if (options.preflight && options.instancePath) {
     const fs = new GuardedInstanceFs();
     const optionsTxt = await fs.readText(options.instancePath, 'options.txt');

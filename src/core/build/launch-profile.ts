@@ -8,7 +8,12 @@
  * `PackState` (spec 0006). Nothing is guessed and nothing is "latest" (Constitution P5/P7); the
  * report's own rationale travels with the profile so the choice stays explainable (P9).
  */
-import { isLoaderFamily, type JavaMajor, type PackState } from '../domain/index.ts';
+import {
+  isConcreteLoaderVersion,
+  isLoaderFamily,
+  type JavaMajor,
+  type PackState,
+} from '../domain/index.ts';
 import type { RequirementsReport } from '../requirements/index.ts';
 import { GENERATED_BY, type LaunchProfile } from './types.ts';
 
@@ -65,6 +70,11 @@ export function parseLaunchProfile(json: string): LaunchProfile {
   if (typeof loader !== 'object' || loader === null) fail('missing loader');
   const family = asString(loader.family, 'loader.family');
   if (!isLoaderFamily(family)) fail(`unknown loader family "${family}"`);
+  const loaderVersion = asString(loader.version, 'loader.version');
+  // The profile is what `launch` installs/runs against: a hand-edited alias must not survive.
+  if (!isConcreteLoaderVersion(loaderVersion)) {
+    fail(`loader.version "${loaderVersion}" is not a concrete ${family} build`);
+  }
 
   const java = p.java as Record<string, unknown> | undefined;
   if (typeof java !== 'object' || java === null) fail('missing java');
@@ -83,7 +93,7 @@ export function parseLaunchProfile(json: string): LaunchProfile {
   return {
     name: asString(p.name, 'name'),
     minecraftVersion: asString(p.minecraftVersion, 'minecraftVersion'),
-    loader: { family, version: asString(loader.version, 'loader.version') },
+    loader: { family, version: loaderVersion },
     java: { majorVersion: majorVersion as JavaMajor, rationale: asString(java.rationale, 'java.rationale') },
     memory: {
       xmxMb: memory.xmxMb,

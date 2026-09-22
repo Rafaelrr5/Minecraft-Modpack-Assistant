@@ -14,6 +14,7 @@ import { stdin, stdout } from 'node:process';
 
 import { type AssistantDeps, type AssistantIo, type ChatModel, runAssistantSession } from '../../core/index.ts';
 import { createModrinthProvider } from '../../integration/modrinth/index.ts';
+import { createOfficialLoaderVersions } from '../../integration/loader-versions/official-loader-versions.ts';
 import { GuardedInstanceFs } from '../../integration/instance-fs/index.ts';
 import { PackwizFormat } from '../../integration/packwiz/index.ts';
 import { createNvidiaChatModel } from '../../integration/nvidia/index.ts';
@@ -109,6 +110,7 @@ export async function runAssistant(io: AssistantIo, options: AssistantCliOptions
 
   const deps: AssistantDeps = {
     provider: createModrinthProvider(),
+    loaderVersions: createOfficialLoaderVersions(),
     instanceFs: new GuardedInstanceFs(),
     packFormat: new PackwizFormat(),
     logger,

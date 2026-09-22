@@ -9,6 +9,7 @@
  */
 import {
   type InstanceFs,
+  type LoaderVersionProvider,
   type ModSourceProvider,
   type PackFormat,
   type RequirementsTarget,
@@ -21,6 +22,7 @@ import {
   resolveModpack,
 } from '../../core/index.ts';
 import { createModrinthProvider } from '../../integration/modrinth/index.ts';
+import { createOfficialLoaderVersions } from '../../integration/loader-versions/official-loader-versions.ts';
 import { GuardedInstanceFs } from '../../integration/instance-fs/index.ts';
 import { PackwizFormat } from '../../integration/packwiz/index.ts';
 import { briefFromOptions, type OrchestrateOptions } from './orchestrate.ts';
@@ -36,6 +38,7 @@ export interface BuildOptions extends OrchestrateOptions {
 
 /** Ports the build needs; injectable so the command is testable without real disk/network. */
 export interface BuildPorts {
+  readonly loaderVersions?: LoaderVersionProvider;
   readonly packFormat: PackFormat;
   readonly instanceFs: InstanceFs;
 }
@@ -56,6 +59,7 @@ export async function runBuild(
       ...(options.recommendLimit !== undefined ? { recommendLimit: options.recommendLimit } : {}),
     },
     provider,
+    ports.loaderVersions ? { loaderVersions: ports.loaderVersions } : {},
   );
 
   if (result.issues.length > 0) {
@@ -104,7 +108,7 @@ export async function runBuildCli(options: BuildOptions): Promise<number> {
   return runBuild(
     options,
     createModrinthProvider(),
-    { packFormat: new PackwizFormat(), instanceFs: new GuardedInstanceFs() },
+    { packFormat: new PackwizFormat(), instanceFs: new GuardedInstanceFs(), loaderVersions: createOfficialLoaderVersions() },
     (text) => process.stdout.write(text),
   );
 }

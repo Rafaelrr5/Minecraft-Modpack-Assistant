@@ -21,6 +21,7 @@ export interface ModpackBrief {
   readonly theme: string;
   readonly playstyle?: string;
   readonly minecraftVersion: MinecraftVersion;
+  /** Discovery may carry `recommended`; orchestration resolves it before creating pinned state. */
   readonly loader: Loader;
   readonly audienceLevel: AudienceLevel;
   readonly distribution: Distribution;

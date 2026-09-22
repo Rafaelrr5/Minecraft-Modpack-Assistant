@@ -18,7 +18,7 @@ test('runOrchestrate resolves dependencies, renders the set, and reports issues 
 
   let out = '';
   const result = await runOrchestrate(
-    { loader: 'neoforge', minecraft: '1.21.1', include: ['mod-a', 'fabric-only'] },
+    { loader: 'neoforge', loaderVersion: '21.1.62' /* synthetic pin */, minecraft: '1.21.1', include: ['mod-a', 'fabric-only'] },
     provider,
     (text) => {
       out += text;
@@ -35,7 +35,7 @@ test('runOrchestrate resolves dependencies, renders the set, and reports issues 
 test('runOrchestrate reports a clean set with no issues', async () => {
   const provider = new FakeProvider([{ slug: 'sodium', projectId: 'pS', categories: ['optimization'] }]);
   let out = '';
-  await runOrchestrate({ loader: 'neoforge', minecraft: '1.21.1', include: ['sodium'] }, provider, (t) => {
+  await runOrchestrate({ loader: 'neoforge', loaderVersion: '21.1.62' /* synthetic pin */, minecraft: '1.21.1', include: ['sodium'] }, provider, (t) => {
     out += t;
   });
   assert.match(out, /No issues/);
@@ -45,7 +45,7 @@ test('runOrchestrate --requirements appends a requirements report (T-0002-12)', 
   const provider = new FakeProvider([{ slug: 'create', projectId: 'pC', categories: ['technology'] }]);
   let out = '';
   await runOrchestrate(
-    { loader: 'neoforge', minecraft: '1.21.1', include: ['create'], requirements: true },
+    { loader: 'neoforge', loaderVersion: '21.1.62' /* synthetic pin */, minecraft: '1.21.1', include: ['create'], requirements: true },
     provider,
     (t) => {
       out += t;
@@ -64,7 +64,7 @@ test('runOrchestrate --preflight appends a read-only conflict report (spec 0007,
   ]);
   let out = '';
   await runOrchestrate(
-    { loader: 'neoforge', minecraft: '1.21.1', include: ['optifine', 'sodium'], preflight: true },
+    { loader: 'neoforge', loaderVersion: '21.1.62' /* synthetic pin */, minecraft: '1.21.1', include: ['optifine', 'sodium'], preflight: true },
     provider,
     (t) => {
       out += t;

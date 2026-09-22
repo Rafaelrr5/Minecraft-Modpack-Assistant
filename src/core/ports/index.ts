@@ -4,6 +4,7 @@ export * from './chat-model.ts';
 export * from './game-launcher.ts';
 export * from './instance-fs.ts';
 export * from './jar-transport.ts';
+export * from './loader-version-provider.ts';
 export * from './log-analysis-provider.ts';
 export * from './mod-source-provider.ts';
 export * from './pack-format.ts';

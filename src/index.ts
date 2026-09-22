@@ -11,3 +11,4 @@ export * from './integration/nvidia/index.ts';
 export * from './integration/google/index.ts';
 export * from './integration/mclogs/index.ts';
 export * from './integration/packwiz/index.ts';
+export * from './integration/loader-versions/index.ts';

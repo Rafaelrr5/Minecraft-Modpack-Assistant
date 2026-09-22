@@ -15,6 +15,7 @@ import {
   type Distribution,
   type LoaderFamily,
   type PerformanceBudget,
+  isConcreteLoaderVersion,
   parseMinecraftVersion,
 } from '../domain/index.ts';
 import {
@@ -131,6 +132,7 @@ function buildBriefTool(): ToolDefinition {
         theme: { type: 'string', description: 'What the pack is about (free text).' },
         minecraftVersion: { type: 'string', description: 'Pinned version, e.g. "1.21.1".' },
         loader: { type: 'string', enum: ['neoforge', 'forge', 'fabric', 'quilt'] },
+        loaderVersion: { type: 'string', description: 'Optional explicit loader build provided by the user. Omit for official stable selection; never invent a version.' },
         distribution: { type: 'string', enum: ['singleplayer', 'server'] },
         serverPlayers: { type: 'integer', description: 'Required for a server.' },
         audienceLevel: { type: 'string', enum: ['beginner', 'expert'] },
@@ -151,6 +153,10 @@ function buildBriefTool(): ToolDefinition {
     handler(args, ctx): Promise<ToolResult> {
       const a = args as Record<string, unknown>;
       let minecraftVersion;
+      if (a.loaderVersion !== undefined &&
+          (typeof a.loaderVersion !== 'string' || !isConcreteLoaderVersion(a.loaderVersion))) {
+        return Promise.resolve({ ok: false, summary: 'loaderVersion must be a concrete build; omit it for official metadata resolution.' });
+      }
       try {
         minecraftVersion = parseMinecraftVersion(String(a.minecraftVersion));
       } catch {
@@ -163,7 +169,7 @@ function buildBriefTool(): ToolDefinition {
       let draft: DraftBrief = {
         theme: String(a.theme),
         minecraftVersion,
-        loader: { family: a.loader as LoaderFamily, version: RECOMMENDED_LOADER_VERSION },
+        loader: { family: a.loader as LoaderFamily, version: a.loaderVersion === undefined ? RECOMMENDED_LOADER_VERSION : String(a.loaderVersion) },
         distribution: a.distribution as Distribution,
       };
       const audience = (a.audienceLevel as AudienceLevel | undefined) ?? ctx.options.audienceLevel;
@@ -209,6 +215,11 @@ function buildBriefTool(): ToolDefinition {
       };
       const brief = confirm(session, ctx.options.now ? { now: ctx.options.now } : {});
       ctx.state.brief = brief;
+      delete ctx.state.resolved;
+      delete ctx.state.requirements;
+      delete ctx.state.preflight;
+      delete ctx.state.buildPlan;
+      ctx.state.userConfirmedApply = false;
       ctx.state.briefRationales = defaultRationales; // for the in-session "why?" (FR-7)
       const defaults = brief.defaultsApplied.length
         ? ` Applied defaults: ${brief.defaultsApplied.join(', ')}.`
@@ -247,9 +258,22 @@ function resolveModsTool(deps: AssistantDeps): ToolDefinition {
         ...(a.recommend !== undefined ? { recommend: Boolean(a.recommend) } : {}),
         ...(a.recommendLimit !== undefined ? { recommendLimit: Number(a.recommendLimit) } : {}),
       };
-      const result = await resolveModpack(ctx.state.brief, request, deps.provider, {
-        logger: deps.logger,
-      });
+      // Invalidate any previous plan before attempting a new resolution. A failed lookup must not
+      // leave stale artifacts available to apply_build (also used by deterministic fallback).
+      delete ctx.state.resolved;
+      delete ctx.state.requirements;
+      delete ctx.state.preflight;
+      delete ctx.state.buildPlan;
+      ctx.state.userConfirmedApply = false;
+      let result;
+      try {
+        result = await resolveModpack(ctx.state.brief, request, deps.provider, {
+          logger: deps.logger,
+          ...(deps.loaderVersions ? { loaderVersions: deps.loaderVersions } : {}),
+        });
+      } catch (error) {
+        return { ok: false, summary: `Resolution failed: ${error instanceof Error ? error.message : String(error)} Nothing was written.` };
+      }
       ctx.state.resolved = result;
       const issues = result.issues.length
         ? ` ${result.issues.length} issue(s): ${result.issues.map((i) => i.message).join('; ')}`

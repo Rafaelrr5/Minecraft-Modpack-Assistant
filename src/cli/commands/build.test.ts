@@ -23,7 +23,7 @@ async function tempInstance(): Promise<string> {
 }
 
 function baseOptions(instancePath: string): BuildOptions {
-  return { loader: 'neoforge', minecraft: '1.21.1', include: ['sodium'], instancePath };
+  return { loader: 'neoforge', loaderVersion: '21.1.62' /* synthetic pin */, minecraft: '1.21.1', include: ['sodium'], instancePath };
 }
 
 test('build is dry-run by default — prints a plan and writes nothing (AC-3)', async () => {

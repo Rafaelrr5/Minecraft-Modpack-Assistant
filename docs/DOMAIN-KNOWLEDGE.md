@@ -35,11 +35,13 @@ loader does **not** run on another without bridge. Major loaders today:
 | **Fabric** | Lightweight / performance | Minimal loader; pairs with the **Fabric API** library most Fabric mods need. Metadata in `fabric.mod.json`. [S3] |
 | **Quilt** | Fabric-compatible fork | Aims for compat with most Fabric mods; adds own hooks. Metadata `quilt.mod.json` (also reads `fabric.mod.json`). [S4] |
 
-**Minimum Minecraft versions (load-bearing for the loader×version check).** **NeoForge**
-targets **Minecraft 1.20.2 and newer** (forked from Forge 2023); no NeoForge
-build for older versions, so a "NeoForge 1.19" brief = *deterministic* dead-end Discovery
-rejects (spec `0001`). Forge, Fabric, and Quilt span wide ranges we do **not** bound here
-without a source — treat an unbounded family as "supported", no guessing. [S1][S2]
+**Implemented minimum Minecraft version (load-bearing for the loader×version check).**
+The assistant supports **NeoForge on Minecraft 1.20.2 and newer** in its current domain
+rule; an older target such as "NeoForge 1.19" is a *deterministic* Discovery dead-end
+(spec `0001`). This support floor must not be read as proof that no historical NeoForge
+build exists for any earlier Minecraft version. Forge, Fabric, and Quilt span wide ranges
+we do **not** bound here without a source — the current family check treats those as
+unbounded; automatic loader resolution still requires eligible official metadata. [S1][S2]
 
 **Bridging.** **Sinytra Connector** lets many **Fabric** mods run on **NeoForge** (not
 universal guarantee, version-sensitive). Matters for orchestration: a
@@ -53,6 +55,57 @@ version-pinning matters. Re-verify current cadence before encoding assumptions. 
 > **Product implication.** Loader + Minecraft version = **primary compatibility key**
 > for every mod in a pack. Resolution (Phase 2) and conflict pre-flight (Phase 3) start
 > here.
+
+---
+
+### 1.5 Loader-build resolution and pinning
+
+**Implementation review: 2026-09-09 (spec `0006` FR-8–FR-10).** Discovery can carry the
+exact `recommended` selection sentinel; it is not a resolved loader build. Orchestration
+replaces it through the injected `LoaderVersionProvider` before pinning `PackState`.
+The core performs no network I/O and has no hardcoded loader-build default.
+
+The official adapter uses these endpoints and shapes (local live captures are inspection
+artifacts, **not** synthetic test fixtures or committed production defaults):
+
+| Family | Official metadata | Selection implemented |
+| --- | --- | --- |
+| Fabric | [`/v2/versions/loader/{game}`](https://meta.fabricmc.net/v2/versions/loader/1.21.1) | Require matching `intermediary.version`; read `loader.version` and optional `loader.stable`, then choose the newest eligible stable numeric version. |
+| Quilt | [`/v3/versions/loader/{game}`](https://meta.quiltmc.org/v3/versions/loader/1.21.1) | Require matching `hashed.version`; read `loader.version` and optional `loader.stable`, then choose the newest eligible stable numeric version. |
+| NeoForge | [Maven release inventory](https://maven.neoforged.net/api/maven/versions/releases/net/neoforged/neoforge) | Read `versions[]`, restrict to the target Minecraft line, then choose the newest stable concrete version; do not trust inventory ordering. |
+| Forge | [Promotions JSON](https://files.minecraftforge.net/net/minecraftforge/forge/promotions_slim.json) | Read `promos["{game}-recommended"]`, falling back to `"{game}-latest"` only if its value is concrete and stable. A promotion key is not the pinned value. |
+
+The local capture `tmp/fabric-live.json` shows `loader.stable: true` and
+`intermediary.version: "1.21.1"`; `tmp/quilt-live.json` shows `hashed.version: "1.21.1"`,
+a loader entry without `stable`, and a `-beta.9` suffix. These observations justify checking
+target metadata and suffixes, **not** selecting the first entry or assuming every feed
+provides a stability boolean. Automatic resolution excludes `stable: false` and any
+hyphenated prerelease suffix; when the boolean is absent the suffix determines eligibility.
+There is **no automatic prerelease fallback**. Empty/malformed/wrong-target metadata or a
+failed lookup yields no pin and actionable guidance, never a guessed version.
+
+**NeoForge version mapping.** The [official versioning guide](https://docs.neoforged.net/docs/gettingstarted/versioning)
+states that, for Minecraft's `1.x` era, NeoForge's major/minor correspond to Minecraft's
+minor/patch and its final component is the loader build: Minecraft `1.20.2` → NeoForge
+`20.2.<build>`, `1.21.1` → `21.1.<build>`, and an omitted Minecraft patch (`1.21`) is
+normalized to zero (`21.0.<build>`). The implemented adapter deliberately covers only
+`1.20.2+` within `1.20.x`, and `1.21.x`; it returns no inferred prefix for other lines,
+snapshots or prereleases. This is an implementation support boundary, not a claim that no
+other historical or future builds exist. The same official guide documents a different
+scheme for Minecraft `26.1+`; that scheme is **not implemented** here.
+
+**Explicit pins and legacy state.** `--loader-version <build>` supplies the source/current
+pin to orchestration-backed CLI commands. Migration resolves the new target independently,
+or accepts `--to-loader-version <build>`; it never copies the source pin into the target.
+Concrete caller pins are preserved verbatim after **syntactic** validation, including
+explicit prerelease/build suffixes. This does **not** verify catalog existence or
+Minecraft/loader compatibility. Pin validation rejects aliases (`recommended`, `latest`,
+`stable`), empty/padded tokens, ranges, wildcards and other malformed tokens. The Discovery
+sentinel is resolved only at the resolution boundary; legacy sentinels in packwiz input or
+`PackState` are rejected at build/packwiz/export/release boundaries, never silently
+re-resolved by a serializer. Re-resolve a brief or supply a separately verified concrete
+build before retrying. Offline fixtures use explicitly synthetic pins or injected metadata;
+these are not supported-version recommendations.
 
 ---
 

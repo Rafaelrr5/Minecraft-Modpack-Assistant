@@ -50,6 +50,7 @@ Options for 'discover':
   --expert          Terse, expert-mode prompts (skip beginner explanations).
 
 Options for 'orchestrate':
+  --loader-version <v>  Optional concrete build; omitted means official stable metadata resolution.
   --loader <name>   Loader family: neoforge | forge | fabric | quilt (required).
   --mc <version>    Target Minecraft version, e.g. 1.21.1 (required).
   --mods <a,b,c>    Comma-separated mod slugs / project ids to include.
@@ -66,6 +67,7 @@ Options for 'orchestrate':
   --instance <dir>  With --preflight: read options.txt to refine keybinding remaps.
 
 Options for 'build':
+  --loader-version <v>  Optional concrete build; preserved in packwiz and the launch profile.
   --loader <name>   Loader family: neoforge | forge | fabric | quilt (required).
   --mc <version>    Target Minecraft version, e.g. 1.21.1 (required).
   --mods <a,b,c>    Comma-separated mod slugs / project ids to include.
@@ -130,6 +132,7 @@ Options for 'kubejs':
   --json            Output the report/plan as JSON (for scripting / experts).
 
 Options for 'updates':
+  --loader-version <v>  Optional concrete current build (otherwise resolve official metadata).
   --loader <name>   Loader family: neoforge | forge | fabric | quilt (required).
   --mc <version>    Target Minecraft version, e.g. 1.21.1 (required).
   --mods <a,b,c>    Comma-separated mod slugs / project ids currently in the pack.
@@ -137,6 +140,8 @@ Options for 'updates':
   --json            Output the report as JSON (for scripting / experts).
 
 Options for 'migrate':
+  --loader-version <v>  Optional concrete source build.
+  --to-loader-version <v>  Optional concrete target build; never copied from the source.
   --loader <name>   Current loader family: neoforge | forge | fabric | quilt (required).
   --from-mc <ver>   Current Minecraft version, e.g. 1.20.1 (required).
   --to-mc <ver>     Target Minecraft version to migrate to, e.g. 1.21.1 (required).
@@ -146,6 +151,7 @@ Options for 'migrate':
   --json            Output the report as JSON (for scripting / experts).
 
 Options for 'export':
+  --loader-version <v>  Optional concrete build; preserved in the archive.
   --loader <name>   Loader family: neoforge | forge | fabric | quilt (required).
   --mc <version>    Target Minecraft version, e.g. 1.21.1 (required).
   --mods <a,b,c>    Comma-separated mod slugs / project ids to include.
@@ -160,6 +166,7 @@ Options for 'export':
   --force           Required with --apply when the output file already exists.
 
 Options for 'release':
+  --loader-version <v>  Optional concrete build; preserved in the release archive.
   --loader <name>   Loader family: neoforge | forge | fabric | quilt (required).
   --mc <version>    Target Minecraft version, e.g. 1.21.1 (required).
   --mods <a,b,c>    Comma-separated mod slugs / project ids in the current pack.

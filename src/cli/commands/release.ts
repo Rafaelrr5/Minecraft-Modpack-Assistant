@@ -10,6 +10,7 @@
  */
 import {
   type ModSourceProvider,
+  type LoaderVersionProvider,
   type PackFormat,
   type PackState,
   type ReleaseMeta,
@@ -18,6 +19,7 @@ import {
   resolveModpack,
 } from '../../core/index.ts';
 import { createModrinthProvider } from '../../integration/modrinth/index.ts';
+import { createOfficialLoaderVersions } from '../../integration/loader-versions/official-loader-versions.ts';
 import { PackwizFormat } from '../../integration/packwiz/index.ts';
 import { PackagingExporter } from '../../integration/packaging/index.ts';
 import { briefFromOptions } from './orchestrate.ts';
@@ -32,6 +34,7 @@ export interface ReleaseOptions extends ExportOptions {
 
 /** Ports the release needs; injectable so the command is testable without real disk/network. */
 export interface ReleasePorts {
+  readonly loaderVersions?: LoaderVersionProvider;
   readonly packFormat: PackFormat;
   readonly exporter: PackExporter;
 }
@@ -52,6 +55,7 @@ export async function runRelease(
       ...(options.recommendLimit !== undefined ? { recommendLimit: options.recommendLimit } : {}),
     },
     provider,
+    ports.loaderVersions ? { loaderVersions: ports.loaderVersions } : {},
   );
 
   if (result.issues.length > 0) {
@@ -103,7 +107,7 @@ export async function runReleaseCli(options: ReleaseOptions): Promise<number> {
   return runRelease(
     options,
     createModrinthProvider(),
-    { packFormat: new PackwizFormat(), exporter: new PackagingExporter() },
+    { packFormat: new PackwizFormat(), exporter: new PackagingExporter(), loaderVersions: createOfficialLoaderVersions() },
     (text) => process.stdout.write(text),
   );
 }

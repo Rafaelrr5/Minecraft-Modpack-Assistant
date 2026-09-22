@@ -20,6 +20,7 @@ import {
   type JarTransport,
   type LogAnalysisProvider,
   type ModSourceProvider,
+  type LoaderVersionProvider,
   type PackFormat,
   type QuestDefinition,
   type ScriptDefinition,
@@ -27,6 +28,7 @@ import {
   parseOptionsKeybinds,
 } from '../core/index.ts';
 import { createModrinthProvider } from '../integration/modrinth/index.ts';
+import { createOfficialLoaderVersions } from '../integration/loader-versions/official-loader-versions.ts';
 import { GuardedInstanceFs } from '../integration/instance-fs/index.ts';
 import { PackwizFormat } from '../integration/packwiz/index.ts';
 import { createJarTransport } from '../integration/download/index.ts';
@@ -72,6 +74,7 @@ export type LogSink = (text: string) => void;
 
 /** The port set the desktop wires once; all overridable so the backbone is testable with fakes. */
 export interface DesktopPorts {
+  readonly loaderVersions: LoaderVersionProvider;
   readonly provider: ModSourceProvider;
   readonly instanceFs: InstanceFs;
   readonly packFormat: PackFormat;
@@ -106,6 +109,7 @@ export interface DesktopServices {
 function defaultPorts(): DesktopPorts {
   return {
     provider: createModrinthProvider(),
+    loaderVersions: createOfficialLoaderVersions(),
     instanceFs: new GuardedInstanceFs(),
     packFormat: new PackwizFormat(),
     transport: createJarTransport(),
@@ -149,7 +153,7 @@ export function createDesktopServices(overrides: Partial<DesktopPorts> = {}): De
     async orchestrate(options, onLog) {
       const { write, output } = collector(onLog);
       // For pre-flight, read options.txt (read-only) so keybind remaps avoid keys already bound.
-      const deps: OrchestrateDeps = {};
+      const deps: OrchestrateDeps = { loaderVersions: ports.loaderVersions };
       if (options.preflight && options.instancePath) {
         const optionsTxt = await ports.instanceFs.readText(options.instancePath, 'options.txt');
         if (optionsTxt) Object.assign(deps, { currentKeybinds: parseOptionsKeybinds(optionsTxt) });
@@ -163,7 +167,7 @@ export function createDesktopServices(overrides: Partial<DesktopPorts> = {}): De
       const exitCode = await runBuild(
         options,
         ports.provider,
-        { packFormat: ports.packFormat, instanceFs: ports.instanceFs },
+        { packFormat: ports.packFormat, instanceFs: ports.instanceFs, loaderVersions: ports.loaderVersions },
         write,
       );
       return { exitCode, output: output() };
@@ -199,19 +203,19 @@ export function createDesktopServices(overrides: Partial<DesktopPorts> = {}): De
 
     async updates(options, onLog) {
       const { write, output } = collector(onLog);
-      const report = await runUpdates(options, ports.provider, write);
+      const report = await runUpdates(options, ports.provider, write, ports.loaderVersions);
       return { exitCode: report.regression.hasRegression ? 1 : 0, output: output(), data: report };
     },
 
     async migrate(options, onLog) {
       const { write, output } = collector(onLog);
-      const report = await runMigrate(options, ports.provider, write);
+      const report = await runMigrate(options, ports.provider, write, ports.loaderVersions);
       return { exitCode: report.canMigrate ? 0 : 1, output: output(), data: report };
     },
 
     async export(options, onLog) {
       const { write, output } = collector(onLog);
-      const exitCode = await runExport(options, ports.provider, ports.exporter, write);
+      const exitCode = await runExport(options, ports.provider, ports.exporter, write, ports.loaderVersions);
       return { exitCode, output: output() };
     },
 
@@ -220,7 +224,7 @@ export function createDesktopServices(overrides: Partial<DesktopPorts> = {}): De
       const exitCode = await runRelease(
         options,
         ports.provider,
-        { packFormat: ports.packFormat, exporter: ports.exporter },
+        { packFormat: ports.packFormat, exporter: ports.exporter, loaderVersions: ports.loaderVersions },
         write,
       );
       return { exitCode, output: output() };

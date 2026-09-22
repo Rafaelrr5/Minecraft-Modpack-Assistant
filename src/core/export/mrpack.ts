@@ -8,6 +8,7 @@
  * DOMAIN-KNOWLEDGE §8 [S19].
  */
 import type { LoaderFamily } from '../domain/loader.ts';
+import { assertConcreteLoaderVersion } from '../domain/loader.ts';
 import type { PackState, PackStateMod } from '../domain/pack-state.ts';
 import type { Side } from '../domain/mod.ts';
 import type { MrpackEnv, MrpackFile, MrpackIndex, UnmappableMod } from './types.ts';
@@ -78,6 +79,9 @@ export function buildMrpackIndex(state: PackState): {
     else unmappable.push(entry);
   }
   files.sort((a, b) => a.path.localeCompare(b.path));
+
+  // A `.mrpack` is shareable: its loader dependency must be a concrete build (spec 0006 FR-9).
+  assertConcreteLoaderVersion(state.loader, 'buildMrpackIndex');
 
   const dependencies: Record<string, string> = {
     minecraft: state.minecraft.raw,

@@ -67,15 +67,15 @@ src/                           Application code
   core/                        UI-agnostic core — imports no cli/ or integration/ (enforced)
     domain/                    Core domain model (MinecraftVersion, Loader, Mod, Modpack, Conflict, PackState, …)
     ports/                     Interfaces the core depends on (Logger, ChatModel, InstanceFs,
-                               JarTransport, GameLauncher, LogAnalysisProvider, ModSourceProvider,
-                               PackFormat, ScriptValidator)
+                               JarTransport, GameLauncher, LogAnalysisProvider, LoaderVersionProvider,
+                               ModSourceProvider, PackFormat, ScriptValidator)
     One directory per capability, each owned by its spec — read the spec, not this line:
     discovery/ 0001 · requirements/ 0002 · orchestration/ 0006 · conflicts/ 0007 · build/ 0008 ·
     crash-diagnosis/ 0010 · quests/ 0011 · scripts/ 0012 · updates/ 0013 · migration/ 0014 ·
     export/ 0015 · release/ 0016 · assistant/ 0017 · install/ 0018 · launch/ 0019 · authoring/ 0020
   integration/                 Adapters implementing the ports — logging · instance-fs · modrinth ·
                                nvidia · google · mclogs · packwiz · download · launcher ·
-                               script-validator · packaging
+                               loader-versions · script-validator · packaging
   cli/                         Thin CLI adapter (see the command list under `help`, or `docs/`)
   desktop/                     Electron adapter (spec 0022) — second UI over the SAME core (ADR 0008)
     services.ts                Electron-FREE composition root (covered by `npm run check`)
@@ -217,7 +217,11 @@ and P3/P5. Not optional:
 3. **Validate before writing.** Generated SNBT/KubeJS/manifests must **parse/validate**
    first; SNBT via a real serializer, never string/regex.
 4. **Pin versions.** Never assume "latest" for Minecraft/loader/mods where it affects
-   behavior.
+   behavior. A brief's loader `recommended` is a *request*, never a `PackState` pin:
+   orchestration resolves it to a stable concrete build from official metadata (no hardcoded
+   build, no prerelease fallback); build/packwiz/export/release reject sentinels, ranges and
+   wildcards rather than repairing them. →
+   [§1.5](./docs/DOMAIN-KNOWLEDGE.md#15-loader-build-resolution-and-pinning)
 5. **Cite domain claims.** Ground facts in [`DOMAIN-KNOWLEDGE.md`](./docs/DOMAIN-KNOWLEDGE.md);
    flag uncertainty instead of bluffing.
 6. **Respect catalog ToS & licensing** (Modrinth-first; CurseForge keys/licensing when

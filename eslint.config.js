@@ -11,6 +11,7 @@ export default tseslint.config(
     // The Electron-free backbone (src/desktop/services.ts, shared/, *.test.ts) stays linted.
     ignores: [
       'dist/',
+      'out/',
       'node_modules/',
       'coverage/',
       'src/desktop/main/**',

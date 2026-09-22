@@ -71,3 +71,18 @@ Tasks `T-0005-XX`. Each have deliverable, **maps-to** ref, **done-when** conditi
 - [x] All Constitution gates in [`spec.md`](./spec.md) pass.
 - [x] Round-trip test green; generated TOML validates; ADR 0006 recorded.
 - [x] Docs/roadmap/status synced; spec marked `done`.
+---
+
+## Amendment A1 tasks — `unknown` side in packwiz TOML
+
+- [x] **T-0005-09 — Refuse to serialize `unknown`**
+  - **Deliverable:** `buildModToml` throws an actionable metadata error; no partial write.
+  - **Maps to:** FR-4 (extended), AC-8.
+- [x] **T-0005-10 — Absent `side` parses to `unknown`**
+  - **Deliverable:** `parseModToml` returns `unknown` for a missing key; unrecognized values
+    still throw.
+  - **Maps to:** FR-5 (extended), AC-8.
+- [x] **T-0005-11 — Tests**
+  - **Deliverable:** `packwiz-format.test.ts` proves the failed write leaves the directory
+    empty, the absent-`side` read yields `unknown`, and the known-side round-trip is unchanged.
+  - **Maps to:** AC-8.

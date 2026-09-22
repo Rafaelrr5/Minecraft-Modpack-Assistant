@@ -148,8 +148,40 @@ APIs through a **provider-agnostic abstraction**
     are what **update tracking** (spec `0013`) and **version migration** (spec `0014`) run on:
     map an installed jar to its catalog version, find the newest compatible one, show what
     changed, and re-check a new Minecraft/loader target.
+- **Project-level side metadata:** a v2 **project** (not a version) carries **`client_side`**
+  and **`server_side`**, each one of `required` | `optional` | `unsupported` | `unknown`. Side
+  from these legacy fields is therefore a *project* attribute; this adapter obtains it from the
+  owning project rather than inventing it from the version's loader or categories. [S8]
+  - **Conservative reading** (what this assistant does): a side is **supported** when its field
+    is `required` **or** `optional`; **not supported** only when it is explicitly `unsupported`;
+    `unknown`, absent, or an unrecognized value is **indeterminate**.
+    → `both` only when **both** sides are supported; `client` only when the client side is
+    supported **and** the server side is explicitly `unsupported`; `server` the inverse;
+    **everything else is `unknown`** — including one-sided evidence (`required`/`unknown`) and
+    the contradictory `unsupported`/`unsupported`. An **`unknown` side never implies
+    compatibility**, and is never widened to `both`
+    ([Constitution P5](../memory/constitution.md#principle-5--sourced--version-pinned-domain-knowledge)).
+  - **Scope caveat.** Current Modrinth docs (<https://docs.modrinth.com/api/operations/getproject/>)
+    additionally expose newer **`environment` arrays** and recommend the *version*-level
+    environment; `client_side`/`server_side` remain documented **legacy (deprecated)** fields
+    with the values above. This adapter targets **v2** and reads only those legacy fields —
+    anything expressible solely in the newer shape resolves to **`unknown`** rather than being
+    guessed. No support for the new semantics is claimed. [S8]
+  - Public source cross-check: <https://api.modrinth.com/v2/project/sodium> returned
+    `id: AANobbMI`, `client_side: required`, `server_side: unsupported`, and
+    `environment: [client_only]`. The offline `project.json` fixture is a schema-authored subset,
+    not a full recorded version response. No inference from the slug is used.
+  - `Side` describes supported installation targets, not mandatory network presence. A selected
+    pack entry on a supported target is exported as required; legacy `optional` is not retained
+    as a separate pack-selection option. Unknown support is never treated as optional support.
+  - Unknown-side resource costs are included conservatively with low confidence and an explicit
+    compatibility disclaimer; unknown is neither zero cost nor confirmed support.
 - **Rate limit:** **300 requests/minute**; a descriptive **`User-Agent`** is **required**
   (Modrinth wants a contact/project identifier). Over limit returns `429`. [S8][S9]
+  - Side metadata costs **one extra project request** per version listing / hash lookup. A
+    failed or absent project lookup **degrades to `unknown`** (with a warning) and must never
+    hide an otherwise valid version — and a `404` on the **project** must never be mistaken for
+    a **hash miss**.
 - **Licensing posture:** open, documented, commercial-friendly — why it's the
   first data source. [S8]
 
@@ -224,6 +256,10 @@ shared by specs that touch conflicts:
    `incompatible`/`discouraged` (Forge/NeoForge).
 6. **Client/server-side mismatch** — a client-only mod required on a server (or vice
    versa) per the `side`/`environment` field.
+   - An **undetermined** side (§3.1: catalog said `unknown`, or metadata was absent/malformed)
+     is **not** a mismatch and **not** a clean bill of health. It is reported as its own
+     *suspected* side warning stating that compatibility **cannot be determined** and pointing
+     at the mod's metadata — never silently treated as "runs everywhere".
 
 > **Product implication.** Categories 1, 4, 5, 6 detectable **statically** from
 > metadata (strongest "one step ahead" wins). Categories 2 and 3 often need heuristics or
@@ -336,6 +372,20 @@ A pack must ultimately be expressed in a format a launcher can install.
 | **packwiz** | TOML-based, **git-friendly** pack definition: an `index.toml` plus per-mod `.pw.toml` files with source URLs, hashes, side, and version pins. Has a CLI and an HTTP "bootstrap" installer. [S18] | **Development source of truth** — the declarative, reproducible pack state ([Constitution P7](../memory/constitution.md#principle-7--declarative-reproducible-pack-state), [ADR 0005](./decisions/0005-packwiz-and-mrpack-pack-format.md)). |
 | **`.mrpack`** | **Modrinth's** modpack format: a zip containing `modrinth.index.json` (files with hashes, env client/server, download URLs) plus an `overrides/` tree for configs. [S19] | **Primary export**; broad launcher support. |
 | **CurseForge `manifest.json`** | CurseForge's modpack format: a zip with `manifest.json` referencing project+file IDs, plus an `overrides/` tree. [S20] | **Secondary export** (later phase; tied to CurseForge API/licensing). |
+
+**Neither format can express an undetermined side.** packwiz's per-mod `side` is
+`client` | `server` | `both` only [S18], and `.mrpack`'s per-file `env` is a
+client/server pair of `required`/`optional`/`unsupported` with **no "unknown"** — and an
+**omitted** `env` is read as required on both sides [S19]. So an `unknown` side (§3.1)
+cannot be serialized honestly into either:
+
+- **packwiz** → the write is **refused** with an actionable metadata error. Both alternatives
+  lie: writing `both` fabricates compatibility, omitting `side` defaults to `both` anyway.
+  Tradeoff accepted: a pack with an unsourced side cannot be built until the side is pinned.
+- **`.mrpack`** → the mod is surfaced as **unmappable** and its entry **excluded**, the same
+  treatment as an inexpressible hash algorithm (spec `0015` FR-5).
+- Reading back a packwiz metafile with **no** `side` key yields `unknown` internally rather
+  than inventing `both`; a present-but-unrecognized value stays a hard parse error.
 
 **Launchers.** **Prism Launcher** and the **Modrinth App** have the broadest interoperability
 (both import `.mrpack`; Prism also imports CurseForge packs) — primary

@@ -31,7 +31,8 @@ export interface ModSourceProvider {
   readonly id: string;
   search(query: SearchQuery): Promise<Mod[]>;
   getMod(idOrSlug: string): Promise<Mod>;
+  /** File sides must be sourced from catalog metadata or explicitly `unknown`, never guessed. */
   listVersions(idOrSlug: string, filter?: VersionFilter): Promise<ModFile[]>;
-  /** Identify a concrete file by content hash; `null` when unknown to the catalog. */
+  /** Identify a file with sourced-or-unknown side; `null` only when the hash is unknown. */
   getVersionByHash(hash: string, algorithm: HashAlgorithm): Promise<ModFile | null>;
 }

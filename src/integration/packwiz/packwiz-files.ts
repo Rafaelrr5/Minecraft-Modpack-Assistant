@@ -37,6 +37,7 @@ function optString(value: unknown): string | undefined {
 }
 
 function asSide(value: unknown, what: string): Side {
+  if (value === undefined) return 'unknown';
   const side = asString(value, what);
   if (!(SIDES as readonly string[]).includes(side)) {
     throw new Error(`packwiz: invalid side "${side}" for ${what}`);
@@ -169,6 +170,9 @@ export function parseIndexToml(text: string): { hashFormat: string; files: Index
 // ── mods/<slug>.pw.toml ──────────────────────────────────────────────────────────────────
 
 export function buildModToml(mod: PackStateMod): string {
+  if (mod.side === 'unknown') {
+    throw new Error(`packwiz: cannot write ${mod.slug}: side is unknown; verify the mod's metadata and re-pin an explicit client/server/both side`);
+  }
   const obj: Record<string, unknown> = {
     name: mod.name,
     filename: mod.fileName,

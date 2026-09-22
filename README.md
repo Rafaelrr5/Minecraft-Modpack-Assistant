@@ -54,6 +54,11 @@ between two versions (reusing the lockfile diff; initial-release when there's no
 **bundles it with the export** (archive + `CHANGELOG.md`) into one shareable, byte-stable release.
 **Next:** Phase 8 (productization / SaaS). → see the [roadmap](./roadmap/README.md).
 
+Side metadata is now sourced from Modrinth's legacy project fields or explicitly `unknown`
+(specs 0004/0007/0015/0005, Amendment A1). Unknown produces a pre-flight warning and an unmappable
+`.mrpack` entry; packwiz writes stop until its side is verified. Client-only mods are never marked
+server-required. Contract fixture: `src/integration/modrinth/__fixtures__/project.json`.
+
 ---
 
 ## What is this?

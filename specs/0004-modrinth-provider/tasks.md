@@ -78,3 +78,32 @@ Tasks `T-0004-XX`. Each has deliverable, **maps-to** ref, **done-when** conditio
 - [x] All Constitution gates in [`spec.md`](./spec.md) pass.
 - [x] Contract tests (search/versions/deps/hash) + transport tests green.
 - [x] Docs/roadmap/status synced; spec marked `done`.
+---
+
+## Amendment A1 tasks — honest `side`
+
+Verification: `npm run check` passed typecheck, lint, build and 411 tests (zero failures).
+`CLAUDE.md` doc map and side rule synced.
+
+- [x] **T-0004-12 — Consumer propagation safety**
+  - **Deliverable:** resource estimates retain unknown-side costs with low confidence and a
+    compatibility disclaimer; update re-pinning adopts candidate side; regression comparison
+    distinguishes manual unknown-side verification from a known mismatch. Regression tests
+    exercise both target environments and unknown-to-mismatch transitions (FR-9).
+
+- [x] **T-0004-08 — `Side` gains `unknown`**
+  - **Deliverable:** `Side = 'client' | 'server' | 'both' | 'unknown'`; `ModFile.side` doc
+    states it is sourced-or-`unknown`, never defaulted.
+  - **Maps to:** FR-9.
+- [x] **T-0004-09 — `mapProjectSide` + project-aware version mapper**
+  - **Deliverable:** exported pure mapper over `client_side`/`server_side`; optional project
+    argument on `mapVersionToModFile`.
+  - **Maps to:** FR-9/FR-12, AC-6/AC-7.
+- [x] **T-0004-10 — Project fetch on both version paths**
+  - **Deliverable:** `listVersions` + `getVersionByHash` bind project side by `project_id`;
+    warned degradation; project `404` is not a hash miss.
+  - **Maps to:** FR-10/FR-11, AC-8/AC-9.
+- [x] **T-0004-11 — Tests + `project.json` fixture (schema-authored)**
+  - **Deliverable:** mapper table tests (both directions, both-supported, missing/unknown/
+    unrecognized/contradictory) and provider contract tests, all offline.
+  - **Maps to:** AC-6…AC-9.

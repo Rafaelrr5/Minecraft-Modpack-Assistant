@@ -136,6 +136,11 @@ Every `phase-N-*.md` follows the same template:
 
 ## Phase map
 
+Maintenance correction implemented: specs 0004/0007/0015/0005
+Amendment A1 source Modrinth side metadata instead of assuming both. Unknown support remains explicit
+across pre-flight, export, packwiz and resource estimates; updates preserve newly sourced side and
+detect mismatch transitions.
+
 | # | Phase | Status | Seeded specs |
 | --- | --- | --- | --- |
 | 0 | [Foundation & Knowledge Base](./phase-0-foundation.md) | ✅ | [`0003`](../specs/0003-project-foundation/spec.md) · [`0004`](../specs/0004-modrinth-provider/spec.md) · [`0005`](../specs/0005-pack-state/spec.md) |

@@ -151,6 +151,14 @@ test('AC-5: a candidate update introducing a declared incompatibility is flagged
   assert.equal(regression.newConflicts[0]?.category, 'declared-incompatibility');
 });
 
+test('unknown side becoming a known mismatch remains an update regression', () => {
+  const current = packOf([{ slug: 'a', side: 'unknown' }]);
+  const candidate = packOf([{ slug: 'a', side: 'client' }]);
+  const regression = checkUpdateRegressions(current, candidate, { environment: 'server' });
+  assert.equal(regression.hasRegression, true);
+  assert.match(regression.newConflicts[0]?.explanation ?? '', /client-only/);
+});
+
 test('AC-5: a benign candidate introduces no new conflicts', () => {
   const current = packOf([{ slug: 'a', projectId: 'a' }, { slug: 'b', projectId: 'b' }]);
   const candidate = packOf([{ slug: 'a', projectId: 'a' }, { slug: 'b', projectId: 'b' }]);
@@ -195,6 +203,33 @@ test('AC-6: planUpdate re-pins only the accepted mod and never mutates its input
   assert.equal(state.mods.find((m) => m.slug === 'a')?.versionId, 'a-v1');
   assert.equal(diff.updated.length, 1);
   assert.equal(diff.updated[0]?.slug, 'a');
+});
+
+test('planUpdate adopts the candidate’s sourced side instead of keeping a stale one', async () => {
+  const provider = new FakeUpdateProvider([
+    {
+      slug: 'a',
+      projectId: 'a',
+      versions: [
+        { versionId: 'a-v1', versionNumber: '1.0.0', datePublished: '2024-01-01T00:00:00Z', sha512: 'a1-512', side: 'both' },
+        // Newly sourced metadata says client-only (spec 0004 A1) — the re-pin must not discard it.
+        { versionId: 'a-v2', versionNumber: '2.0.0', datePublished: '2024-06-01T00:00:00Z', sha512: 'a2-512', side: 'client' },
+      ],
+    },
+  ]);
+  const state = packStateOf([
+    { slug: 'a', projectId: 'a', versionId: 'a-v1', hashFormat: 'sha512', hash: 'a1-512', side: 'both' },
+  ]);
+
+  const updates = await checkForUpdates(state, provider);
+  const { next } = planUpdate(state, updates.filter((u) => u.status === 'update-available'));
+
+  assert.equal(next.mods[0]?.versionId, 'a-v2');
+  assert.equal(next.mods[0]?.side, 'client', 'the candidate side wins over the stale pin');
+  const latest = updates[0]?.latest;
+  assert.ok(latest);
+  const unknown = planUpdate(state, [{ ...updates[0]!, latest: { ...latest, file: { ...latest.file, side: 'unknown' } } }]);
+  assert.equal(unknown.next.mods[0]?.side, 'unknown', 'stale both cannot replace fresh uncertainty');
 });
 
 // ── Façade + render ───────────────────────────────────────────────────────────────────────────

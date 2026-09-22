@@ -85,3 +85,31 @@ Both audiences via later features, but artifact serves them directly (Constituti
 | 7 | Declarative, reproducible pack state | Pass | Core purpose: declarative, pinned, reproducible state. |
 | 8 | Dual-audience progressive disclosure | Pass | Beginner never edits TOML; expert gets clean editable packwiz tree. |
 | 9 | Simplicity, YAGNI & observability | Pass | Read/write skeleton only; export/download deferred. ADR 0006 records native-I/O choice. |
+---
+
+## Amendment A1 — packwiz cannot serialize an `unknown` side
+
+**Context.** Spec `0004` Amendment A1 lets `PackStateMod.side` be `unknown`. packwiz's per-mod
+`side` field accepts only `client` | `server` | `both` (DOMAIN-KNOWLEDGE §8 [S18]).
+
+**Requirement delta.**
+
+- **FR-4 (extended) — refuse, don't lie.** `buildModToml` **throws an actionable error** when
+  `side === 'unknown'`, naming the mod and telling the user to source/pin the side. Because
+  `PackwizFormat.assemble` builds and validates the whole tree in memory *before* any write,
+  the refusal happens with **zero files written** (Constitution P4).
+  - The two alternatives were rejected as dishonest: writing `both` fabricates compatibility,
+    and omitting `side` is read as `both` by packwiz anyway.
+  - **Accepted tradeoff:** a pack holding a mod with unsourced side cannot be built until the
+    side is determined. This is the intended, visible failure — it is the pre-flight
+    undetermined-side warning (spec `0007` A1) becoming a hard stop at write time.
+- **FR-5 (extended) — parsing invents nothing.** A metafile with **no** `side` key parses to
+  `unknown` instead of throwing or defaulting to `both`. A present-but-unrecognized value
+  remains a hard parse error (malformed input stays loud).
+- Round-tripping a pack whose every side is known is **byte-identical** to before.
+
+**Added acceptance criterion.**
+
+- **AC-8** — assembling/writing a pack containing an `unknown`-side mod fails with an error
+  naming the mod and its metadata, and leaves the target directory empty; a known-side pack
+  still round-trips unchanged; a metafile without `side` reads back as `unknown`.

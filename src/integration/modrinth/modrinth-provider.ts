@@ -143,30 +143,66 @@ export class ModrinthProvider implements ModSourceProvider {
     return mapProjectToMod(project);
   }
 
+  /**
+   * Fetch a project purely for its **side** metadata (spec 0004 Amendment A1). Side lives on the
+   * project, not the version, so both version paths need it. Any failure degrades to `undefined`
+   * with a warning — a missing side must never hide an otherwise valid version, and a project
+   * `404` must never masquerade as a hash miss.
+   */
+  async #trySideProject(idOrSlug: string): Promise<ModrinthProject | undefined> {
+    try {
+      return await this.#request<ModrinthProject>(`/project/${encodeURIComponent(idOrSlug)}`);
+    } catch (error) {
+      this.#log.warn('modrinth project side metadata unavailable; side is unknown', {
+        project: idOrSlug,
+        reason: error instanceof Error ? error.message : String(error),
+      });
+      return undefined;
+    }
+  }
+
+  /** Attach the project's side to each version, warning when the two don't belong together. */
+  #withSide(versions: readonly ModrinthVersion[], project?: ModrinthProject): ModFile[] {
+    return versions.map((version) => {
+      if (project && project.id !== version.project_id) {
+        this.#log.warn('modrinth project does not own this version; side is unknown', {
+          project: project.id,
+          version: version.id,
+          versionProject: version.project_id,
+        });
+        return mapVersionToModFile(version);
+      }
+      return mapVersionToModFile(version, project);
+    });
+  }
+
   async listVersions(idOrSlug: string, filter?: VersionFilter): Promise<ModFile[]> {
-    const versions = await this.#request<ModrinthVersion[]>(
-      `/project/${encodeURIComponent(idOrSlug)}/version`,
-      {
+    const [versions, project] = await Promise.all([
+      this.#request<ModrinthVersion[]>(`/project/${encodeURIComponent(idOrSlug)}/version`, {
         loaders: filter?.loaders?.length ? JSON.stringify(filter.loaders) : undefined,
         game_versions: filter?.gameVersions?.length
           ? JSON.stringify(filter.gameVersions)
           : undefined,
-      },
-    );
-    return versions.map(mapVersionToModFile);
+      }),
+      this.#trySideProject(idOrSlug),
+    ]);
+    return this.#withSide(versions, project);
   }
 
   async getVersionByHash(hash: string, algorithm: HashAlgorithm): Promise<ModFile | null> {
+    let version: ModrinthVersion;
     try {
-      const version = await this.#request<ModrinthVersion>(
-        `/version_file/${encodeURIComponent(hash)}`,
-        { algorithm },
-      );
-      return mapVersionToModFile(version);
+      // Only THIS request's 404 means "the catalog doesn't know this hash".
+      version = await this.#request<ModrinthVersion>(`/version_file/${encodeURIComponent(hash)}`, {
+        algorithm,
+      });
     } catch (error) {
       if (error instanceof ModrinthApiError && error.status === 404) return null;
       throw error;
     }
+    // Only on a hit do we spend a second request on the owning project's side metadata.
+    const project = await this.#trySideProject(version.project_id);
+    return this.#withSide([version], project)[0]!;
   }
 }
 

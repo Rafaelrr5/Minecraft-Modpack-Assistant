@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, readdir } from 'node:fs/promises';
+import { mkdtemp, readFile, readdir, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import * as path from 'node:path';
 import { parse } from 'smol-toml';
@@ -94,6 +94,42 @@ test('assemble returns the validated tree in memory; every file parses as TOML (
     'pack.toml',
   ]);
   for (const f of files) assert.doesNotThrow(() => parse(f.contents), `${f.relPath} must parse`);
+});
+
+test('AC-8: an unknown side is refused with an actionable error and writes nothing', async () => {
+  const dir = await workspace();
+  const pack = samplePack();
+  const unknownSide: PackState = {
+    ...pack,
+    mods: [{ ...pack.mods[0]!, side: 'unknown' }],
+  };
+  const fmt = new PackwizFormat();
+
+  // In-memory assembly already refuses…
+  assert.throws(
+    () => fmt.assemble(unknownSide),
+    (error: Error) => /sodium/i.test(error.message) && /side/i.test(error.message),
+  );
+
+  // …so a write attempt leaves the workspace untouched (no partial tree, Constitution P4).
+  await assert.rejects(() => fmt.writePack(unknownSide, dir));
+  assert.deepEqual(await readdir(dir), []);
+});
+
+test('AC-8: a metafile with no side reads back as unknown, not both', async () => {
+  const dir = await workspace();
+  const fmt = new PackwizFormat();
+  await fmt.writePack(samplePack(), dir);
+
+  const metafile = path.join(dir, 'mods/sodium.pw.toml');
+  const stripped = (await readFile(metafile, 'utf8'))
+    .split('\n')
+    .filter((line) => !line.startsWith('side ='))
+    .join('\n');
+  await writeFile(metafile, stripped, 'utf8');
+
+  const read = await fmt.readPack(dir);
+  assert.equal(read.mods[0]?.side, 'unknown', 'absent side must not invent compatibility');
 });
 
 test('writePack === assemble + write: same files, same bytes (spec 0008 regression)', async () => {

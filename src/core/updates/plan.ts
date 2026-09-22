@@ -19,13 +19,13 @@ function pinDownload(file: ModFile): PinnedDownload {
   throw new Error(`Cannot re-pin ${file.fileName}: candidate has no sha512/sha1 hash.`);
 }
 
-/** Re-pin one entry to a candidate file, keeping its name/slug/side (side is project-level). */
+/** Re-pin one entry, keeping name/slug but adopting the candidate's sourced side. */
 function repin(mod: PackStateMod, file: ModFile): PackStateMod {
   return {
     name: mod.name,
     slug: mod.slug,
     fileName: file.fileName,
-    side: mod.side,
+    side: file.side,
     provider: file.provider,
     projectId: file.projectId,
     versionId: file.versionId,

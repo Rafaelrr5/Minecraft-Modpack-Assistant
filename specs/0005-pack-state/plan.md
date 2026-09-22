@@ -106,3 +106,13 @@ Detailed steps in [`tasks.md`](./tasks.md).
 ## Constitution Re-check
 
 All gates from [`spec.md`](./spec.md) hold. Reaffirmed: declarative/reproducible state is purpose (P7); TOML via real serializer + re-parse validation (P3); writes confined to workspace, not instance (P4); provider recorded generically (P6); native-I/O decision captured as [ADR 0006](../../docs/decisions/0006-native-packwiz-io.md) (P9, no silent choice).
+---
+
+## Amendment A1 — plan delta (`unknown` side in packwiz TOML)
+
+- `packwiz-files.ts` keeps `SIDES` as the three **serializable** packwiz values; `buildModToml`
+  gains an `unknown` guard that throws before `stringify`.
+- `asSide` is only reached for a **present** value, so it keeps rejecting garbage; the absent
+  case is handled in `parseModToml` (`raw.side === undefined` gives `unknown`).
+- No change to `PackwizFormat`: `assemble` already builds everything in memory before
+  `writePack` touches the disk, so the throw is inherently write-free.

@@ -21,8 +21,14 @@ const MRPACK_LOADER_KEY: Readonly<Record<LoaderFamily, string>> = {
   quilt: 'quilt-loader',
 };
 
-/** Map a mod's `side` to the `.mrpack` client/server environment ([S19]). */
-export function sideToMrpackEnv(side: Side): MrpackEnv {
+/**
+ * Map a mod's `side` to the `.mrpack` client/server environment ([S19]).
+ *
+ * `undefined` for an `unknown` side: the format has no such value, and both fallbacks would lie —
+ * guessing an env fabricates support, and omitting `env` is read as required on both sides. The
+ * caller surfaces it as unmappable instead (spec 0015 Amendment A1, Constitution P5).
+ */
+export function sideToMrpackEnv(side: Side): MrpackEnv | undefined {
   switch (side) {
     case 'client':
       return { client: 'required', server: 'unsupported' };
@@ -30,6 +36,8 @@ export function sideToMrpackEnv(side: Side): MrpackEnv {
       return { client: 'unsupported', server: 'required' };
     case 'both':
       return { client: 'required', server: 'required' };
+    case 'unknown':
+      return undefined;
   }
 }
 
@@ -54,11 +62,23 @@ function fileEntry(mod: PackStateMod): MrpackFile | UnmappableMod {
       reason: `pinned hash is ${hashFormat}; .mrpack accepts only sha1/sha512`,
     };
   }
+  // `.mrpack` has no "unknown" env, and an omitted `env` means required-on-both — so an
+  // undetermined side is surfaced rather than silently widened (spec 0015 A1).
+  const env = sideToMrpackEnv(mod.side);
+  if (!env) {
+    return {
+      slug: mod.slug,
+      name: mod.name,
+      reason:
+        'side is unknown; .mrpack requires a known client/server environment — source the side ' +
+        "from the mod's metadata and re-pin",
+    };
+  }
   const hashes = hashFormat === 'sha512' ? { sha512: hash } : { sha1: hash };
   return {
     path: `mods/${mod.fileName}`,
     hashes,
-    env: sideToMrpackEnv(mod.side),
+    env,
     downloads: [url],
   };
 }

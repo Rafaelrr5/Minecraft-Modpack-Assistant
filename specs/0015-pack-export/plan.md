@@ -250,3 +250,13 @@ cleanly: the core emits **text** archive entries and the integration adapter own
 **timestamp-free** store-only zip over a dependency. Honesty about CurseForge ids (P5) is structural:
 unmappable mods are a first-class output, not a swallowed edge case. The only writer is a new-file
 write to a chosen path (not an instance), kept dry-run-by-default with no-clobber (P4).
+
+---
+
+## Amendment A1 — plan delta (`unknown` side)
+
+`sideToMrpackEnv` returns `MrpackEnv | undefined` — `undefined` for `unknown`. `fileEntry`
+already returns `MrpackFile | UnmappableMod`, so the whole change is one guard that converts a
+missing env into the existing unmappable path; `buildMrpackIndex`, `assembleExport`, the
+renderer and the CLI's unmappable reporting need no change. The CurseForge manifest is
+untouched: it carries no side/env field, so `unknown` costs it nothing.

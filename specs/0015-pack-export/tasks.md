@@ -99,3 +99,16 @@
 - [x] All Constitution gates pass (or deviations are justified in the spec).
 - [x] Tests (unit + CLI) green; the export validates its documents and produces a valid archive.
 - [x] Docs and roadmap status updated; spec marked `done`.
+
+---
+
+## Amendment A1 tasks — `unknown` side
+
+- [x] **T-0015-10 — Exclude + surface `unknown`-side mods**
+  - **Deliverable:** `sideToMrpackEnv` returns `undefined` for `unknown`; `fileEntry` returns an
+    `UnmappableMod` naming the undetermined side.
+  - **Maps to:** FR-5 (extended), AC-10.
+- [x] **T-0015-11 — Test**
+  - **Deliverable:** `mrpack.test.ts` proves the entry is excluded, the reason mentions the
+    unknown side, and known sides still map as before.
+  - **Maps to:** AC-10.

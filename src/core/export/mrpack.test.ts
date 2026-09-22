@@ -81,6 +81,21 @@ test('side maps to client/server env for both/client/server (AC-2)', () => {
   assert.deepEqual(byPath.get('mods/spark.jar'), { client: 'unsupported', server: 'required' });
 });
 
+test('AC-10: an unknown side is unmappable and excluded, never guessed into an env', () => {
+  assert.equal(sideToMrpackEnv('unknown'), undefined, '.mrpack has no "unknown" env');
+
+  const { index, unmappable } = buildMrpackIndex(
+    state([mod({ slug: 'known', side: 'client' }), mod({ slug: 'mystery', side: 'unknown' })]),
+  );
+
+  assert.deepEqual(index.files.map((f) => f.path), ['mods/known.jar']);
+  assert.equal(unmappable.length, 1);
+  assert.equal(unmappable[0]!.slug, 'mystery');
+  assert.match(unmappable[0]!.reason, /side/i);
+  // The mapped mod keeps its honest env; nothing defaults to required-on-both.
+  assert.deepEqual(index.files[0]?.env, { client: 'required', server: 'unsupported' });
+});
+
 test('files are sorted by path for byte-stable output (AC-8)', () => {
   const { index } = buildMrpackIndex(
     state([mod({ slug: 'zebra' }), mod({ slug: 'alpha' }), mod({ slug: 'mid' })]),

@@ -84,7 +84,7 @@ test('AC-3: version-mismatch flags an out-of-range required dep; unknown range i
   assert.equal(junk.length, 0, 'an unparseable range never yields a false certain conflict');
 });
 
-test('AC-4: client-only mod on a server flags; both/unknown side never does', () => {
+test('AC-4: client-only mod on a server flags; known both does not', () => {
   const onServer = detectSideMismatch(input([{ slug: 'jei', side: 'client' }], 'server'));
   assert.equal(onServer.length, 1);
   assert.equal(onServer[0]?.category, 'side-mismatch');
@@ -93,7 +93,24 @@ test('AC-4: client-only mod on a server flags; both/unknown side never does', ()
   assert.equal(onClient.length, 0);
 
   const bothSide = detectSideMismatch(input([{ slug: 'lib', side: 'both' }], 'server'));
-  assert.equal(bothSide.length, 0, 'a `both`/unknown side is not falsely flagged');
+  assert.equal(bothSide.length, 0, 'a `both` side is not falsely flagged');
+});
+
+test('AC-10: an unknown side is reported as undetermined, not as a mismatch or a clean pass', () => {
+  for (const environment of ['client', 'server'] as const) {
+    const found = detectSideMismatch(input([{ slug: 'mystery', side: 'unknown' }], environment));
+    assert.equal(found.length, 1, `unknown side must surface on a ${environment} pack`);
+    const conflict = found[0];
+    assert.equal(conflict?.category, 'side-mismatch');
+    assert.equal(conflict?.severity, 'warning');
+    assert.equal(conflict?.certainty, 'suspected');
+    // Says it cannot be determined — not that it IS incompatible.
+    assert.match(conflict?.explanation ?? '', /cannot be determined/i);
+    assert.doesNotMatch(conflict?.explanation ?? '', /-only/, 'no fabricated side claim');
+    // Guidance is "verify the metadata", never "remove the mod".
+    assert.equal(conflict?.resolution?.kind, 'manual');
+    assert.match(conflict?.resolution?.summary ?? '', /verif/i);
+  }
 });
 
 test('AC-5: a resolved known-bad pair is flagged citing its source', () => {

@@ -180,3 +180,18 @@ Each step independently green-able; module usable after step 4, CLI after step 5
 
 All gates from `spec.md` hold once design concrete. **P7** entry stays *justified deviation* (operate on resolved `Modpack`, not `PackState`, because lockfile lossy and detector read-only — no reproducibility impact). **P3** strengthened: datasets schema-validated on load, Maven parser fails closed. **P4** confirmed: zero writes, no
 `node:fs`, `options.txt` read only through guarded port. No new deviations introduced.
+---
+
+## Amendment A1 — plan delta (undetermined side)
+
+`detectors/side-mismatch.ts` classifies each mod's side once:
+
+- `both` → nothing;
+- `client`/`server` opposite the target environment → the existing mismatch warning;
+- `unknown` → a new *undetermined* warning, same `side-mismatch` category and `suspected`
+  certainty, resolution kind `manual` with verify-metadata wording.
+
+Reusing the existing category and resolution kinds keeps `ConflictCategory`, the summary table,
+renderers and assistant schema unchanged. Update regression comparison includes the side finding's
+resolution kind so uncertainty cannot mask a newly known mismatch. A dedicated `side-unknown`
+category was rejected as unnecessary schema expansion.

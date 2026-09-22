@@ -1,26 +1,52 @@
 /**
- * Client/server side-mismatch detector (spec 0007 FR-5; DOMAIN-KNOWLEDGE §4.3.6).
+ * Client/server side detector (spec 0007 FR-5 + Amendment A1; DOMAIN-KNOWLEDGE §4.3.6).
  *
- * A mod whose declared `side` cannot run in the target environment — e.g. a `client`-only mod in a
- * **server** pack — is flagged. Catalog *version* endpoints don't declare side (Modrinth defaults
- * it to `both`; see `src/core/domain/mod.ts`), so only mods with a **known** side (`client` or
- * `server`) are considered. A `both`/unknown side is never falsely flagged (Constitution P5 / FR-9).
- * Because catalog side data is thin, these are marked `suspected`, not `certain`.
+ * Two distinct findings share the `side-mismatch` category, both `suspected` (catalog side data is
+ * thin, and nothing is proven until a launch):
+ *
+ *  1. a **known mismatch** — the mod's declared side is the opposite of the target environment
+ *     (a `client`-only mod in a **server** pack, or vice versa);
+ *  2. an **undetermined side** — the side could not be sourced (`unknown`), so compatibility
+ *     *cannot be determined*. Reported so an unsourced side can never pass as a clean bill of
+ *     health (Constitution P5); the guidance is to verify the mod's metadata, not to remove it.
+ *
+ * A `both` side is never flagged.
  */
-import type { Conflict, Side } from '../../domain/index.ts';
+import type { Conflict } from '../../domain/index.ts';
 import type { PreflightInput, TargetEnvironment } from '../types.ts';
 
-/** Is a mod whose declared side is `side` runnable in `environment`? */
-function incompatible(side: Side, environment: TargetEnvironment): boolean {
-  if (side === 'both') return false;
-  return side !== environment; // client-only on server, or server-only on client
+/** A mod declared for one side only, running on the other. */
+function isMismatch(side: string, environment: TargetEnvironment): boolean {
+  return (side === 'client' || side === 'server') && side !== environment;
 }
 
 export function detectSideMismatch(input: PreflightInput): readonly Conflict[] {
   const conflicts: Conflict[] = [];
   for (const m of input.modpack.mods) {
     const side = m.file.side;
-    if (!incompatible(side, input.environment)) continue;
+
+    if (side === 'unknown') {
+      conflicts.push({
+        category: 'side-mismatch',
+        severity: 'warning',
+        certainty: 'suspected',
+        mods: [m.mod.slug],
+        explanation:
+          `${m.mod.name} does not declare which side it runs on, so its compatibility with this ` +
+          `${input.environment} pack cannot be determined.`,
+        resolution: {
+          kind: 'manual',
+          summary: `Verify whether ${m.mod.name} supports the ${input.environment} side.`,
+          details:
+            'The catalog reported no usable client/server support for this mod (see ' +
+            "DOMAIN-KNOWLEDGE §3.1). Check the mod's page or its jar metadata and pin an " +
+            'explicit side. This is an unknown, not a known incompatibility.',
+        },
+      });
+      continue;
+    }
+
+    if (!isMismatch(side, input.environment)) continue;
 
     conflicts.push({
       category: 'side-mismatch',

@@ -46,6 +46,17 @@ test('runPreflight reports a clean set with no conflicts', () => {
   assert.match(renderPreflight(report), /No conflicts detected/);
 });
 
+test('AC-10: an unknown side is summarized, so the pack is never reported conflict-free', () => {
+  const report = runPreflight({
+    modpack: packOf([{ slug: 'a' }, { slug: 'mystery', side: 'unknown' }]),
+    environment: 'client',
+  });
+  assert.equal(report.summary['side-mismatch'], 1);
+  assert.equal(report.summary.suspected, 1);
+  assert.equal(report.conflicts.length, 1);
+  assert.doesNotMatch(renderPreflight(report), /No conflicts detected/);
+});
+
 test('every conflict carries category, severity, certainty, mods, explanation (FR-8)', () => {
   const report = runPreflight({
     modpack: packOf([{ slug: 'optifine' }, { slug: 'sodium' }]),

@@ -1,0 +1,10 @@
+{
+  "id": "AANobbMI",
+  "slug": "sodium",
+  "title": "Sodium",
+  "description": "The fastest and most compatible rendering optimization mod for Minecraft.",
+  "categories": ["optimization"],
+  "project_type": "mod",
+  "client_side": "required",
+  "server_side": "unsupported"
+}

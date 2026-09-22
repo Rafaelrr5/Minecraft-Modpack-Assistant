@@ -182,6 +182,10 @@ Grounding for everyday work. **Authoritative, source-cited detail in
   `conflicts`/`breaks`); Forge/NeoForge `mods.toml` `[[dependencies]]` (required/optional/
   incompatible/discouraged, `versionRange`, `side`, `ordering`). →
   [§4](./docs/DOMAIN-KNOWLEDGE.md#4-mod-metadata--dependency-declarations)
+- **Mod side:** comes from the Modrinth *project*'s `client_side`/`server_side`; anything
+  indeterminate is `unknown`, never widened to `both`. Unknown warns in pre-flight, is
+  unmappable in `.mrpack`, blocks packwiz writes. →
+  [§3.1](./docs/DOMAIN-KNOWLEDGE.md#31-modrinth-first-adapter--see-adr-0004)
 - **Conflict categories:** duplicate `modId`, registry, mixin, version mismatch, declared
   incompatibility, client/server side. (Static-certain vs. suspected.) →
   [§4.3](./docs/DOMAIN-KNOWLEDGE.md#43-conflict-categories-taxonomy)

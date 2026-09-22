@@ -18,7 +18,9 @@ export interface RegressionOptions {
 
 /** A stable identity for a conflict: its category + the sorted set of mods involved. */
 function conflictKey(c: Conflict): string {
-  return `${c.category}::${[...c.mods].sort().join(',')}`;
+  // An undetermined-side warning must not mask a newly known side mismatch.
+  const sideKind = c.category === 'side-mismatch' ? `::${c.resolution?.kind ?? ''}` : '';
+  return `${c.category}::${[...c.mods].sort().join(',')}${sideKind}`;
 }
 
 /** Conflicts in `candidate` whose key is absent from `current` — the regressions the update adds. */

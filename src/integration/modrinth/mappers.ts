@@ -3,7 +3,7 @@
  * upstream schema change only touches this file (and is caught by the contract tests).
  */
 import { isLoaderFamily } from '../../core/domain/loader.ts';
-import type { Dependency, DependencyKind, Mod, ModFile } from '../../core/domain/mod.ts';
+import type { Dependency, DependencyKind, Mod, ModFile, Side } from '../../core/domain/mod.ts';
 import type {
   ModrinthDependency,
   ModrinthProject,
@@ -51,7 +51,35 @@ export function mapProjectToMod(project: ModrinthProject): Mod {
   };
 }
 
-export function mapVersionToModFile(version: ModrinthVersion): ModFile {
+/**
+ * Map a v2 project's `client_side`/`server_side` to the domain {@link Side} (spec 0004 Amendment
+ * A1; the mapping table and its rationale live in DOMAIN-KNOWLEDGE §3.1).
+ *
+ * Conservative by construction: a side counts as *supported* only for the documented `required` /
+ * `optional`, and as *not supported* only for an explicit `unsupported`. Everything else —
+ * `unknown`, absent, unrecognized — is indeterminate, and any indeterminacy (or the contradictory
+ * unsupported-everywhere) yields `'unknown'` rather than a guess. `both` is claimed only from
+ * evidence that both sides are supported (Constitution P5).
+ *
+ * Scope: v2 legacy fields only. The newer `environment` arrays are deliberately not interpreted,
+ * so data expressible only that way resolves to `'unknown'`.
+ */
+export function mapProjectSide(clientSide?: string, serverSide?: string): Side {
+  const supported = (value?: string): boolean => value === 'required' || value === 'optional';
+  const unsupported = (value?: string): boolean => value === 'unsupported';
+
+  if (supported(clientSide) && supported(serverSide)) return 'both';
+  if (supported(clientSide) && unsupported(serverSide)) return 'client';
+  if (supported(serverSide) && unsupported(clientSide)) return 'server';
+  return 'unknown';
+}
+
+/**
+ * Map a version to a {@link ModFile}. `project` is the version's **owning** project — the only
+ * source of the legacy fields this adapter consumes. Omit it (or pass a non-owning project) and side is
+ * honestly `'unknown'`; it is never defaulted to `both`.
+ */
+export function mapVersionToModFile(version: ModrinthVersion, project?: ModrinthProject): ModFile {
   const file = version.files.find((f) => f.primary) ?? version.files[0];
   if (!file) {
     throw new Error(`Modrinth version ${version.id} has no downloadable files`);
@@ -72,7 +100,11 @@ export function mapVersionToModFile(version: ModrinthVersion): ModFile {
     loaders: version.loaders.filter(isLoaderFamily),
     gameVersions: [...version.game_versions],
     dependencies: version.dependencies.map(mapDependency),
-    side: 'both',
+    // Bound by project id so another project's metadata can never leak onto this version.
+    side:
+      project && project.id === version.project_id
+        ? mapProjectSide(project.client_side, project.server_side)
+        : 'unknown',
     downloadUrl: file.url,
     ...(version.date_published ? { datePublished: version.date_published } : {}),
     ...(version.changelog ? { changelog: version.changelog } : {}),

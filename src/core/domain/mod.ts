@@ -7,8 +7,15 @@
  */
 import type { LoaderFamily } from './loader.ts';
 
-/** Where a mod runs. Mismatches here are a static conflict category (DOMAIN-KNOWLEDGE §4.3). */
-export type Side = 'client' | 'server' | 'both';
+/**
+ * Where a mod runs. Mismatches here are a static conflict category (DOMAIN-KNOWLEDGE §4.3).
+ *
+ * `unknown` means the side could **not be sourced** — the catalog said so, the metadata was
+ * absent/malformed, or only one side was evidenced. It is *not* a synonym for `both`: an unknown
+ * side never implies compatibility (Constitution P5, DOMAIN-KNOWLEDGE §3.1). Consumers must treat
+ * it as undetermined — surface it, don't widen it.
+ */
+export type Side = 'client' | 'server' | 'both' | 'unknown';
 
 /**
  * Kinds of dependency relation. Unifies Fabric's `depends`/`recommends`/`suggests`/
@@ -70,9 +77,10 @@ export interface ModFile {
   readonly gameVersions: readonly string[];
   readonly dependencies: readonly Dependency[];
   /**
-   * Where the file runs. Catalog *version* endpoints don't declare side (it's a project-level
-   * attribute on Modrinth), so adapters default to `both` and side is enriched from project
-   * metadata in a later phase.
+   * Where the file runs — **explicit and sourced, or `unknown`**. The Modrinth adapter reads
+   * legacy project-level client_side/server_side fields and maps them conservatively
+   * (DOMAIN-KNOWLEDGE §3.1). Adapters must **never** default
+   * a missing/ambiguous side to `both` (Constitution P5, spec 0004 Amendment A1).
    */
   readonly side: Side;
   readonly downloadUrl: string;

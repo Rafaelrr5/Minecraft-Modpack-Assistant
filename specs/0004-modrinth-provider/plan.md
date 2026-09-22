@@ -151,3 +151,32 @@ All gates from [`spec.md`](./spec.md) hold. Reaffirmed: provider-agnostic bounda
 port only, P6); contract tests against fixtures (P3); read-only (P4); endpoints/limits
 sourced (P5). Only flagged item: fixtures schema-authored, not live-recorded —
 documented as open question and refresh task, not silent deviation.
+---
+
+## Amendment A1 — plan delta (honest `side`)
+
+1. `Side` gains `'unknown'` (`src/core/domain/mod.ts`); `ModFile.side` stays **required and
+   explicit** so every adapter must answer the question.
+2. `mappers.ts` gains a pure, exported `mapProjectSide(clientSide?, serverSide?)` implementing the §3.1
+   conservative table; `mapVersionToModFile(version, project?)` takes the project as an
+   **optional second argument** — omitted means `unknown`. Fake/test providers keep compiling.
+3. `ModrinthProvider` gains a private `#trySideProject(idOrSlug)` that returns `undefined` and
+   **warns** on any failure. `listVersions` fetches project + versions in parallel;
+   `getVersionByHash` fetches the project only on a hash **hit**, keeping the `404`-to-`null`
+   catch scoped to the version request alone.
+4. Binding is by `project.id === version.project_id`; a mismatch warns and degrades.
+
+**Rejected alternatives.** (a) Defaulting to `both` — the defect itself. (b) Slug/category
+special-cases (e.g. "sodium is client-only") — unsourced heuristics, Constitution P5.
+(c) Reading the newer `environment` arrays — outside this legacy-field mapping; would require a
+separate mapping of the richer semantics, even though current v2 responses include them.
+
+### Propagation safety checks
+
+The `unknown` addition must not silently drop mods from RAM/disk estimates: include their
+resource cost conservatively, lower RAM/disk/CPU confidence and explicitly state that side
+compatibility is not confirmed. Keep Java facts independent of side. Re-pinning updates must
+adopt the candidate side, including unknown. Regression comparison must distinguish an unknown
+side warning (`manual` verification) from a newly known mismatch (`change-side`), so the latter
+is not hidden by the former's category/slug key. These are required consumer corrections for
+FR-9, not new capabilities (P2/P5/P9 pass).

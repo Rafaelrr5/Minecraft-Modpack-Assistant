@@ -120,3 +120,15 @@
 - [x] All Constitution gates pass (P7 deviation justified in spec).
 - [x] Unit + integration + architecture + CLI tests green (`npm run check`); datasets validate.
 - [x] Docs and roadmap status updated; spec marked `done`.
+---
+
+## Amendment A1 tasks — undetermined side
+
+- [x] **T-0007-11 — Report `unknown` side as an undetermined warning**
+  - **Deliverable:** `detectSideMismatch` emits a `suspected` `side-mismatch` warning stating
+    compatibility cannot be determined, with verify-metadata guidance, for either environment.
+  - **Maps to:** FR-5 (revised), AC-10.
+- [x] **T-0007-12 — Tests**
+  - **Deliverable:** detector test for `unknown` (both environments) + `preflight` test proving
+    the finding is summarized and the set is not reported conflict-free; `both` still unflagged.
+  - **Maps to:** AC-10.

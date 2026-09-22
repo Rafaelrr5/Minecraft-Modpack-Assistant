@@ -44,9 +44,9 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
 
-/** Does a mod's side run on the target side? `both` always does (DOMAIN-KNOWLEDGE §4 sides). */
+/** Budget unknown-side mods conservatively; inclusion does not assert compatibility. */
 function sideIncluded(side: Side, target: RequirementsTarget): boolean {
-  return side === 'both' || side === target;
+  return side === 'unknown' || side === 'both' || side === target;
 }
 
 function isPerformanceMod(mod: Mod): boolean {
@@ -167,15 +167,23 @@ export function predictRequirements(modpack: Modpack, options: PredictOptions = 
   const minecraft = modpack.brief.minecraftVersion;
   const profile = buildProfile(modpack.mods, target);
   const gpu = gpuRequirement(flags, target);
+  const unknownSides = modpack.mods.filter((m) => m.file.side === 'unknown').length;
+  // A missing side cannot justify either a zero resource cost or confirmed compatibility.
+  const uncertainty = <T extends { confidence: Confidence; rationale: string }>(figure: T): T =>
+    unknownSides === 0 ? figure : {
+      ...figure,
+      confidence: 'low',
+      rationale: `${figure.rationale} ${unknownSides} mod(s) have unknown side; included conservatively, compatibility is not confirmed.`,
+    };
 
   return {
     minecraftVersion: minecraft.raw,
     loaderFamily: modpack.brief.loader.family,
     target,
     java: javaRequirement(minecraft),
-    ram: estimateRam(profile),
-    disk: estimateDisk(modpack.mods, target),
-    cpu: cpuRequirement(profile),
+    ram: uncertainty(estimateRam(profile)),
+    disk: uncertainty(estimateDisk(modpack.mods, target)),
+    cpu: uncertainty(cpuRequirement(profile)),
     ...(gpu ? { gpu } : {}),
     inputs: {
       modCount: profile.modCount,

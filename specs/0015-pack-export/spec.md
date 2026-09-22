@@ -198,3 +198,31 @@ the output leads with the plain result and layers the archive detail and caveats
 | 7 | Declarative, reproducible pack state | **Pass** | A pure, byte-stable projection of `PackState`; no wall-clock in the archive (FR-9 / AC-8). |
 | 8 | Dual-audience progressive disclosure | **Pass** | Plain "exported N mods" first; archive contents + unmappable reasons for experts. |
 | 9 | Simplicity, YAGNI & observability | **Pass** | Reuses the existing resolve→PackState path; store-only deterministic zip (no dependency); jar-bundling / CF sourcing deferred until needed. |
+
+---
+
+## Amendment A1 — an `unknown` side is unmappable, never guessed
+
+**Context.** Spec `0004` Amendment A1 lets `PackStateMod.side` be `unknown`. The `.mrpack`
+per-file `env` has no such value: it is a client/server pair of
+`required`/`optional`/`unsupported`, and an **omitted** `env` is read as required on both sides
+(DOMAIN-KNOWLEDGE §8 [S19]).
+
+**Requirement delta.**
+
+- **FR-5 (extended).** A mod whose `side` is `unknown` is surfaced as an **`UnmappableMod`**
+  with a reason naming the undetermined side, and its file entry is **excluded** from
+  `modrinth.index.json` — exactly the treatment an inexpressible hash algorithm already gets.
+  Guessing an `env`, or omitting `env` (which defaults to required-on-both), is forbidden:
+  both fabricate compatibility the pack never sourced (Constitution P5).
+- Known sides are unchanged: `client` → `{client: required, server: unsupported}`, `server` the
+  inverse, `both` → required on both.
+
+**Added acceptance criterion.**
+
+- **AC-10** — exporting a pack containing an `unknown`-side mod emits no file entry for it,
+  lists it in `unmappable` with a side-related reason, and counts it in the artifact summary;
+  the remaining mods export unchanged and byte-stably.
+
+**Constitution Gate (delta).** P5 — pass: unrepresentable facts surfaced, not invented.
+P3/P7 — unaffected: the index is still parse-back-validated and byte-stable.

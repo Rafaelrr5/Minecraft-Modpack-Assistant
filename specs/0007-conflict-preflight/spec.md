@@ -182,3 +182,31 @@ Both audiences, per Constitution
 | 7 | Declarative, reproducible pack state | **Justified deviation** | Operates on the domain `Modpack` (resolved set), **not** `PackState` — the lockfile is intentionally lossy (drops `dependencies`/`modId`), and `Modpack` is the shared vocabulary specs `0002`/`0006` already consume. No reproducibility regression: the detector reads, never writes, state. |
 | 8 | Dual-audience progressive disclosure | **Pass** | One recommended fix for beginners; full taxonomy + certainty + all candidates for experts (§3). |
 | 9 | Simplicity, YAGNI & observability | **Pass** | Single spec (no separate known-bad spec); seed datasets only; structured per-conflict logging. |
+
+---
+
+## Amendment A1 — an undetermined side is visible, not silent
+
+**Context.** Spec `0004` Amendment A1 makes `ModFile.side` honest: it can now be `unknown`.
+Previously every Modrinth mod arrived as `both` and the side detector had nothing to say.
+
+**Requirement delta.**
+
+- **FR-5 (revised).** The side detector reports two distinct things, both `suspected` warnings
+  in the existing **`side-mismatch`** category (no new category — DOMAIN-KNOWLEDGE §4.3.6):
+  1. a **known mismatch** — side is `client` on a `server` pack or vice versa (unchanged); and
+  2. an **undetermined side** — side is `unknown`, so compatibility **cannot be determined**.
+     The explanation says exactly that; the proposed fix is **verify the mod's side metadata**,
+     never "remove the mod". `both` is still never flagged.
+- A pack containing an `unknown`-side mod therefore **cannot** produce a "no conflicts" clean
+  bill of health, which would be an unsourced compatibility assertion (Constitution P5).
+
+**Added acceptance criterion.**
+
+- **AC-10** — an `unknown`-side mod yields exactly one `side-mismatch` **warning** of
+  `suspected` certainty whose text states compatibility cannot be determined and whose
+  resolution asks the user to verify metadata; it is counted in the report summary (so the set
+  is not reported as conflict-free) and is emitted for **both** target environments.
+
+**Constitution Gate (delta).** P5 — pass: the report no longer converts absent side data into
+an implicit "compatible". P4 — unaffected: still read-only, nothing applied.

@@ -88,3 +88,60 @@ Mostly internal (consumed by later capability modules), but underpins both audie
 | 7 | Declarative, reproducible pack state | Pass | Returns version-pinned `ModFile`s (hashes) that `0005` serializes. |
 | 8 | Dual-audience progressive disclosure | N/A | Internal data layer; surfaced by later features. |
 | 9 | Simplicity, YAGNI & observability | Pass | Only four needed methods; requests/rate-limit waits logged. |
+---
+
+## Amendment A1 — honest `side` metadata (correctness fix)
+
+**Consumer invariant:** resource estimates must not discard unknown-side mods as though they
+were unsupported; conservatively budget them with explicitly lower confidence, without claiming
+compatibility. Updates adopt fresh side metadata and report unknown-to-known mismatch transitions.
+
+**Defect.** `mapVersionToModFile` hard-coded `side: 'both'` for every Modrinth version. Every
+downstream consumer (pre-flight, packwiz pin, `.mrpack` export) therefore asserted "runs on
+client *and* server" for data the adapter had never read — Sodium, a client-only mod, was pinned
+as required on a server. That is a fabricated fact (Constitution **P5**) presented as sourced.
+
+**Fix (this amendment).** Side is a Modrinth **project** attribute (DOMAIN-KNOWLEDGE §3.1), so
+the adapter must read the project and map it conservatively, or say **`unknown`**.
+
+### Added functional requirements
+
+- **FR-9 — Sourced side.** `ModFile.side` is derived from the owning project's v2
+  `client_side`/`server_side` (`required` | `optional` | `unsupported` | `unknown`) per the
+  conservative mapping in DOMAIN-KNOWLEDGE §3.1: `both` only when both sides are supported;
+  `client`/`server` only when the opposite side is explicitly `unsupported`; otherwise
+  **`unknown`**. Missing, malformed, unrecognized and contradictory input all yield `unknown` —
+  **never** `both`.
+- **FR-10 — Side on every version path.** Project metadata is fetched for `listVersions` **and**
+  `getVersionByHash`, not only `getMod`, and is bound to a version by
+  `version.project_id === project.id`. A mismatch degrades that version to `unknown` rather than
+  attaching another project's side.
+- **FR-11 — Observable degradation.** A failed/absent project lookup logs a warning and yields
+  `unknown`; it never hides an otherwise valid version. A `404` from the **project** endpoint is
+  never reported as a **hash miss** (`null`) — only the `/version_file/{hash}` `404` is.
+- **FR-12 — v2 scope.** Only the documented v2 legacy fields are read. The newer
+  `environment` arrays are **not** interpreted; data expressible only that way resolves to
+  `unknown` (DOMAIN-KNOWLEDGE §3.1 scope caveat). No support for the new semantics is claimed.
+
+### Added acceptance criteria
+
+- **AC-6** — `required`/`unsupported` in either direction maps to `client` / `server`;
+  supported-on-both maps to `both`.
+- **AC-7** — missing, `unknown`, unrecognized, one-sided and `unsupported`/`unsupported`
+  project metadata all map to `unknown`.
+- **AC-8** — `listVersions` and `getVersionByHash` both return a sourced side; a project-lookup
+  failure yields `unknown` + a warning with the version still returned.
+- **AC-9** — a hash **miss** returns `null` after exactly one request (no project lookup), and a
+  project `404` on a hash **hit** still returns the file (side `unknown`).
+
+### Constitution Gate (delta)
+
+| # | Principle | Status | Notes |
+| --- | --- | --- | --- |
+| 3 | Validation discipline | Pass | Mapper unit tests per value pair + provider contract tests over fixtures. |
+| 5 | Sourced knowledge | **Pass (was violated)** | Side now sourced or explicitly `unknown`; §3.1 records the mapping + v2 scope caveat. |
+| 6 | Provider-agnostic | Pass | `unknown` added to the domain `Side`; no Modrinth type crosses the boundary. |
+| 9 | Simplicity / observability | Pass | One extra project request per call; degradation warned, not silent. |
+
+**Fixtures.** A `project.json` fixture is **schema-authored** from the documented v2 shape, same
+posture (and same open question) as the existing fixtures — **not** a live recording.

@@ -130,6 +130,20 @@ test('AC-5: disk = sum(file sizes) + documented headroom; heuristics carry confi
   }
 });
 
+test('unknown sides stay in resource estimates with explicit uncertainty, not compatibility', () => {
+  const pack = modpack('1.21.1', [{ slug: 'mystery', side: 'unknown', sizeMb: 50, categories: ['worldgen'] }]);
+  for (const target of ['client', 'server'] as const) {
+    const report = predictRequirements(pack, { target });
+    assert.equal(report.inputs.modCount, 1);
+    assert.equal(report.disk.modsMb, 50);
+    for (const figure of [report.ram, report.disk, report.cpu]) {
+      assert.equal(figure.confidence, 'low');
+      assert.match(figure.rationale, /unknown side/i);
+      assert.match(figure.rationale, /compatibility.*not confirmed/i);
+    }
+  }
+});
+
 test('AC-6: the report is directly consumable by the build phase (numeric Java + -Xmx)', () => {
   const report = predictRequirements(modpack('1.20.4', [{ slug: 'create', categories: ['technology'] }]));
   assert.equal(typeof report.java.majorVersion, 'number');

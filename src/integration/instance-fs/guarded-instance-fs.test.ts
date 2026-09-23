@@ -348,3 +348,43 @@ test('apply backs up an existing binary target before overwriting it (spec 0018)
   // The pre-write bytes were captured in the backup before the overwrite.
   assert.deepEqual(new Uint8Array(await readFile(path.join(backupDir, 'mods', 'x.jar'))), original);
 });
+
+// ── Spec 0024: listFiles is read-only and cannot be walked out of the instance ──────────────────
+
+test('listFiles enumerates instance files as forward-slash relative paths, and never writes', async () => {
+  const dir = await tmp();
+  await mkdir(path.join(dir, 'config', 'ftbquests'), { recursive: true });
+  await mkdir(path.join(dir, 'saves', 'World'), { recursive: true });
+  await writeFile(path.join(dir, 'config', 'a.json'), '{}');
+  await writeFile(path.join(dir, 'config', 'ftbquests', 'q.snbt'), '{}');
+  await writeFile(path.join(dir, 'saves', 'World', 'level.dat'), 'w');
+  const fs = new GuardedInstanceFs();
+
+  const before = (await readdir(dir)).sort();
+  assert.deepEqual(await fs.listFiles(dir), [
+    'config/a.json',
+    'config/ftbquests/q.snbt',
+    'saves/World/level.dat',
+  ]);
+  // Listing is a probe: the tree is untouched (Constitution P4).
+  assert.deepEqual((await readdir(dir)).sort(), before);
+
+  // A sub-directory scope lists only that subtree.
+  assert.deepEqual(await fs.listFiles(dir, 'config'), ['config/a.json', 'config/ftbquests/q.snbt']);
+});
+
+test('listFiles skips a link that escapes the instance instead of following it', async (t) => {
+  const fixture = await tmp();
+  t.after(() => rm(fixture, { recursive: true, force: true }));
+  const dir = path.join(fixture, 'instance');
+  const outside = path.join(fixture, 'outside');
+  await mkdir(path.join(dir, 'config'), { recursive: true });
+  await mkdir(outside);
+  await writeFile(path.join(dir, 'config', 'mine.json'), '{}');
+  await writeFile(path.join(outside, 'private.txt'), 'private original');
+  if (!(await makeLink(t, outside, path.join(dir, 'config', 'leak'), 'junction'))) return;
+
+  const listed = await new GuardedInstanceFs().listFiles(dir);
+  assert.deepEqual(listed, ['config/mine.json']);
+  assert.equal(await readFile(path.join(outside, 'private.txt'), 'utf8'), 'private original');
+});

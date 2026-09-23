@@ -20,6 +20,7 @@ import {
 } from './gate.ts';
 import type { OrchestrationIssue } from '../orchestration/types.ts';
 import type { ExportArtifact } from '../export/types.ts';
+import { NO_OVERRIDES } from '../export/overrides.ts';
 import type { BuildArtifacts } from '../build/types.ts';
 
 const unresolved: OrchestrationIssue = {
@@ -101,7 +102,7 @@ test('stamping an export artifact adds the marker and renames the file (FR-4)', 
     fileName: 'mypack-0.1.0.mrpack',
     entries: [{ path: 'modrinth.index.json', contents: '{}' }],
     unmappable: [],
-    summary: { mods: 1, mapped: 1, unmappable: 0 },
+    summary: { mods: 1, mapped: 1, unmappable: 0, overrides: NO_OVERRIDES },
   };
   const stamped = withUnsupportedMarker(artifact, [incompatible], { command: 'export' });
 

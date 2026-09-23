@@ -11,10 +11,21 @@
  * verified) in tests (Constitution P3). Store method only — no deflate.
  */
 
-/** One archive member. A `path` ending in `/` is a directory entry (zero-length). */
+/**
+ * One archive member. A `path` ending in `/` is a directory entry (zero-length). `contents` is the
+ * text payload; when `bytes` is present it is authoritative and written verbatim (spec 0024 FR-4),
+ * so binaries survive byte-for-byte.
+ */
 export interface ZipEntry {
   readonly path: string;
   readonly contents: string;
+  readonly bytes?: Uint8Array;
+}
+
+/** The payload a member actually stores (raw bytes win over text). */
+function payload(entry: ZipEntry): Buffer {
+  if (entry.path.endsWith('/')) return Buffer.alloc(0);
+  return entry.bytes !== undefined ? Buffer.from(entry.bytes) : Buffer.from(entry.contents, 'utf8');
 }
 
 // The canonical "zero" DOS timestamp: 1980-01-01 00:00:00 (valid, and fixed → reproducible).
@@ -56,7 +67,7 @@ export function createStoreZip(entries: readonly ZipEntry[]): Buffer {
   for (const entry of entries) {
     const nameBytes = Buffer.from(entry.path, 'utf8');
     const isDir = entry.path.endsWith('/');
-    const data = isDir ? Buffer.alloc(0) : Buffer.from(entry.contents, 'utf8');
+    const data = payload(entry);
     const crc = crc32(data);
 
     const local = Buffer.alloc(30);
@@ -112,8 +123,14 @@ export function createStoreZip(entries: readonly ZipEntry[]): Buffer {
   return Buffer.concat([localPart, centralPart, eocd]);
 }
 
-/** Read a store-only ZIP produced by {@link createStoreZip}, verifying each entry's CRC-32. */
-export function readStoreZip(bytes: Buffer): ZipEntry[] {
+/** One archive member as stored — raw bytes, no text decoding (spec 0024 AC-3). */
+export interface RawZipEntry {
+  readonly path: string;
+  readonly bytes: Buffer;
+}
+
+/** Read a store-only ZIP as raw bytes per member, verifying each entry's CRC-32. */
+export function readStoreZipRaw(bytes: Buffer): RawZipEntry[] {
   // Locate the End-of-Central-Directory record (no archive comment → scan from the tail).
   let eocd = -1;
   for (let i = bytes.length - 22; i >= 0; i--) {
@@ -127,7 +144,7 @@ export function readStoreZip(bytes: Buffer): ZipEntry[] {
   const count = bytes.readUInt16LE(eocd + 10);
   let p = bytes.readUInt32LE(eocd + 16); // central directory offset
 
-  const entries: ZipEntry[] = [];
+  const entries: RawZipEntry[] = [];
   for (let i = 0; i < count; i++) {
     if (bytes.readUInt32LE(p) !== CENTRAL_SIG) throw new Error('zip: bad central directory signature');
     const method = bytes.readUInt16LE(p + 10);
@@ -147,8 +164,19 @@ export function readStoreZip(bytes: Buffer): ZipEntry[] {
     const data = bytes.subarray(dataStart, dataStart + size);
     if (crc32(data) !== crc) throw new Error(`zip: CRC mismatch for ${path}`);
 
-    entries.push({ path, contents: data.toString('utf8') });
+    entries.push({ path, bytes: data });
     p += 46 + nameLen + extraLen + commentLen;
   }
   return entries;
+}
+
+/**
+ * Read a store-only ZIP produced by {@link createStoreZip}, verifying each entry's CRC-32 and
+ * decoding each member as UTF-8 text. Use {@link readStoreZipRaw} when members may be binary.
+ */
+export function readStoreZip(bytes: Buffer): ZipEntry[] {
+  return readStoreZipRaw(bytes).map((entry) => ({
+    path: entry.path,
+    contents: entry.bytes.toString('utf8'),
+  }));
 }

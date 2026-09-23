@@ -1,12 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, readdir, stat } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import * as path from 'node:path';
 
 import { runRelease, type ReleaseOptions, type ReleasePorts } from './release.ts';
 import { type PackExporter } from './export.ts';
 import { FakeProvider } from '../../core/orchestration/__fixtures__/fake-provider.ts';
+import { GuardedInstanceFs } from '../../integration/instance-fs/index.ts';
 import { PackwizFormat } from '../../integration/packwiz/index.ts';
 import { PackagingExporter } from '../../integration/packaging/index.ts';
 import { parseMinecraftVersion, type PackState } from '../../core/index.ts';
@@ -165,4 +166,44 @@ test('--allow-unsupported releases anyway, marking the bundle UNSUPPORTED (AC-2)
   const paths = (await exporter.readArchive(out)).map((e) => e.path);
   assert.ok(paths.includes(UNSUPPORTED_MARKER_FILE), 'the bundle carries the marker');
   assert.ok(paths.includes('CHANGELOG.md'), 'still a real release bundle');
+});
+
+// ── Spec 0024: overrides travel with a release too (FR-8) ───────────────────────────────────────
+
+test('release --overrides ships the pack content alongside the changelog (FR-8)', async () => {
+  const instanceDir = await mkdtemp(path.join(tmpdir(), 'mpa-release-overrides-'));
+  await mkdir(path.join(instanceDir, 'config'), { recursive: true });
+  await writeFile(path.join(instanceDir, 'config', 'sodium.json'), '{"fps":true}');
+  await mkdir(path.join(instanceDir, 'saves', 'World'), { recursive: true });
+  await writeFile(path.join(instanceDir, 'saves', 'World', 'level.dat'), 'world');
+
+  const outDir = await mkdtemp(path.join(tmpdir(), 'mpa-release-out-'));
+  const out = path.join(outDir, 'pack.mrpack');
+  const exporter = new PackagingExporter();
+
+  let text = '';
+  const code = await runRelease(
+    baseOptions({ apply: true, out, overrides: instanceDir }),
+    provider(),
+    { packFormat: new PackwizFormat(), exporter, instanceFs: new GuardedInstanceFs() },
+    (t) => {
+      text += t;
+    },
+  );
+
+  assert.equal(code, 0);
+  assert.match(text, /overrides\/config\/sodium\.json/);
+  const paths = (await exporter.readArchiveRaw(out)).map((e) => e.path);
+  assert.ok(paths.includes('overrides/config/sodium.json'));
+  assert.ok(paths.includes('CHANGELOG.md'), 'the release still carries its changelog');
+  assert.ok(!paths.some((p) => p.includes('level.dat')), 'worlds never ship');
+});
+
+test('a release without --overrides is declared mods-only (FR-6)', async () => {
+  let text = '';
+  const code = await runRelease(baseOptions(), provider(), ports(), (t) => {
+    text += t;
+  });
+  assert.equal(code, 0);
+  assert.match(text, /mods-only pack/);
 });

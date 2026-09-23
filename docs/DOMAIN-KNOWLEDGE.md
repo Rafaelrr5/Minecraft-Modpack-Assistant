@@ -387,6 +387,19 @@ cannot be serialized honestly into either:
 - Reading back a packwiz metafile with **no** `side` key yields `unknown` internally rather
   than inventing `both`; a present-but-unrecognized value stays a hard parse error.
 
+**The `overrides/` tree is what makes an exported pack *the* pack.** Both `.mrpack` [S19] and
+the CurseForge format [S20] carry non-mod content in an `overrides/` directory that a launcher
+copies into the instance root on install — so mod configs (`config/`), KubeJS scripts
+(`kubejs/`, §7 [S16]), the FTB Quests book (`config/ftbquests/`, §7 [S15]) and resource/shader
+packs (`resourcepacks/`, `shaderpacks/`, §9 [S24]) travel there or not at all. The same
+directory is a **data-exfiltration hazard**: it sits next to `saves/`, `logs/`,
+`crash-reports/`, `backups/` and the launcher's account files ([S12] for `options.txt`, which
+holds the local player's keybinds and video settings). Our export therefore collects content
+under a **deny-by-default whitelist** of top-level folders, refuses world/log/backup/credential
+names at any depth, and never duplicates `mods/` (the index already pins every jar). An export
+that includes nothing is reported as **mods-only** rather than passing for a complete pack (spec
+`0024`).
+
 **Launchers.** **Prism Launcher** and the **Modrinth App** have the broadest interoperability
 (both import `.mrpack`; Prism also imports CurseForge packs) — primary
 targets for "produce an installable instance". [S21]

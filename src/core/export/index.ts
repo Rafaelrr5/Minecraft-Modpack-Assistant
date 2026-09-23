@@ -7,6 +7,7 @@
  * surface over `assembleExport`.
  */
 export * from './types.ts';
+export * from './overrides.ts';
 export * from './mrpack.ts';
 export * from './curseforge.ts';
 export * from './export.ts';

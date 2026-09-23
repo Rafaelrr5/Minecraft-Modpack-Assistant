@@ -239,7 +239,14 @@ export function createDesktopServices(overrides: Partial<DesktopPorts> = {}): De
 
     async export(options, onLog) {
       const { write, output } = collector(onLog);
-      const exitCode = await runExport(options, ports.provider, ports.exporter, write, ports.loaderVersions);
+      const exitCode = await runExport(
+        options,
+        ports.provider,
+        ports.exporter,
+        write,
+        ports.loaderVersions,
+        ports.instanceFs,
+      );
       return { exitCode, output: output() };
     },
 
@@ -248,7 +255,12 @@ export function createDesktopServices(overrides: Partial<DesktopPorts> = {}): De
       const exitCode = await runRelease(
         options,
         ports.provider,
-        { packFormat: ports.packFormat, exporter: ports.exporter, loaderVersions: ports.loaderVersions },
+        {
+          packFormat: ports.packFormat,
+          exporter: ports.exporter,
+          loaderVersions: ports.loaderVersions,
+          instanceFs: ports.instanceFs,
+        },
         write,
       );
       return { exitCode, output: output() };

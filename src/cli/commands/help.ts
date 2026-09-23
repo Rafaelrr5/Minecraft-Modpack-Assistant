@@ -164,6 +164,10 @@ Options for 'export':
   --format <name>   Export format: mrpack (default) | curseforge.
   --name <s>        Override the pack name written into the export.
   --pack-version <v> Override the pack version written into the export.
+  --overrides <dir> Also ship the pack's own content (configs, KubeJS scripts, quest
+                    book, resource/shader packs) read from this instance folder.
+                    Read-only; your worlds, logs, backups and account files are
+                    never included. Without it the archive is mods-only.
   --out <file>      Where to write the archive (required with --apply).
   --apply           Write the archive (otherwise dry-run, the default).
   --force           Required with --apply when the output file already exists.
@@ -181,6 +185,10 @@ Options for 'release':
   --name <s>        Override the pack name written into the release.
   --pack-version <v> Override the pack version (the release label).
   --release-date <d> Release date to record (e.g. 2026-06-07); not read from the clock.
+  --overrides <dir> Also ship the pack's own content (configs, KubeJS scripts, quest
+                    book, resource/shader packs) read from this instance folder.
+                    Read-only; your worlds, logs, backups and account files are
+                    never included. Without it the bundle is mods-only.
   --out <file>      Where to write the bundle archive (required with --apply).
   --apply           Write the bundle (otherwise dry-run, the default).
   --force           Required with --apply when the output file already exists.

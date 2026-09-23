@@ -9,6 +9,7 @@
  * overwrite without `--force` (Constitution P4).
  */
 import {
+  type InstanceFs,
   type ModSourceProvider,
   type LoaderVersionProvider,
   type PackFormat,
@@ -26,10 +27,11 @@ import {
 } from '../../core/index.ts';
 import { createModrinthProvider } from '../../integration/modrinth/index.ts';
 import { createOfficialLoaderVersions } from '../../integration/loader-versions/official-loader-versions.ts';
+import { GuardedInstanceFs } from '../../integration/instance-fs/index.ts';
 import { PackwizFormat } from '../../integration/packwiz/index.ts';
 import { PackagingExporter } from '../../integration/packaging/index.ts';
 import { briefFromOptions } from './orchestrate.ts';
-import { type ExportOptions, type PackExporter } from './export.ts';
+import { collectOverridesForCommand, type ExportOptions, type PackExporter } from './export.ts';
 
 export interface ReleaseOptions extends ExportOptions {
   /** A prior packwiz tree to diff against (baseline). Omitted → an initial release. */
@@ -43,6 +45,8 @@ export interface ReleasePorts {
   readonly loaderVersions?: LoaderVersionProvider;
   readonly packFormat: PackFormat;
   readonly exporter: PackExporter;
+  /** Read-only source for `--overrides` (spec 0024); absent → the flag cannot collect. */
+  readonly instanceFs?: InstanceFs;
 }
 
 /** Resolve → (read baseline) → assemble bundle → render → (optionally) write. Returns an exit code. */
@@ -96,7 +100,13 @@ export async function runRelease(
   }
 
   const meta: ReleaseMeta = options.releaseDate !== undefined ? { date: options.releaseDate } : {};
-  const assembled = assembleRelease(packState, options.format, { baseline, meta });
+  // Overrides are read only after the gate: a refused pack collects nothing (spec 0024 FR-8).
+  const overrides = await collectOverridesForCommand(options.overrides, ports.instanceFs, write);
+  const assembled = assembleRelease(packState, options.format, {
+    baseline,
+    meta,
+    ...(overrides !== undefined ? { overrides } : {}),
+  });
   const bundle = blocked
     ? {
         ...assembled,
@@ -105,7 +115,7 @@ export async function runRelease(
     : assembled;
 
   if (!options.apply) {
-    write(renderReleasePlan(bundle)); // dry-run: show the plan, write nothing (AC-5)
+    write(renderReleasePlan(bundle, undefined, overrides)); // dry-run: show the plan, write nothing (AC-5)
     return 0;
   }
 
@@ -114,7 +124,7 @@ export async function runRelease(
     return 2;
   }
 
-  write(renderReleasePlan(bundle, options.out));
+  write(renderReleasePlan(bundle, options.out, overrides));
   const writeResult = await ports.exporter.writeExport(bundle.artifact, options.out, {
     force: options.force === true,
   });
@@ -131,7 +141,12 @@ export async function runReleaseCli(options: ReleaseOptions): Promise<number> {
   return runRelease(
     options,
     createModrinthProvider(),
-    { packFormat: new PackwizFormat(), exporter: new PackagingExporter(), loaderVersions: createOfficialLoaderVersions() },
+    {
+      packFormat: new PackwizFormat(),
+      exporter: new PackagingExporter(),
+      loaderVersions: createOfficialLoaderVersions(),
+      instanceFs: new GuardedInstanceFs(),
+    },
     (text) => process.stdout.write(text),
   );
 }

@@ -61,6 +61,13 @@ export interface InstanceFs {
    * need no change; the guarded adapter implements it (idempotency in spec 0018 relies on it).
    */
   readBytes?(instanceDir: string, relPath: string): Promise<Uint8Array | null>;
+  /**
+   * Read-only: list every **file** under the instance (or under `relDir` within it), as
+   * forward-slash paths relative to the instance root. Never writes; anything resolving outside the
+   * instance (symlink, junction) is skipped rather than followed. Optional so existing
+   * implementations need no change; export overrides (spec 0024) rely on it.
+   */
+  listFiles?(instanceDir: string, relDir?: string): Promise<string[]>;
   /** Build a dry-run plan. Performs no filesystem writes. */
   plan(instanceDir: string, changes: readonly FileChange[]): ChangePlan;
   /** Apply a plan — refuses without `confirm`; backs up before writing when confirmed. */

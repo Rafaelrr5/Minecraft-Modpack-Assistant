@@ -5,10 +5,15 @@
  * writing is the packaging adapter, reached on an explicit opt-in (Constitution P4).
  */
 import { renderExportPlan } from '../export/render.ts';
+import type { OverridesCollection } from '../export/overrides.ts';
 import type { ReleaseBundle } from './types.ts';
 
 /** Render the release plan. `outPath` (when given) is where `--apply` would write the bundle. */
-export function renderReleasePlan(bundle: ReleaseBundle, outPath?: string): string {
+export function renderReleasePlan(
+  bundle: ReleaseBundle,
+  outPath?: string,
+  overrides?: OverridesCollection,
+): string {
   const { changelog } = bundle;
   const lines = [
     'Release plan',
@@ -17,5 +22,5 @@ export function renderReleasePlan(bundle: ReleaseBundle, outPath?: string): stri
     `  Changes: ${changelog.summary.added} added · ${changelog.summary.updated} updated · ` +
       `${changelog.summary.removed} removed`,
   ];
-  return `${lines.join('\n')}\n\n${renderExportPlan(bundle.artifact, outPath)}`;
+  return `${lines.join('\n')}\n\n${renderExportPlan(bundle.artifact, outPath, overrides)}`;
 }

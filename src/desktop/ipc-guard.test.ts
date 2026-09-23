@@ -10,7 +10,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { IPC } from './shared/ipc-contract.ts';
 import {
@@ -174,10 +174,15 @@ test('only the app renderer is a trusted URL', () => {
 });
 
 test('a percent-encoded file path still matches its decoded entry', () => {
-  const trust = rendererTrust(undefined, 'C:/Program Files/mpa/out/renderer/index.html');
+  // Platform-absolute path with a space (C:\Program Files\... on Windows, /Program Files/... on
+  // POSIX); a hardcoded drive letter is not absolute on Linux and would resolve against cwd.
+  const entry = resolve('/Program Files/mpa/out/renderer/index.html');
+  const trust = rendererTrust(undefined, entry);
+  const encoded = pathToFileURL(entry).href;
+  assert.match(encoded, /Program%20Files/);
   assert.ok(isTrustedRendererUrl(trust.rendererFileUrl, trust));
-  assert.ok(isTrustedRendererUrl('file:///C:/Program%20Files/mpa/out/renderer/index.html', trust));
-  assert.ok(!isTrustedRendererUrl('file:///C:/Program%20Files/mpa/out/renderer/evil.html', trust));
+  assert.ok(isTrustedRendererUrl(encoded, trust));
+  assert.ok(!isTrustedRendererUrl(encoded.replace(/index\.html$/, 'evil.html'), trust));
 });
 
 test('a sub-frame or foreign sender may not call, a top-level app frame may', () => {

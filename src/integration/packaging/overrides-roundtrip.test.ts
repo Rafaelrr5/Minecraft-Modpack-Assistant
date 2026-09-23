@@ -134,6 +134,35 @@ test('exporting the same instance twice is byte-identical (AC-6)', async () => {
   assert.ok((await readFile(first)).equals(await readFile(second)));
 });
 
+test('a CurseForge pack carries the same overrides and still parses back (AC-1/AC-3)', async () => {
+  const instanceDir = await makeInstance();
+  const out = path.join(await mkdtemp(path.join(tmpdir(), 'mpa-out-')), 'pack.zip');
+
+  const collection = await collectOverrides(instanceDir, new GuardedInstanceFs());
+  const artifact = assembleExport(state(), 'curseforge', undefined, collection);
+  assert.equal((await new PackagingExporter().writeExport(artifact, out)).written, true);
+
+  const members = new Map(
+    (await new PackagingExporter().readArchiveRaw(out)).map((e) => [e.path, e.bytes]),
+  );
+
+  for (const rel of Object.keys(SHIPPED)) {
+    const stored = members.get(`overrides/${rel}`);
+    assert.ok(stored, `overrides/${rel} must be in the CurseForge archive`);
+    assert.ok((await readFile(path.join(instanceDir, rel))).equals(stored));
+  }
+  for (const rel of Object.keys(REFUSED)) {
+    assert.ok(![...members.keys()].some((p) => p.endsWith(rel)), `${rel} must not be shipped`);
+  }
+
+  // The importer reads manifest.json; it must parse and still point at `overrides` ([S20]).
+  const manifest = members.get('manifest.json');
+  assert.ok(manifest);
+  const parsed = JSON.parse(manifest.toString('utf8'));
+  assert.equal(parsed.manifestType, 'minecraftModpack');
+  assert.equal(parsed.overrides, 'overrides');
+});
+
 test('without an instance the artifact is honestly mods-only (AC-5)', async () => {
   const artifact = assembleExport(state(), 'mrpack');
   assert.equal(artifact.summary.overrides.modsOnly, true);

@@ -93,7 +93,8 @@
   - **Maps to:** AC-1, AC-2, AC-3, AC-6
   - **Done when:** a real temp instance exports through `GuardedInstanceFs` + `PackagingExporter`;
     the archive is read back, every override matches the source bytes, no denied file is present,
-    and two runs are byte-identical.
+    two runs are byte-identical, and the CurseForge format is covered as well as `.mrpack` (its
+    `manifest.json` parses and still points at `overrides`).
 
 - [x] **T-0024-11 — Command-level tests**
   - **Deliverable:** cases in `src/cli/commands/export.test.ts` and `release.test.ts`.

@@ -124,21 +124,43 @@
 
 ### Remaining screens
 
-- [~] **T-0022-09 — Read-only screens:** doctor, orchestrate (+requirements/preflight), diagnose,
+- [x] **T-0022-09 — Read-only screens:** doctor, orchestrate (+requirements/preflight), diagnose,
   updates, migrate. **Maps to:** FR-2, AC-6. **Done when:** each renders the structured report in
   beginner + expert views.
-  - **Partially closed by t_20789b41:** doctor, orchestrate (Resolve — dependencies, requirements
-    and pre-flight in one pass) and diagnose are implemented. `updates` and `migrate` are *not*, and
-    are therefore listed as planned in the capability registry rather than offered as dead buttons.
+  - **Started by t_20789b41:** doctor, orchestrate (Resolve — dependencies, requirements and
+    pre-flight in one pass) and diagnose.
+  - **Closed by t_ab9cdfdf:** `updates` and `migrate` now have real screens. Updates leads with the
+    regression verdict rather than a version count — "3 updates available" is not useful if two of
+    them break the pack — and offers no write control at all; taking an accepted update is the
+    guarded Build path (spec 0013 FR-7). Migrate states the single all-or-nothing verdict (spec 0014
+    FR-6), names every mod with nothing to move to, and likewise never writes. The e2e harness
+    asserts both screens expose zero write controls.
 - [ ] **T-0022-10 — Interactive screens:** discover, assistant (via `interactive.ts`). **Maps to:**
   FR-6, FR-7, AC-5. **Done when:** Q/A turns + streaming work; egress disclosed; no-key degrades.
-- [~] **T-0022-11 — Remaining write screens:** install, launch, quests, kubejs (+ `describe`),
+  - **The only capabilities still `planned`** in `src/desktop/shared/capabilities.ts`. They need the
+    bidirectional prompt/reply channel (`PROMPT_EVENT`/`REPLY_EVENT`), not request/response, so they
+    stay listed with their working CLI command rather than offered as a button that cannot converse.
+- [x] **T-0022-11 — Remaining write screens:** install, launch, quests, kubejs (+ `describe`),
   export, release — each Confirm-gated. **Maps to:** FR-4, FR-5, AC-2, AC-4. **Done when:** each
   writes only after Confirm; NL `describe` validated by the `0011`/`0012` pipeline before write.
-  - **Partially closed by t_20789b41:** install and launch are implemented, both Confirm-gated
-    (install additionally requires a second, explicit acknowledgement before overwriting existing
-    jars; launch shows the exact resolved command before it will spawn anything). `quests`,
-    `kubejs`, `export` and `release` remain planned and are not offered in the UI.
+  - **Started by t_20789b41:** install and launch, both Confirm-gated (install additionally requires
+    a second, explicit acknowledgement before overwriting existing jars; launch shows the exact
+    resolved command before it will spawn anything).
+  - **Closed by t_ab9cdfdf:** quests, kubejs (both with the `describe` path), export and release.
+    Each follows the same model — preview first, `ConfirmWrite` second, overwrite a third separate
+    decision — and the authoring screens offer no write control at all until generation produced a
+    plan, so an invalid definition is structurally unwritable rather than merely discouraged. Export
+    and release honour the distribution gate (spec 0023) with no override control in the UI, and
+    release renders the changelog before the archive is cut. The e2e harness asserts all four refuse
+    to offer their write control before a preview, and that assertion was proven to fail when the
+    guard was removed.
+  - **Enabling change:** `runQuests`, `runKubeJs`, `runExport` and `runRelease` gained an optional
+    `onDetail` observer so the GUI receives the structured report/plan/artifact/changelog instead of
+    parsing rendered prose. The CLI path is unchanged; `src/desktop/services.test.ts` covers the new
+    payloads.
+  - **Pasted-JSON shape guard:** the authoring screens validate the *shape* of a pasted definition
+    before handing it over. The core validates content and reports findings, but assumes the shape —
+    an arbitrary object throws from inside the serializer and would reach the user as a stack trace.
 
 ### Packaging, polish, docs
 

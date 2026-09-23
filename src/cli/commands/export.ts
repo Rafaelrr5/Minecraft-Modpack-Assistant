@@ -13,6 +13,7 @@ import {
   type InstanceFs,
   type ModSourceProvider,
   type LoaderVersionProvider,
+  type OrchestrationIssue,
   type OverridesCollection,
   type PackState,
   EXIT_BLOCKED,
@@ -91,6 +92,23 @@ export async function collectOverridesForCommand(
   return collection;
 }
 
+/**
+ * The structured outcome behind the rendered text (spec 0022 FR-2/FR-4). A GUI needs to know
+ * whether the distribution gate blocked the set, what the assembled archive would contain, and
+ * whether a write actually happened — facts that cannot be recovered from rendered prose.
+ * Optional observer; the CLI path is unchanged.
+ */
+export interface ExportRunDetail {
+  /** Resolution problems (unresolved mods, unsatisfied dependencies, incompatibilities). */
+  readonly issues: readonly OrchestrationIssue[];
+  /** True when the distribution gate refused the set (spec 0023). */
+  readonly blocked: boolean;
+  /** The assembled archive plan — absent only when the gate refused before assembly. */
+  readonly artifact?: ExportArtifact;
+  /** Present only once the write step ran. */
+  readonly written?: { readonly written: boolean; readonly outPath: string; readonly bytes?: number; readonly reason?: string };
+}
+
 /** Resolve → assemble → render → (optionally) write. Returns a process exit code. */
 export async function runExport(
   options: ExportOptions,
@@ -99,6 +117,7 @@ export async function runExport(
   write: (text: string) => void,
   loaderVersions?: LoaderVersionProvider,
   instanceFs?: InstanceFs,
+  onDetail?: (detail: ExportRunDetail) => void,
 ): Promise<number> {
   const brief = briefFromOptions(options);
   const result = await resolveModpack(
@@ -118,6 +137,7 @@ export async function runExport(
   // The distribution gate (spec 0023): a broken set is not projected into a shareable archive at
   // all — not even a plan — unless the expert flag is given, and then only as UNSUPPORTED.
   if (blocked && !override) {
+    onDetail?.({ issues: result.issues, blocked: true });
     write(renderBlockedReport(result.issues, { command: 'export', verb: 'exported' }));
     return EXIT_BLOCKED;
   }
@@ -146,17 +166,20 @@ export async function runExport(
     : assembled;
 
   if (!options.apply) {
+    onDetail?.({ issues: result.issues, blocked, artifact });
     write(renderExportPlan(artifact, undefined, overrides)); // dry-run: show the plan, write nothing (AC-7)
     return 0;
   }
 
   if (options.out === undefined) {
+    onDetail?.({ issues: result.issues, blocked, artifact });
     write('export: --out <file> is required with --apply (where to write the archive).\n');
     return 2;
   }
 
   write(renderExportPlan(artifact, options.out, overrides));
   const writeResult = await exporter.writeExport(artifact, options.out, { force: options.force === true });
+  onDetail?.({ issues: result.issues, blocked, artifact, written: writeResult });
   if (!writeResult.written) {
     write(`${writeResult.reason ?? 'Not written.'} Re-run with --force to overwrite.\n`);
     return 1;

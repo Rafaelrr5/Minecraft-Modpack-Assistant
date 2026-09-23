@@ -21,9 +21,15 @@ import {
 import { BuildScreen } from './screens/BuildScreen.tsx';
 import { DiagnoseScreen } from './screens/DiagnoseScreen.tsx';
 import { DoctorScreen } from './screens/DoctorScreen.tsx';
+import { ExportScreen } from './screens/ExportScreen.tsx';
 import { InstallScreen } from './screens/InstallScreen.tsx';
+import { KubeJsScreen } from './screens/KubeJsScreen.tsx';
 import { LaunchScreen } from './screens/LaunchScreen.tsx';
+import { MigrateScreen } from './screens/MigrateScreen.tsx';
+import { QuestsScreen } from './screens/QuestsScreen.tsx';
+import { ReleaseScreen } from './screens/ReleaseScreen.tsx';
 import { ResolveScreen } from './screens/ResolveScreen.tsx';
+import { UpdatesScreen } from './screens/UpdatesScreen.tsx';
 import {
   INITIAL_WORKFLOW,
   type StepId,
@@ -40,6 +46,12 @@ export const SCREENS: Readonly<Record<string, (props: { expert: boolean }) => JS
   launch: LaunchScreen,
   diagnose: DiagnoseScreen,
   doctor: DoctorScreen,
+  quests: QuestsScreen,
+  kubejs: KubeJsScreen,
+  updates: UpdatesScreen,
+  migrate: MigrateScreen,
+  export: ExportScreen,
+  release: ReleaseScreen,
 };
 
 export function App(): JSX.Element {

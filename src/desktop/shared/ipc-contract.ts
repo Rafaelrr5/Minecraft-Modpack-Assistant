@@ -12,10 +12,10 @@ import type { LaunchCommandOptions, LaunchRunDetail } from '../../cli/commands/l
 import type { DiagnoseOptions, DiagnoseRunDetail } from '../../cli/commands/diagnose.ts';
 import type { UpdatesOptions } from '../../cli/commands/updates.ts';
 import type { MigrateOptions } from '../../cli/commands/migrate.ts';
-import type { ExportOptions } from '../../cli/commands/export.ts';
-import type { ReleaseOptions } from '../../cli/commands/release.ts';
-import type { QuestsOptions } from '../../cli/commands/quests.ts';
-import type { KubeJsOptions } from '../../cli/commands/kubejs.ts';
+import type { ExportOptions, ExportRunDetail } from '../../cli/commands/export.ts';
+import type { ReleaseOptions, ReleaseRunDetail } from '../../cli/commands/release.ts';
+import type { QuestsOptions, QuestsRunDetail } from '../../cli/commands/quests.ts';
+import type { KubeJsOptions, KubeJsRunDetail } from '../../cli/commands/kubejs.ts';
 import type {
   MigrationReport,
   OrchestrationResult,
@@ -48,7 +48,16 @@ export type KubeJsCallOptions = Omit<KubeJsOptions, 'defPath' | 'describe' | 'qu
  */
 export type OrchestrateResultData = OrchestrationResult & OrchestrateRunDetail;
 
-export type { DiagnoseRunDetail, InstallRunDetail, LaunchRunDetail, OrchestrateRunDetail };
+export type {
+  DiagnoseRunDetail,
+  ExportRunDetail,
+  InstallRunDetail,
+  KubeJsRunDetail,
+  LaunchRunDetail,
+  OrchestrateRunDetail,
+  QuestsRunDetail,
+  ReleaseRunDetail,
+};
 
 /** `ipcRenderer.invoke(<channel>)` channel names — one per capability. */
 export const IPC = {
@@ -116,12 +125,12 @@ export interface DesktopApi {
   diagnose(options: DiagnoseOptions): Promise<CapabilityResult<DiagnoseRunDetail>>;
   updates(options: UpdatesOptions): Promise<CapabilityResult<UpdateReport>>;
   migrate(options: MigrateOptions): Promise<CapabilityResult<MigrationReport>>;
-  export(options: ExportOptions): Promise<CapabilityResult>;
-  release(options: ReleaseOptions): Promise<CapabilityResult>;
-  quests(def: QuestDefinition, options: QuestsCallOptions): Promise<CapabilityResult>;
-  questsDescribe(description: string, options: QuestsCallOptions): Promise<CapabilityResult>;
-  kubejs(def: ScriptDefinition, options: KubeJsCallOptions): Promise<CapabilityResult>;
-  kubejsDescribe(description: string, options: KubeJsCallOptions): Promise<CapabilityResult>;
+  export(options: ExportOptions): Promise<CapabilityResult<ExportRunDetail>>;
+  release(options: ReleaseOptions): Promise<CapabilityResult<ReleaseRunDetail>>;
+  quests(def: QuestDefinition, options: QuestsCallOptions): Promise<CapabilityResult<QuestsRunDetail>>;
+  questsDescribe(description: string, options: QuestsCallOptions): Promise<CapabilityResult<QuestsRunDetail>>;
+  kubejs(def: ScriptDefinition, options: KubeJsCallOptions): Promise<CapabilityResult<KubeJsRunDetail>>;
+  kubejsDescribe(description: string, options: KubeJsCallOptions): Promise<CapabilityResult<KubeJsRunDetail>>;
   /** Subscribe to streamed capability output; returns an unsubscribe function. */
   onLog(handler: (sessionId: string, text: string) => void): () => void;
 }

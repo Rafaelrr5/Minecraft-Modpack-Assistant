@@ -47,10 +47,12 @@ export interface Capability {
 /**
  * Every capability the product has, with an honest implementation status.
  *
- * The `implemented` set is deliberately the **closed beginner loop** — Resolve → Build → Install →
- * Launch → Diagnose, plus the read-only Doctor — because that is the path from "a list of mods" to
- * "a running instance, or an explained crash". Everything else is `planned`: shipping those screens
- * is tracked by T-0022-09/10/11, and until then they are listed but not offered.
+ * The `implemented` set is everything the GUI can actually drive: the closed beginner loop
+ * (Resolve → Build → Install → Launch → Diagnose, plus the read-only Doctor), the read-only
+ * maintenance checks, the authoring screens, and the two shipping screens. What remains `planned`
+ * is exactly the pair that needs a *conversation* — Discover and Assistant take turns with the user
+ * rather than answering one request — and that bidirectional channel is T-0022-10. Until it exists
+ * they are listed with the CLI command that works today, never offered as a button.
  */
 export const CAPABILITIES: readonly Capability[] = [
   {
@@ -102,7 +104,59 @@ export const CAPABILITIES: readonly Capability[] = [
     blurb: 'Check an instance folder and this machine. Reads only, never writes.',
   },
 
-  // ── Not implemented in the GUI yet (T-0022-09/10/11). Listed, never offered. ────────────────
+  // ── Authoring, maintenance and shipping screens (T-0022-09/11). ────────────────────────────
+  {
+    id: 'quests',
+    label: 'Quests',
+    group: 'Author',
+    cli: 'mpa quests',
+    status: 'implemented',
+    blurb: 'Generate FTB Quests chapters as validated SNBT.',
+  },
+  {
+    id: 'kubejs',
+    label: 'KubeJS scripts',
+    group: 'Author',
+    cli: 'mpa kubejs',
+    status: 'implemented',
+    blurb: 'Generate KubeJS recipe and event scripts, parsed back before they are written.',
+  },
+  {
+    id: 'updates',
+    label: 'Updates',
+    group: 'Maintain',
+    cli: 'mpa updates',
+    status: 'implemented',
+    blurb: 'See which mods moved on, and whether updating would break the set.',
+  },
+  {
+    id: 'migrate',
+    label: 'Migrate version',
+    group: 'Maintain',
+    cli: 'mpa migrate',
+    status: 'implemented',
+    blurb: 'Check whether the pack can move to another Minecraft version, and what blocks it.',
+  },
+  {
+    id: 'export',
+    label: 'Export pack',
+    group: 'Ship',
+    cli: 'mpa export',
+    status: 'implemented',
+    blurb: 'Produce a .mrpack or CurseForge manifest others can import.',
+  },
+  {
+    id: 'release',
+    label: 'Release',
+    group: 'Ship',
+    cli: 'mpa release',
+    status: 'implemented',
+    blurb: 'Cut a versioned release of the pack with its changelog.',
+  },
+
+  // ── Not implemented in the GUI yet (T-0022-10: the two conversational screens). ─────────────
+  // Both need the bidirectional prompt/reply channel, not just request/response, so they are
+  // listed with their working CLI command rather than offered as a button that cannot converse.
   {
     id: 'discover',
     label: 'Discover',
@@ -112,60 +166,12 @@ export const CAPABILITIES: readonly Capability[] = [
     blurb: 'Turn an idea for a pack into a concrete brief through a guided conversation.',
   },
   {
-    id: 'quests',
-    label: 'Quests',
-    group: 'Author',
-    cli: 'mpa quests',
-    status: 'planned',
-    blurb: 'Generate FTB Quests chapters as validated SNBT.',
-  },
-  {
-    id: 'kubejs',
-    label: 'KubeJS scripts',
-    group: 'Author',
-    cli: 'mpa kubejs',
-    status: 'planned',
-    blurb: 'Generate KubeJS recipe and event scripts, parsed back before they are written.',
-  },
-  {
     id: 'assistant',
     label: 'Assistant',
     group: 'Author',
     cli: 'mpa assistant',
     status: 'planned',
     blurb: 'Ask questions about your pack and get answers grounded in its real state.',
-  },
-  {
-    id: 'updates',
-    label: 'Updates',
-    group: 'Maintain',
-    cli: 'mpa updates',
-    status: 'planned',
-    blurb: 'See which mods moved on, and whether updating would break the set.',
-  },
-  {
-    id: 'migrate',
-    label: 'Migrate version',
-    group: 'Maintain',
-    cli: 'mpa migrate',
-    status: 'planned',
-    blurb: 'Check whether the pack can move to another Minecraft version, and what blocks it.',
-  },
-  {
-    id: 'export',
-    label: 'Export pack',
-    group: 'Ship',
-    cli: 'mpa export',
-    status: 'planned',
-    blurb: 'Produce a .mrpack or CurseForge manifest others can import.',
-  },
-  {
-    id: 'release',
-    label: 'Release',
-    group: 'Ship',
-    cli: 'mpa release',
-    status: 'planned',
-    blurb: 'Cut a versioned release of the pack with its changelog.',
   },
 ];
 

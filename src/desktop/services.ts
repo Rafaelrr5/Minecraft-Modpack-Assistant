@@ -45,10 +45,15 @@ import { type LaunchRunDetail, runLaunch } from '../cli/commands/launch.ts';
 import { type DiagnoseRunDetail, runDiagnose } from '../cli/commands/diagnose.ts';
 import { runUpdates } from '../cli/commands/updates.ts';
 import { runMigrate } from '../cli/commands/migrate.ts';
-import { type PackExporter, runExport } from '../cli/commands/export.ts';
-import { runRelease } from '../cli/commands/release.ts';
-import { runQuests, runQuestsAuthoring, selectAuthoringChatModel } from '../cli/commands/quests.ts';
-import { runKubeJs, runKubeJsAuthoring } from '../cli/commands/kubejs.ts';
+import { type ExportRunDetail, type PackExporter, runExport } from '../cli/commands/export.ts';
+import { type ReleaseRunDetail, runRelease } from '../cli/commands/release.ts';
+import {
+  type QuestsRunDetail,
+  runQuests,
+  runQuestsAuthoring,
+  selectAuthoringChatModel,
+} from '../cli/commands/quests.ts';
+import { type KubeJsRunDetail, runKubeJs, runKubeJsAuthoring } from '../cli/commands/kubejs.ts';
 
 import type {
   BuildOptions,
@@ -97,12 +102,12 @@ export interface DesktopServices {
   diagnose(options: DiagnoseOptions, onLog?: LogSink): Promise<CapabilityResult<DiagnoseRunDetail>>;
   updates(options: UpdatesOptions, onLog?: LogSink): Promise<CapabilityResult<UpdateReport>>;
   migrate(options: MigrateOptions, onLog?: LogSink): Promise<CapabilityResult<MigrationReport>>;
-  export(options: ExportOptions, onLog?: LogSink): Promise<CapabilityResult>;
-  release(options: ReleaseOptions, onLog?: LogSink): Promise<CapabilityResult>;
-  quests(def: QuestDefinition, options: QuestsCallOptions, onLog?: LogSink): Promise<CapabilityResult>;
-  questsDescribe(description: string, options: QuestsCallOptions, onLog?: LogSink): Promise<CapabilityResult>;
-  kubejs(def: ScriptDefinition, options: KubeJsCallOptions, onLog?: LogSink): Promise<CapabilityResult>;
-  kubejsDescribe(description: string, options: KubeJsCallOptions, onLog?: LogSink): Promise<CapabilityResult>;
+  export(options: ExportOptions, onLog?: LogSink): Promise<CapabilityResult<ExportRunDetail>>;
+  release(options: ReleaseOptions, onLog?: LogSink): Promise<CapabilityResult<ReleaseRunDetail>>;
+  quests(def: QuestDefinition, options: QuestsCallOptions, onLog?: LogSink): Promise<CapabilityResult<QuestsRunDetail>>;
+  questsDescribe(description: string, options: QuestsCallOptions, onLog?: LogSink): Promise<CapabilityResult<QuestsRunDetail>>;
+  kubejs(def: ScriptDefinition, options: KubeJsCallOptions, onLog?: LogSink): Promise<CapabilityResult<KubeJsRunDetail>>;
+  kubejsDescribe(description: string, options: KubeJsCallOptions, onLog?: LogSink): Promise<CapabilityResult<KubeJsRunDetail>>;
 }
 
 /** Build the default real port set (pure constructors — no I/O happens here). */
@@ -239,6 +244,7 @@ export function createDesktopServices(overrides: Partial<DesktopPorts> = {}): De
 
     async export(options, onLog) {
       const { write, output } = collector(onLog);
+      let detail: ExportRunDetail | undefined;
       const exitCode = await runExport(
         options,
         ports.provider,
@@ -246,12 +252,16 @@ export function createDesktopServices(overrides: Partial<DesktopPorts> = {}): De
         write,
         ports.loaderVersions,
         ports.instanceFs,
+        (d) => {
+          detail = d;
+        },
       );
-      return { exitCode, output: output() };
+      return { exitCode, output: output(), ...(detail ? { data: detail } : {}) };
     },
 
     async release(options, onLog) {
       const { write, output } = collector(onLog);
+      let detail: ReleaseRunDetail | undefined;
       const exitCode = await runRelease(
         options,
         ports.provider,
@@ -262,14 +272,20 @@ export function createDesktopServices(overrides: Partial<DesktopPorts> = {}): De
           instanceFs: ports.instanceFs,
         },
         write,
+        (d) => {
+          detail = d;
+        },
       );
-      return { exitCode, output: output() };
+      return { exitCode, output: output(), ...(detail ? { data: detail } : {}) };
     },
 
     async quests(def, options, onLog) {
       const { write, output } = collector(onLog);
-      const exitCode = await runQuests(def, options, { instanceFs: ports.instanceFs }, write);
-      return { exitCode, output: output() };
+      let detail: QuestsRunDetail | undefined;
+      const exitCode = await runQuests(def, options, { instanceFs: ports.instanceFs }, write, (d) => {
+        detail = d;
+      });
+      return { exitCode, output: output(), ...(detail ? { data: detail } : {}) };
     },
 
     async questsDescribe(description, options, onLog) {
@@ -278,24 +294,32 @@ export function createDesktopServices(overrides: Partial<DesktopPorts> = {}): De
         ? { chatModel: ports.chatModel, note: '' }
         : selectAuthoringChatModel();
       if (!choice.chatModel) return { exitCode: 2, output: `${choice.note}\n` };
+      let detail: QuestsRunDetail | undefined;
       const exitCode = await runQuestsAuthoring(
         description,
         options,
         { instanceFs: ports.instanceFs, chatModel: choice.chatModel },
         write,
+        (d) => {
+          detail = d;
+        },
       );
-      return { exitCode, output: output() };
+      return { exitCode, output: output(), ...(detail ? { data: detail } : {}) };
     },
 
     async kubejs(def, options, onLog) {
       const { write, output } = collector(onLog);
+      let detail: KubeJsRunDetail | undefined;
       const exitCode = await runKubeJs(
         def,
         options,
         { instanceFs: ports.instanceFs, scriptValidator: ports.scriptValidator },
         write,
+        (d) => {
+          detail = d;
+        },
       );
-      return { exitCode, output: output() };
+      return { exitCode, output: output(), ...(detail ? { data: detail } : {}) };
     },
 
     async kubejsDescribe(description, options, onLog) {
@@ -304,13 +328,17 @@ export function createDesktopServices(overrides: Partial<DesktopPorts> = {}): De
         ? { chatModel: ports.chatModel, note: '' }
         : selectAuthoringChatModel();
       if (!choice.chatModel) return { exitCode: 2, output: `${choice.note}\n` };
+      let detail: KubeJsRunDetail | undefined;
       const exitCode = await runKubeJsAuthoring(
         description,
         options,
         { instanceFs: ports.instanceFs, scriptValidator: ports.scriptValidator, chatModel: choice.chatModel },
         write,
+        (d) => {
+          detail = d;
+        },
       );
-      return { exitCode, output: output() };
+      return { exitCode, output: output(), ...(detail ? { data: detail } : {}) };
     },
   };
 }

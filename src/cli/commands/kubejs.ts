@@ -18,6 +18,8 @@ import {
   type InstanceFs,
   type QuestDefinition,
   type ScriptDefinition,
+  type ScriptGenerationReport,
+  type ScriptPlan,
   type ScriptValidator,
   draftScriptDefinition,
   generateScripts,
@@ -75,12 +77,33 @@ export async function loadScriptDefinition(defPath: string): Promise<ScriptDefin
   return JSON.parse(text) as ScriptDefinition;
 }
 
+/** The empty summary for a draft that never produced a definition — keeps the report shape uniform. */
+const EMPTY_SCRIPT_SUMMARY = { files: 0, handlers: 0, recipes: 0 } as const;
+
+/**
+ * The structured outcome behind the rendered text (spec 0022 FR-2/FR-4/FR-5). Mirrors
+ * `QuestsRunDetail`: a GUI needs the findings, the planned files and their destructiveness as data,
+ * not as prose. Optional observer; the CLI path is unchanged.
+ */
+export interface KubeJsRunDetail {
+  readonly report: ScriptGenerationReport;
+  /** Absent when validation/parse-back failed — an invalid script is never planned (FR-5). */
+  readonly plan?: ScriptPlan;
+  /** Present only once the apply step ran or was refused. */
+  readonly apply?: ApplyResult;
+  /** True when apply was refused because the plan overwrites files and force was not given. */
+  readonly refusedForce?: boolean;
+  /** The definition that was generated from — the drafted one on the `describe` path. */
+  readonly definition?: ScriptDefinition;
+}
+
 /** Generate → preview → (optionally) apply. Returns a process exit code. */
 export async function runKubeJs(
   def: ScriptDefinition,
   options: Omit<KubeJsOptions, 'defPath' | 'questsPath'> & { readonly questDefinition?: QuestDefinition },
   ports: KubeJsPorts,
   write: (text: string) => void,
+  onDetail?: (detail: KubeJsRunDetail) => void,
 ): Promise<number> {
   const json = options.json === true;
   const report = await generateScripts(
@@ -93,6 +116,7 @@ export async function runKubeJs(
   );
 
   if (!report.ok) {
+    onDetail?.({ report, definition: def });
     write(renderScriptReport(report, { json }));
     return 1; // blocking findings — nothing is written (FR-4/FR-5)
   }
@@ -108,8 +132,10 @@ export async function runKubeJs(
 
   // Decide the apply outcome (or the dry-run / refusal) before rendering, so JSON can emit once.
   let apply: ApplyResult | undefined;
+  let refusedForce = false;
   if (options.apply) {
     if (plan.destructive && options.force !== true) {
+      refusedForce = true;
       apply = {
         applied: false,
         written: [],
@@ -119,6 +145,14 @@ export async function runKubeJs(
       apply = await ports.instanceFs.apply(plan.changePlan, { confirm: true });
     }
   }
+
+  onDetail?.({
+    report,
+    plan,
+    definition: def,
+    ...(apply ? { apply } : {}),
+    ...(refusedForce ? { refusedForce: true } : {}),
+  });
 
   if (json) {
     write(
@@ -155,6 +189,7 @@ export async function runKubeJsAuthoring(
   options: Omit<KubeJsOptions, 'defPath' | 'describe' | 'questsPath'> & { readonly questDefinition?: QuestDefinition },
   ports: KubeJsAuthoringPorts,
   write: (text: string) => void,
+  onDetail?: (detail: KubeJsRunDetail) => void,
 ): Promise<number> {
   const draft = await draftScriptDefinition(
     {
@@ -168,6 +203,9 @@ export async function runKubeJsAuthoring(
   );
 
   if (!draft.ok || !draft.definition) {
+    onDetail?.({
+      report: { ok: false, findings: draft.findings, files: [], summary: EMPTY_SCRIPT_SUMMARY },
+    });
     if (options.json) {
       write(
         `${JSON.stringify(
@@ -188,6 +226,7 @@ export async function runKubeJsAuthoring(
     options,
     { instanceFs: ports.instanceFs, scriptValidator: ports.scriptValidator },
     write,
+    onDetail,
   );
 }
 

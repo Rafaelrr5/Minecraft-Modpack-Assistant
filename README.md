@@ -223,7 +223,10 @@ escape hatch (spec 0022 FR-3 / AC-3). CI runs it after `desktop:build`.
 it drives the whole guided lifecycle through the real UI against a throwaway instance folder, using
 only read-only and dry-run paths, then independently checks that the folder was not modified — so a
 regression that starts writing without a confirmation fails CI rather than a user's world
-(Constitution P4). CI runs it after the smoke test.
+(Constitution P4). CI runs it after the smoke test. It also walks every screen added after that
+beginner loop — quests, scripts, export, release, updates, migrate — and asserts the property that
+protects your instance: no write control is offered until you have previewed, and the read-only
+screens offer none at all.
 
 `desktop:dist` produces an NSIS installer with the app icon and product metadata, plus a
 `SHA256SUMS.txt` users can check with `certutil -hashfile <file> SHA256`. The alpha installer is

@@ -16,6 +16,8 @@ import {
   type ChatModel,
   type InstanceFs,
   type QuestDefinition,
+  type QuestGenerationReport,
+  type QuestPlan,
   draftQuestDefinition,
   generateQuests,
   planQuestWrite,
@@ -117,17 +119,43 @@ export async function loadDefinition(defPath: string): Promise<QuestDefinition> 
   return JSON.parse(text) as QuestDefinition;
 }
 
+/**
+ * The empty summary used when a *draft* never produced a definition to generate from — the report
+ * shape stays uniform so a UI can render "nothing was generated" without a special case.
+ */
+const EMPTY_QUEST_SUMMARY = { chapters: 0, quests: 0, tasks: 0, rewards: 0 } as const;
+
+/**
+ * The structured outcome behind the rendered text (spec 0022 FR-2/FR-4/FR-5). A GUI must know
+ * whether generation produced blocking findings, which files the plan would write, and whether it
+ * is destructive — none of which can be recovered from rendered prose. Optional observer; the CLI
+ * path is unchanged.
+ */
+export interface QuestsRunDetail {
+  readonly report: QuestGenerationReport;
+  /** Absent when validation failed — no plan is produced for an invalid definition (FR-5). */
+  readonly plan?: QuestPlan;
+  /** Present only once the apply step ran or was refused. */
+  readonly apply?: ApplyResult;
+  /** True when apply was refused because the plan overwrites files and force was not given. */
+  readonly refusedForce?: boolean;
+  /** The definition that was generated from — the drafted one on the `describe` path. */
+  readonly definition?: QuestDefinition;
+}
+
 /** Generate → preview → (optionally) apply. Returns a process exit code. */
 export async function runQuests(
   def: QuestDefinition,
   options: Omit<QuestsOptions, 'defPath'>,
   ports: QuestsPorts,
   write: (text: string) => void,
+  onDetail?: (detail: QuestsRunDetail) => void,
 ): Promise<number> {
   const json = options.json === true;
   const report = generateQuests(def, { knownNamespaces: options.namespaces ?? [] });
 
   if (!report.ok) {
+    onDetail?.({ report, definition: def });
     write(renderQuestReport(report, { json }));
     return 1; // blocking findings — nothing is written (FR-4)
   }
@@ -143,8 +171,10 @@ export async function runQuests(
 
   // Decide the apply outcome (or the dry-run / refusal) before rendering, so JSON can emit once.
   let apply: ApplyResult | undefined;
+  let refusedForce = false;
   if (options.apply) {
     if (plan.destructive && options.force !== true) {
+      refusedForce = true;
       apply = {
         applied: false,
         written: [],
@@ -154,6 +184,14 @@ export async function runQuests(
       apply = await ports.instanceFs.apply(plan.changePlan, { confirm: true });
     }
   }
+
+  onDetail?.({
+    report,
+    plan,
+    definition: def,
+    ...(apply ? { apply } : {}),
+    ...(refusedForce ? { refusedForce: true } : {}),
+  });
 
   if (json) {
     write(
@@ -189,6 +227,7 @@ export async function runQuestsAuthoring(
   options: Omit<QuestsOptions, 'defPath' | 'describe'>,
   ports: QuestsAuthoringPorts,
   write: (text: string) => void,
+  onDetail?: (detail: QuestsRunDetail) => void,
 ): Promise<number> {
   const draft = await draftQuestDefinition(
     { description, ...(options.namespaces !== undefined ? { knownNamespaces: options.namespaces } : {}) },
@@ -197,6 +236,9 @@ export async function runQuestsAuthoring(
   );
 
   if (!draft.ok || !draft.definition) {
+    onDetail?.({
+      report: { ok: false, findings: draft.findings, files: [], summary: EMPTY_QUEST_SUMMARY },
+    });
     if (options.json) {
       write(
         `${JSON.stringify(
@@ -212,7 +254,7 @@ export async function runQuestsAuthoring(
   }
 
   if (!options.json) write(renderQuestDraft(draft));
-  return runQuests(draft.definition, options, { instanceFs: ports.instanceFs }, write);
+  return runQuests(draft.definition, options, { instanceFs: ports.instanceFs }, write, onDetail);
 }
 
 /** Wire the guarded instance FS and read (or draft) the definition for terminal use. */

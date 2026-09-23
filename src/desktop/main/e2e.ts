@@ -75,7 +75,7 @@ const WALKTHROUGH = (instancePath: string): string => `(async () => {
   add('type the instance folder', await setInput('Instance folder', ${JSON.stringify(instancePath)}), 'input');
 
   // ── Context carries forward: the path typed on step 1 appears on every later step ─────────────
-  for (const step of ['Build instance', 'Install jars', 'Launch', 'Diagnose crash']) {
+  for (const step of ['Build instance', 'Install jars', 'Launch', 'Diagnose crash', 'Quests', 'KubeJS scripts']) {
     await nav(step);
     const label = [...document.querySelectorAll('label')]
       .find((l) => l.textContent.trim().startsWith('Instance folder'));
@@ -121,7 +121,43 @@ const WALKTHROUGH = (instancePath: string): string => `(async () => {
   add('Doctor lists checks', document.querySelectorAll('.list li').length > 0,
     document.querySelectorAll('.list li').length + ' checks');
 
+  // ── The screens added after the beginner loop ─────────────────────────────────────────────────
+  // Their real runs need the catalog (updates/migrate/export/release) or a model (the authoring
+  // describe path), neither of which this offline harness has. What IS asserted offline is the
+  // property that protects the user's instance: every write screen refuses to offer its write
+  // control until a preview has been run in this session, and the read-only screens offer no write
+  // control at all (FR-4 / Constitution P4). A regression here is exactly the kind that ships a
+  // one-click destructive button, so it is worth proving without the network.
+  for (const [screen, writeLabel] of [
+    ['Quests', 'Write into the instance…'],
+    ['KubeJS scripts', 'Write into the instance…'],
+    ['Export pack', 'Write the file…'],
+    ['Release', 'Write the release…'],
+  ]) {
+    add('navigate to ' + screen, await nav(screen), 'nav');
+    add(screen + ' mounted', document.querySelector('.screen-head h1') !== null,
+      document.querySelector('.screen-head h1')?.textContent ?? '(none)');
+    const writeButton = byText('button', writeLabel);
+    add(screen + ' will not write before a preview', writeButton?.disabled === true,
+      writeButton ? 'inert until previewed' : 'write control missing');
+  }
+
+  for (const screen of ['Updates', 'Migrate version']) {
+    add('navigate to ' + screen, await nav(screen), 'nav');
+    add(screen + ' mounted', document.querySelector('.screen-head h1') !== null,
+      document.querySelector('.screen-head h1')?.textContent ?? '(none)');
+    // Scope to the screen: the sidebar's own nav buttons ("Install jars") would match otherwise.
+    const writeish = [...document.querySelectorAll('.screen button')]
+      .filter((b) => /write|apply|install|download/i.test(b.textContent));
+    add(screen + ' offers nothing that writes', writeish.length === 0,
+      writeish.length + ' write control(s)');
+  }
+
   // ── The expert toggle reveals detail rather than changing behaviour ───────────────────────────
+  // Checked on a screen that has actually produced a report — the toggle reveals detail *about a
+  // result*, so an empty screen would compare two identical empty renders and prove nothing.
+  await nav('Doctor');
+  await clickAndWait('Run the check', 20000);
   const before = document.body.textContent.length;
   const toggle = document.querySelector('.topbar input[type=checkbox]');
   toggle?.click();

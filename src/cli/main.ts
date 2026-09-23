@@ -15,6 +15,7 @@ import { type OrchestrateOptions, runOrchestrateCli } from './commands/orchestra
 import { type BuildOptions, runBuildCli } from './commands/build.ts';
 import { type InstallOptions, runInstallCli } from './commands/install.ts';
 import { type LaunchCommandOptions, runLaunchCli } from './commands/launch.ts';
+import { type LaunchableOptions, runLaunchableCli } from './commands/launchable.ts';
 import { type ExportOptions, runExportCli } from './commands/export.ts';
 import { type ReleaseOptions, runReleaseCli } from './commands/release.ts';
 import { type DiagnoseOptions, runDiagnoseCli } from './commands/diagnose.ts';
@@ -235,6 +236,44 @@ export async function run(argv: readonly string[]): Promise<number> {
       json: values.json === true,
     };
     return runLaunchCli(options);
+  }
+
+  if (command === 'launchable') {
+    const { values } = parseArgs({
+      args: [...rest],
+      options: {
+        instance: { type: 'string' },
+        target: { type: 'string' },
+        out: { type: 'string' },
+        apply: { type: 'boolean', default: false },
+        force: { type: 'boolean', default: false },
+        'allow-unsupported': { type: 'boolean', default: false },
+        json: { type: 'boolean', default: false },
+      },
+      allowPositionals: false,
+    });
+
+    if (values.instance === undefined) {
+      process.stderr.write(
+        'launchable: --instance <dir> is required (the built instance to hand over).\n',
+      );
+      return 2;
+    }
+    if (values.target !== undefined && values.target !== 'prism' && values.target !== 'modrinth-app') {
+      process.stderr.write('launchable: --target must be one of prism|modrinth-app.\n');
+      return 2;
+    }
+
+    const options: LaunchableOptions = {
+      instancePath: values.instance,
+      target: values.target === 'modrinth-app' ? 'modrinth-app' : 'prism',
+      ...(values.out !== undefined ? { out: values.out } : {}),
+      apply: values.apply === true,
+      force: values.force === true,
+      allowUnsupported: values['allow-unsupported'] === true,
+      json: values.json === true,
+    };
+    return runLaunchableCli(options);
   }
 
   if (command === 'export') {

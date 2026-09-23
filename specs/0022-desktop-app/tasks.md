@@ -120,8 +120,38 @@
     `npm run desktop:build` and `node scripts/desktop-smoke.mjs` pass; the workflow retains the
     core/CLI gate without an installer step.
 
-- [ ] **T-0022-12 — Packaging:** `desktop:dist` → Windows installer. **Maps to:** FR-8, AC-7.
+- [x] **T-0022-12 — Packaging:** `desktop:dist` → Windows installer. **Maps to:** FR-8, AC-7.
   **Done when:** an installer is produced on the host OS.
+  - **Shipped:** `npm run desktop:dist` builds `release/MinecraftModpackAssistant-Setup-<version>-x64.exe`
+    (NSIS) and then writes `release/SHA256SUMS.txt`. The app icon is generated from code by
+    `scripts/generate-icon.mjs` into `build-resources/icon.ico` (not `build/`, which this repo
+    git-ignores as a compiler output dir, so an icon there would be missing from a clean checkout);
+    `package.json` gained `author`, and `electron-builder.yml` a `copyright`, a space-free
+    `artifactName`, and the icon. Signing is stated explicitly as absent for the alpha via
+    `signExecutable: false` — **not** `signAndEditExecutable: false`, which would also skip the
+    resource-edit pass that stamps the icon and metadata while still exiting 0.
+  - **Verified on Windows 11 build 26200, x64:** `desktop:dist` exit 0 with no "default Electron
+    icon" and no "author is missed" warning; the installed `.exe` reports ProductName / CompanyName
+    / LegalCopyright / FileVersion and carries the generated icon (extracted and inspected, not the
+    Electron atom); `certutil -hashfile` independently reproduced the published SHA-256; silent
+    install → the **installed** app launched with `MPA_SMOKE=1` and all 7 preload-bridge checks
+    passed (the packaged-app counterpart of T-0022-11, which only covered the unpackaged bundle) →
+    silent uninstall removed the program directory, both shortcuts and the HKCU uninstall entry
+    while a sentinel file under `%APPDATA%` survived (`deleteAppDataOnUninstall: false`,
+    Constitution P4).
+  - **Superseded premise:** the card's original evidence (a `winCodeSign` symlink-permission failure)
+    was observed on electron-builder 25. On 26 the unsigned Windows build no longer extracts that
+    bundle and the NSIS stage completes on a normal, non-elevated user session. Documented in
+    `docs/RELEASE.md` as an environment requirement should signing reintroduce it, not as a config
+    bug to patch.
+  - **Guards added inside `npm run check`:** `src/desktop/icon.test.ts` (committed icon is
+    byte-identical to its generator, is a valid multi-size ICO, and is not git-ignored) and
+    `src/desktop/packaging.test.ts` (product metadata, explicit signing posture, checksum step still
+    chained, packaging globs still cover the CommonJS preload). Both proven to fail when their
+    subject breaks.
+  - **CI:** a `windows-installer` job builds the real installer on `windows-latest`, re-checks the
+    icon and the checksums, and uploads the `.exe` + `SHA256SUMS.txt` as artifacts. Not yet exercised
+    on GitHub — nothing was pushed from this run.
 - [ ] **T-0022-13 — Polish:** apply `frontend-design`; cohesive, distinctive UI; dual-audience.
   **Maps to:** NFRs (friendly + P8). **Done when:** UI review passes; expert toggle everywhere.
 - [ ] **T-0022-14 — Docs & sync:** keep spec/plan/roadmap status + doc maps current; note any new

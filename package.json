@@ -3,6 +3,10 @@
   "version": "0.1.0",
   "description": "An AI assistant that guides anyone through the entire Minecraft modpack lifecycle, staying one step ahead of conflicts and crashes.",
   "license": "MIT",
+  "author": {
+    "name": "Rafael Rocha Ribeiro",
+    "email": "faelrribeiro3@gmail.com"
+  },
   "type": "module",
   "engines": {
     "node": ">=22.18.0"
@@ -30,9 +34,10 @@
     "cli": "node src/cli/main.ts",
     "desktop:dev": "electron-vite dev",
     "desktop:build": "electron-vite build",
-    "desktop:dist": "electron-vite build && electron-builder",
+    "desktop:dist": "electron-vite build && electron-builder && node scripts/checksum-release.mjs",
     "desktop:typecheck": "tsc -p src/desktop/tsconfig.json",
-    "desktop:smoke": "electron-vite build && node scripts/desktop-smoke.mjs"
+    "desktop:smoke": "electron-vite build && node scripts/desktop-smoke.mjs",
+    "desktop:icon": "node scripts/generate-icon.mjs"
   },
   "keywords": [
     "minecraft",

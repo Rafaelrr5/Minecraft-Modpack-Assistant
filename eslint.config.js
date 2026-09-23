@@ -51,12 +51,13 @@ export default tseslint.config(
     },
   },
   {
-    // Node-run build/verification scripts (e.g. the desktop preload smoke harness). They are plain
-    // ESM executed by `node`, so declare the Node globals they legitimately use rather than adding
-    // a dependency on `globals` just for two names.
+    // Node-run build/verification scripts (e.g. the desktop preload smoke harness, the icon
+    // generator, the release checksum tool). They are plain ESM executed by `node`, so declare the
+    // Node globals they legitimately use rather than adding a dependency on `globals` for a handful
+    // of names.
     files: ['scripts/**/*.mjs'],
     languageOptions: {
-      globals: { console: 'readonly', process: 'readonly' },
+      globals: { console: 'readonly', process: 'readonly', Buffer: 'readonly' },
     },
   },
   {

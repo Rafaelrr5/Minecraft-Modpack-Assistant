@@ -47,3 +47,43 @@ jobs:
       # when no DISPLAY is present, so it works headlessly here and windowed on a developer machine.
       - name: Desktop preload smoke test
         run: node scripts/desktop-smoke.mjs
+
+  # The Windows installer can only be built on Windows, and "the config is valid" is not the same
+  # claim as "the installer exists" (spec 0022, T-0022-12). This job produces the real NSIS artifact
+  # and its checksum, and uploads both so a release can be cut from a CI build rather than from
+  # whatever happened to be on a maintainer's machine. Install/launch/uninstall stay manual — see
+  # the checklist in docs/RELEASE.md; a runner cannot verify shortcuts or a visible window.
+  windows-installer:
+    name: windows installer
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Fails if build-resources/icon.ico drifted from the generator. Also covered by `npm run
+      # check` in the build job; repeated here so this job never packages a stale icon.
+      - name: Verify the icon matches its generator
+        run: node scripts/generate-icon.mjs --check
+
+      - name: Build the installer
+        run: npm run desktop:dist
+
+      - name: Verify the published checksums
+        run: node scripts/checksum-release.mjs --check
+
+      - name: Upload the installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: |
+            release/*.exe
+            release/SHA256SUMS.txt
+          if-no-files-found: error

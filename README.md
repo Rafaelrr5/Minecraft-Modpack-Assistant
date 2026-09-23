@@ -114,12 +114,13 @@ code. *No capability without a spec.* → [why](./docs/decisions/0001-spec-drive
 | **Architecture** | [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) | Modules, core domain model, agent/LLM boundary. |
 | **Domain knowledge** | [`docs/DOMAIN-KNOWLEDGE.md`](./docs/DOMAIN-KNOWLEDGE.md) | Sourced knowledge base (cite this for facts). |
 | **Decisions (ADRs)** | [`docs/decisions/`](./docs/decisions/README.md) | The durable *why* behind each decision. |
+| **Release guide** | [`docs/RELEASE.md`](./docs/RELEASE.md) | Building, signing posture, checksum verification and the manual install/launch/uninstall checklist for the Windows installer. |
 | **Constitution** | [`memory/constitution.md`](./memory/constitution.md) | Non-negotiable principles (the supreme gate). |
 | **Specs** | [`specs/`](./specs/README.md) | Capability specs (`spec → plan → tasks`). |
 | **Templates** | [`templates/`](./templates/) | Standardized spec/plan/tasks/ADR templates. |
 | **Roadmap** | [`roadmap/`](./roadmap/README.md) | Phased delivery plan (Phase 0 → 8). |
 | **Source** | [`src/`](./src/) | The implementation: `core/` (UI-agnostic domain + ports), `integration/` (adapters), `cli/`, `desktop/` (Electron GUI — spec 0022). |
-| **Build/verify scripts** | [`scripts/`](./scripts/) | Node scripts the gates call — `desktop-smoke.mjs` runs the built desktop app and asserts the preload bridge is live. |
+| **Build/verify scripts** | [`scripts/`](./scripts/) | Node scripts the gates call — `desktop-smoke.mjs` runs the built desktop app and asserts the preload bridge is live; `generate-icon.mjs` derives the installer icon deterministically; `checksum-release.mjs` writes/verifies `SHA256SUMS.txt`. |
 | **Loader pinning** | [`loader-version-provider.ts`](./src/core/ports/loader-version-provider.ts), [`loader-resolution.ts`](./src/core/orchestration/loader-resolution.ts), [`loader-versions/`](./src/integration/loader-versions/) | Official metadata adapter, offline fixtures/contracts and cross-format roundtrip tests; concrete-version rejection tests also live in `src/core/export/loader-pinning.test.ts`. |
 
 ## The roadmap at a glance
@@ -206,7 +207,8 @@ The friendly **desktop app** (Electron — spec 0022) builds with a separate too
 npm run desktop:dev        # launch the desktop app with hot reload (electron-vite)
 npm run desktop:typecheck  # typecheck the Electron shell (src/desktop/tsconfig.json)
 npm run desktop:build      # bundle main + preload + renderer into out/
-npm run desktop:dist       # package an installer (electron-builder → release/)
+npm run desktop:dist       # package the Windows installer + SHA256SUMS.txt (electron-builder → release/)
+npm run desktop:icon       # regenerate the app icon from code (build-resources/icon.ico)
 npm run desktop:smoke      # build, then run the app and assert the preload bridge is live
 ```
 
@@ -214,6 +216,11 @@ npm run desktop:smoke      # build, then run the app and assert the preload brid
 under Electron, asserts the renderer sees `window.mpa`, round-trips a read-only capability through
 the preload into the core, and asserts the renderer got no `require`/`process`/`ipcRenderer`
 escape hatch (spec 0022 FR-3 / AC-3). CI runs it after `desktop:build`.
+
+`desktop:dist` produces an NSIS installer with the app icon and product metadata, plus a
+`SHA256SUMS.txt` users can check with `certutil -hashfile <file> SHA256`. The alpha installer is
+**unsigned**, so Windows SmartScreen warns on first run — that decision, the verification steps and
+the manual install/launch/uninstall checklist live in **[`docs/RELEASE.md`](./docs/RELEASE.md)**.
 
 Optional API credentials (e.g. a Modrinth token for higher rate limits) are read **only**
 from the environment — copy [`.env.example`](./.env.example) to `.env` (git-ignored) and fill

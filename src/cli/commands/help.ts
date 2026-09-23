@@ -22,6 +22,12 @@ Commands:
                     into mods/. Makes a build runnable. Dry-run by default; --apply to write.
   launch            Run the built instance with the pinned Java + -Xmx, and auto-diagnose a
                     crash. Dry-run by default (prints the command); spawns only with --apply.
+                    This runs a JVM command — it does not download the game or sign you in;
+                    for a playable setup use 'launchable'.
+  launchable        Hand the built pack to a launcher you already have (Prism Launcher or the
+                    Modrinth App) so you can actually play it: generates the launcher's own
+                    instance with the pinned loader, Java and memory, and tells you what to
+                    click. Dry-run by default; writes only with --apply.
   diagnose          Read a crash report / log and explain what broke, with fixes — read-only.
   quests            Generate validated FTB Quests (SNBT) from a structured --def file, or
                     draft one from a plain-language --describe. Dry-run by default; writes
@@ -97,6 +103,17 @@ Options for 'launch':
   --arg <a>         A program arg appended after the JVM args (repeatable; launch mechanism).
   --json            Output the plan/report as JSON (for scripting / experts).
 
+Options for 'launchable':
+  --instance <dir>  The built instance to hand over (required). Reads its pinned pack and
+                    mpa-launch.json.
+  --target <name>   prism (default) | modrinth-app. Prism carries the pinned memory and Java
+                    into the instance; a .mrpack cannot, so you set them by hand there.
+  --out <dir>       Where to write the launcher instance (default: <instance>/prism-instance).
+  --apply           Write the launcher instance (otherwise dry-run, the default).
+  --force           Required with --apply when the output directory already has those files.
+  --allow-unsupported  Experts only: hand over an instance that 'build' marked UNSUPPORTED.
+  --json            Output the plan/result as JSON (for scripting / experts).
+
 Options for 'diagnose':
   --instance <dir>  Path to the Minecraft instance to inspect (required) — read-only.
   --crash <relPath> A specific crash report, e.g. crash-reports/crash-2026-….txt.
@@ -164,6 +181,10 @@ Options for 'export':
   --format <name>   Export format: mrpack (default) | curseforge.
   --name <s>        Override the pack name written into the export.
   --pack-version <v> Override the pack version written into the export.
+  --overrides <dir> Also ship the pack's own content (configs, KubeJS scripts, quest
+                    book, resource/shader packs) read from this instance folder.
+                    Read-only; your worlds, logs, backups and account files are
+                    never included. Without it the archive is mods-only.
   --out <file>      Where to write the archive (required with --apply).
   --apply           Write the archive (otherwise dry-run, the default).
   --force           Required with --apply when the output file already exists.
@@ -181,6 +202,10 @@ Options for 'release':
   --name <s>        Override the pack name written into the release.
   --pack-version <v> Override the pack version (the release label).
   --release-date <d> Release date to record (e.g. 2026-06-07); not read from the clock.
+  --overrides <dir> Also ship the pack's own content (configs, KubeJS scripts, quest
+                    book, resource/shader packs) read from this instance folder.
+                    Read-only; your worlds, logs, backups and account files are
+                    never included. Without it the bundle is mods-only.
   --out <file>      Where to write the bundle archive (required with --apply).
   --apply           Write the bundle (otherwise dry-run, the default).
   --force           Required with --apply when the output file already exists.

@@ -12,8 +12,8 @@ three things worth knowing before you try it:
 | What | State | What that means in practice |
 | --- | --- | --- |
 | **The CLI** | **Usable, and the surface we stand behind** | The whole lifecycle runs from the terminal: discover → resolve → pre-flight → build → install → launch → diagnose, plus quests, KubeJS, updates, migration, export and release. Run it from a clone (`npm run cli -- …`). |
-| **The desktop app** | **Alpha — genuinely early** | An Electron GUI over the same core. **One** of the fourteen lifecycle screens (Build) is implemented; the other thirteen show a placeholder that points you back to the CLI ([spec 0022](./specs/0022-desktop-app/spec.md)). It packages as a Windows NSIS installer, which is **not code-signed** — no certificate exists — so Windows SmartScreen warns on first run. Verify the SHA-256 checksum published with a release instead. |
-| **`launch`** | **Runs a JVM, does not bootstrap a client** | It starts the pack with the **pinned Java and `-Xmx`** and routes a crash straight into diagnosis. It does **not** download Minecraft assets and does **not** authenticate your account — that is launcher-app territory and is deliberately deferred ([ADR 0007](./docs/decisions/0007-local-launch-adapter.md)). Use Prism, the Modrinth App, or the official launcher for a full client session. |
+| **The desktop app** | **Alpha — but no longer a shell** | An Electron GUI over the same core. **Twelve** of the fourteen capabilities have a real screen (resolve, build, install, launch, diagnose, doctor, quests, kubejs, updates, migrate, export, release); the two that need a back-and-forth conversation — **Discover** and **Assistant** — have no screen and are listed with the CLI command that does work, never offered as a dead button ([spec 0022](./specs/0022-desktop-app/spec.md)). It packages as a Windows NSIS installer, which is **not code-signed** — no certificate exists — so Windows SmartScreen warns on first run. Verify the SHA-256 checksum published with a release instead. |
+| **Playing the pack** | **Handed to a launcher, never bootstrapped by us** | `launchable` turns a pinned pack into a **Prism Launcher** instance or a **Modrinth App** `.mrpack` import, checked against the launcher's own metadata ([ADR 0009](./docs/decisions/0009-launcher-handoff-for-client-launch.md), [spec 0025](./specs/0025-launchable-handoff/spec.md)). The separate `launch` command only runs a JVM command against a game you already have — it downloads no Minecraft assets and authenticates no account ([ADR 0007](./docs/decisions/0007-local-launch-adapter.md)). You need Prism or the Modrinth App installed; we deliberately do not write a launcher. |
 
 What *is* solid regardless of maturity: **your game instance is never modified without a backup
 and an explicit confirmation**, and every operation is dry-run by default. That guarantee is
@@ -39,6 +39,10 @@ dry-run default) — and **launchable** with `launch` (`0019`): an opt-in, confi
 pinned **Java + `-Xmx`** behind an injectable `GameLauncher` (CI needs no JRE) that, when no
 compatible JDK is present, gives actionable install guidance (never a guessed path), and on a crash
 **auto-routes the captured log into the `0010` diagnosis** — closing the build→launch→diagnose loop.
+`launch` runs a JVM command against a game you already have; to actually **play** the pack,
+`launchable` (`0025`) hands it to a launcher you already use — generating a **Prism Launcher**
+instance (pinned loader build + the computed memory) or walking you through the **Modrinth App**
+`.mrpack` import, after checking every version against the launcher's own metadata.
 Phase 4 also added **Crash
 Diagnosis** (`0010`): `diagnose` reads a crash report / log (read-only) and categorizes it into the
 crash taxonomy with concrete remediation, reconciling pre-flight's *suspected* conflicts and
@@ -137,12 +141,13 @@ code. *No capability without a spec.* → [why](./docs/decisions/0001-spec-drive
 | **Architecture** | [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) | Modules, core domain model, agent/LLM boundary. |
 | **Domain knowledge** | [`docs/DOMAIN-KNOWLEDGE.md`](./docs/DOMAIN-KNOWLEDGE.md) | Sourced knowledge base (cite this for facts). |
 | **Decisions (ADRs)** | [`docs/decisions/`](./docs/decisions/README.md) | The durable *why* behind each decision. |
+| **Release guide** | [`docs/RELEASE.md`](./docs/RELEASE.md) | Building, signing posture, checksum verification and the manual install/launch/uninstall checklist for the Windows installer. |
 | **Constitution** | [`memory/constitution.md`](./memory/constitution.md) | Non-negotiable principles (the supreme gate). |
 | **Specs** | [`specs/`](./specs/README.md) | Capability specs (`spec → plan → tasks`). |
 | **Templates** | [`templates/`](./templates/) | Standardized spec/plan/tasks/ADR templates. |
 | **Roadmap** | [`roadmap/`](./roadmap/README.md) | Phased delivery plan (Phase 0 → 8). |
 | **Source** | [`src/`](./src/) | The implementation: `core/` (UI-agnostic domain + ports), `integration/` (adapters), `cli/`, `desktop/` (Electron GUI — spec 0022). |
-| **Build/verify scripts** | [`scripts/`](./scripts/) | Node scripts the gates call — `desktop-smoke.mjs` runs the built desktop app and asserts the preload bridge is live. |
+| **Build/verify scripts** | [`scripts/`](./scripts/) | Node scripts the gates call — a green build proves none of them: `desktop-smoke.mjs` (preload bridge live), `desktop-e2e.mjs` (the guided lifecycle end to end, dry-run only), `desktop-screenshot.mjs` (visual review), `generate-icon.mjs` (derives the installer icon deterministically), `checksum-release.mjs` (writes/verifies `SHA256SUMS.txt`). |
 | **Loader pinning** | [`loader-version-provider.ts`](./src/core/ports/loader-version-provider.ts), [`loader-resolution.ts`](./src/core/orchestration/loader-resolution.ts), [`loader-versions/`](./src/integration/loader-versions/) | Official metadata adapter, offline fixtures/contracts and cross-format roundtrip tests; concrete-version rejection tests also live in `src/core/export/loader-pinning.test.ts`. |
 
 ## The roadmap at a glance
@@ -229,14 +234,37 @@ The friendly **desktop app** (Electron — spec 0022) builds with a separate too
 npm run desktop:dev        # launch the desktop app with hot reload (electron-vite)
 npm run desktop:typecheck  # typecheck the Electron shell (src/desktop/tsconfig.json)
 npm run desktop:build      # bundle main + preload + renderer into out/
-npm run desktop:dist       # package an installer (electron-builder → release/)
+npm run desktop:dist       # package the Windows installer + SHA256SUMS.txt (electron-builder → release/)
+npm run desktop:icon       # regenerate the app icon from code (build-resources/icon.ico)
 npm run desktop:smoke      # build, then run the app and assert the preload bridge is live
+npm run desktop:e2e        # build, then walk Resolve → Build → Install → Launch → Diagnose
+npm run desktop:screenshot # build, then capture a PNG of each screen into out/screenshots/
 ```
 
 `desktop:smoke` is the runtime gate a green build cannot give you: it launches the built bundle
 under Electron, asserts the renderer sees `window.mpa`, round-trips a read-only capability through
 the preload into the core, and asserts the renderer got no `require`/`process`/`ipcRenderer`
 escape hatch (spec 0022 FR-3 / AC-3). CI runs it after `desktop:build`.
+
+`desktop:e2e` goes one step further, because a live bridge still does not prove the *flow* works:
+it drives the whole guided lifecycle through the real UI against a throwaway instance folder, using
+only read-only and dry-run paths, then independently checks that the folder was not modified — so a
+regression that starts writing without a confirmation fails CI rather than a user's world
+(Constitution P4). CI runs it after the smoke test. It also walks every screen added after that
+beginner loop — quests, scripts, export, release, updates, migrate — and asserts the property that
+protects your instance: no write control is offered until you have previewed, and the read-only
+screens offer none at all.
+
+`desktop:dist` produces an NSIS installer with the app icon and product metadata, plus a
+`SHA256SUMS.txt` users can check with `certutil -hashfile <file> SHA256`. The alpha installer is
+**unsigned**, so Windows SmartScreen warns on first run — that decision, the verification steps and
+the manual install/launch/uninstall checklist live in **[`docs/RELEASE.md`](./docs/RELEASE.md)**.
+
+The desktop UI is a *guest*, not a trusted caller: the main process re-validates every IPC payload
+against the channel's contract at runtime (types are erased at build time, so the contract alone
+proves nothing), rebuilds it from known keys only, and serves the app's own top-level window only.
+Navigation away from the app, child windows, embedded browsers and web permissions are all refused.
+The smoke run shows those refusals happening in the real app.
 
 Optional API credentials (e.g. a Modrinth token for higher rate limits) are read **only**
 from the environment — copy [`.env.example`](./.env.example) to `.env` (git-ignored) and fill
@@ -265,18 +293,21 @@ Honest state of the project, so nothing here is a surprise:
   ranges, sides, known-bad combos); it does not run the game. It separates
   *certain* from *suspected* and never claims more than the evidence supports.
 - **No published npm package yet.** Run it from a clone (`npm run cli -- …`).
-- **The desktop app (Electron, spec 0022) is an early alpha.** One of its
-  fourteen lifecycle screens (Build) is implemented; the rest are placeholders
-  that point back to the CLI. It is also **outside `npm run check`** — it has
-  its own `desktop:typecheck`/`desktop:build`/`desktop:smoke` gates in CI, so a
-  green `check` does not cover the GUI. The Windows installer is **unsigned**
-  (no certificate exists), so Windows warns on first run; verify the published
+- **The desktop app (Electron, spec 0022) is an early alpha.** Twelve of its
+  fourteen capabilities have a real screen; **Discover** and **Assistant** have
+  none and are listed with the CLI command instead of a dead button. It is also
+  **outside `npm run check`** — it has its own
+  `desktop:typecheck`/`desktop:build`/`desktop:smoke` gates in CI, so a green
+  `check` does not cover the GUI. The Windows installer is **unsigned** (no
+  certificate exists), so Windows warns on first run; verify the published
   SHA-256 checksum instead.
-- **`launch` does not bootstrap the Minecraft client.** It resolves and runs the
-  JVM command with the pinned Java and heap, and auto-routes a crash into
-  diagnosis, but it downloads no assets and authenticates no account
-  ([ADR 0007](./docs/decisions/0007-local-launch-adapter.md)). A full client
-  session needs a launcher app.
+- **We never bootstrap the Minecraft client.** `launchable` hands the pinned pack
+  to **Prism Launcher** or the **Modrinth App**, which own the client download,
+  assets, natives and account auth
+  ([ADR 0009](./docs/decisions/0009-launcher-handoff-for-client-launch.md)) — so
+  one of those must already be installed. `launch` itself only resolves and runs
+  the JVM command with the pinned Java and heap, auto-routing a crash into
+  diagnosis ([ADR 0007](./docs/decisions/0007-local-launch-adapter.md)).
 - **NL features need an API key.** Without `NVIDIA_API_KEY` or `GEMINI_API_KEY`,
   `assistant` and `--describe` fall back to the deterministic flow.
 - **Windows-developed, cross-platform by construction.** Nothing is

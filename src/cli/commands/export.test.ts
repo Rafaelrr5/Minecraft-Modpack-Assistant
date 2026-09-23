@@ -1,12 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, readdir, stat } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import * as path from 'node:path';
 
 import { runExport, type ExportOptions, type PackExporter } from './export.ts';
 import { FakeProvider } from '../../core/orchestration/__fixtures__/fake-provider.ts';
 import { EXIT_BLOCKED, UNSUPPORTED_MARKER_FILE } from '../../core/index.ts';
+import { GuardedInstanceFs } from '../../integration/instance-fs/index.ts';
 import { PackagingExporter } from '../../integration/packaging/index.ts';
 
 function provider(): FakeProvider {
@@ -157,4 +158,82 @@ test('a clean export never carries the unsupported marker', async () => {
   });
   assert.equal(code, 0);
   assert.doesNotMatch(text, new RegExp(UNSUPPORTED_MARKER_FILE.replace('.', '[.]')));
+});
+
+// ── Spec 0024: overrides ────────────────────────────────────────────────────────────────────────
+
+async function overrideInstance(): Promise<string> {
+  const dir = await mkdtemp(path.join(tmpdir(), 'mpa-export-overrides-'));
+  for (const [rel, body] of [
+    ['config/sodium.json', '{"fps":true}'],
+    ['kubejs/server_scripts/recipes.js', 'ServerEvents.recipes(() => {})'],
+    ['saves/MyWorld/level.dat', 'world'],
+    ['logs/latest.log', 'log'],
+    ['.env', 'TOKEN=secret'],
+  ] as const) {
+    const target = path.join(dir, rel);
+    await mkdir(path.dirname(target), { recursive: true });
+    await writeFile(target, body);
+  }
+  return dir;
+}
+
+test('--overrides lists the collected content and the exclusions in the plan (AC-1/FR-7)', async () => {
+  const instanceDir = await overrideInstance();
+  let text = '';
+  const code = await runExport(
+    baseOptions({ overrides: instanceDir }),
+    provider(),
+    throwingExporter,
+    (t) => {
+      text += t;
+    },
+    undefined,
+    new GuardedInstanceFs(),
+  );
+
+  assert.equal(code, 0);
+  assert.match(text, /overrides\/config\/sodium\.json/);
+  assert.match(text, /overrides\/kubejs\/server_scripts\/recipes\.js/);
+  assert.match(text, /Left out on purpose/);
+  assert.match(text, /personal data/);
+  assert.match(text, /credential/i);
+  assert.doesNotMatch(text, /overrides\/saves/);
+  assert.doesNotMatch(text, /overrides\/logs/);
+});
+
+test('without --overrides the export is declared mods-only (AC-5)', async () => {
+  let text = '';
+  const code = await runExport(baseOptions(), provider(), throwingExporter, (t) => {
+    text += t;
+  });
+  assert.equal(code, 0);
+  assert.match(text, /mods-only pack/);
+});
+
+test('a blocked pack collects no overrides at all (AC-7)', async () => {
+  const instanceDir = await overrideInstance();
+  const reads: string[] = [];
+  const spyingFs = new GuardedInstanceFs();
+  const realList = spyingFs.listFiles.bind(spyingFs);
+  spyingFs.listFiles = async (dir: string, rel?: string) => {
+    reads.push(dir);
+    return realList(dir, rel);
+  };
+
+  let text = '';
+  const code = await runExport(
+    blockedOptions({ overrides: instanceDir }),
+    blockedProvider(),
+    throwingExporter,
+    (t) => {
+      text += t;
+    },
+    undefined,
+    spyingFs,
+  );
+
+  assert.equal(code, EXIT_BLOCKED);
+  assert.deepEqual(reads, [], 'the instance must not be read for a refused pack');
+  assert.doesNotMatch(text, /Export plan/);
 });

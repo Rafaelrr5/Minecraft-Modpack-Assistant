@@ -7,6 +7,7 @@
 import type { PackState } from '../domain/pack-state.ts';
 import type { Logger } from '../ports/logger.ts';
 import type { ArchiveEntry, ExportArtifact, ExportFormat, UnmappableMod } from './types.ts';
+import { NO_OVERRIDES, type OverridesCollection } from './overrides.ts';
 import { buildMrpackIndex, renderMrpackIndexJson } from './mrpack.ts';
 import { buildCurseForgeManifest, renderCurseForgeManifestJson } from './curseforge.ts';
 
@@ -19,20 +20,24 @@ export function slugifyName(name: string): string {
   return slug.length > 0 ? slug : 'modpack';
 }
 
-/** The directory-entry convention for non-mod content (configs, scripts) — empty here (spec 0015 §9). */
+/** The directory entry that anchors `overrides/` even when the pack ships no override files. */
 const OVERRIDES_DIR_ENTRY: ArchiveEntry = { path: 'overrides/', contents: '' };
 
 /**
  * Assemble the chosen export for `state`. The archive carries the format's index/manifest document
- * and the `overrides/` directory convention; `unmappable` lists every mod the format could not
- * represent (FR-5). Pure and deterministic.
+ * and the `overrides/` tree — the collected non-mod content (spec 0024) when one is supplied, the
+ * bare directory convention otherwise; `unmappable` lists every mod the format could not represent
+ * (FR-5). Pure and deterministic: the collection is read by the caller and passed in.
  */
 export function assembleExport(
   state: PackState,
   format: ExportFormat,
   logger?: Logger,
+  overrides?: OverridesCollection,
 ): ExportArtifact {
   const slug = slugifyName(state.name);
+  const overrideEntries = overrides?.entries ?? [];
+  const overridesSummary = overrides?.summary ?? NO_OVERRIDES;
   let entries: ArchiveEntry[];
   let unmappable: readonly UnmappableMod[];
   let fileName: string;
@@ -42,6 +47,7 @@ export function assembleExport(
     entries = [
       { path: 'modrinth.index.json', contents: renderMrpackIndexJson(built.index) },
       OVERRIDES_DIR_ENTRY,
+      ...overrideEntries,
     ];
     unmappable = built.unmappable;
     fileName = `${slug}-${state.packVersion}.mrpack`;
@@ -50,6 +56,7 @@ export function assembleExport(
     entries = [
       { path: 'manifest.json', contents: renderCurseForgeManifestJson(built.manifest) },
       OVERRIDES_DIR_ENTRY,
+      ...overrideEntries,
     ];
     unmappable = built.unmappable;
     fileName = `${slug}-${state.packVersion}.zip`;
@@ -62,6 +69,8 @@ export function assembleExport(
     mods: state.mods.length,
     mapped,
     unmappable: unmappable.length,
+    overrides: overridesSummary.included,
+    modsOnly: overridesSummary.modsOnly,
   });
 
   return {
@@ -69,6 +78,11 @@ export function assembleExport(
     fileName,
     entries,
     unmappable,
-    summary: { mods: state.mods.length, mapped, unmappable: unmappable.length },
+    summary: {
+      mods: state.mods.length,
+      mapped,
+      unmappable: unmappable.length,
+      overrides: overridesSummary,
+    },
   };
 }

@@ -5,18 +5,24 @@
  * bytes live behind the integration adapter. The capability is a pure, deterministic projection
  * of `PackState` (Constitution P7); it produces in-memory artifacts and writes nothing.
  */
+// Type-only import: the value-level dependency runs the other way (`overrides.ts` needs
+// `ArchiveEntry`), so this edge is erased at build time and creates no runtime cycle.
+import type { OverridesSummary } from './overrides.ts';
 
 /** The distributable formats we can project a pack into (DOMAIN-KNOWLEDGE §8). */
 export type ExportFormat = 'mrpack' | 'curseforge';
 
 /**
- * One file inside the export archive. `contents` is text today (the index/manifest document and
- * the `overrides/` convention); binary overrides are a later enhancement (spec 0015 §9).
+ * One file inside the export archive. `contents` is the text payload (the index/manifest document,
+ * the changelog); an override collected from an instance (spec 0024) carries raw `bytes` instead,
+ * so binaries (`.zip` resourcepacks, `.nbt`) survive byte-for-byte.
  */
 export interface ArchiveEntry {
-  /** Archive-relative path, e.g. `modrinth.index.json` or `overrides/.gitkeep`. */
+  /** Archive-relative path, e.g. `modrinth.index.json` or `overrides/config/foo.toml`. */
   readonly path: string;
   readonly contents: string;
+  /** Raw content; when present it is authoritative and `contents` is ignored (spec 0024 FR-4). */
+  readonly bytes?: Uint8Array;
 }
 
 /**
@@ -43,6 +49,8 @@ export interface ExportArtifact {
     readonly mods: number;
     readonly mapped: number;
     readonly unmappable: number;
+    /** What non-mod content travels with the archive; `modsOnly` when none (spec 0024 FR-6). */
+    readonly overrides: OverridesSummary;
   };
 }
 

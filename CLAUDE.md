@@ -58,6 +58,7 @@ CLAUDE.md                      ← you are here (operating guide)
 .gitignore                     Node/OS/editor ignores
 package.json · tsconfig*.json · eslint.config.js   TypeScript/Node toolchain (Phase 0)
 electron.vite.config.ts · electron-builder.yml      Desktop (Electron) build/package toolchain (spec 0022; out of `npm run check`)
+scripts/                       Node scripts the gates call (desktop smoke test, installer icon, release checksums)
 .env.example                   Documents optional, env-only API credentials (never committed)
 .github/workflows/ci.yml       CI: build + lint + test on Node 22
 
@@ -80,6 +81,7 @@ src/                           Application code
   desktop/                     Electron adapter (spec 0022) — second UI over the SAME core (ADR 0008)
     services.ts                Electron-FREE composition root (covered by `npm run check`)
     shared/ipc-contract.ts     Electron-FREE typed IPC contract (main + preload + renderer)
+    shared/preload-path.ts     Single source for the built preload filename (main + build config)
     main/ · preload/ · renderer/ (React)   Electron shell — built by electron-vite (`desktop:*`)
 
 docs/

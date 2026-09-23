@@ -1,18 +1,56 @@
 # electron-builder packaging for the desktop app (spec 0022, T-0022-12). Windows installer first
 # (FR-8); macOS/Linux added when there is a user need. Run after `npm run desktop:build` (the
-# `desktop:dist` script chains both). The electron entry is the built main bundle, set via
-# extraMetadata so package.json "main" can stay the library entry (dist/index.js).
+# `desktop:dist` script chains both, then emits SHA-256 checksums via scripts/checksum-release.mjs).
+# The electron entry is the built main bundle, set via extraMetadata so package.json "main" can stay
+# the library entry (dist/index.js).
 appId: com.modpackassistant.desktop
 productName: Minecraft Modpack Assistant
+copyright: Copyright © 2026 Rafael Rocha Ribeiro
 directories:
   output: release
+  # Where electron-builder looks for icon.ico and NSIS resources. This is `build-resources/`, not
+  # the conventional `build/`, because `/build/` is git-ignored in this repo as a compiler output
+  # directory — an icon committed there would never reach a clean checkout or CI, and the installer
+  # would silently fall back to the default Electron icon. `build-resources/icon.ico` is GENERATED,
+  # not hand-drawn: `npm run desktop:icon` re-derives it byte-for-byte and src/desktop/icon.test.ts
+  # fails `npm run check` if the committed file drifts from the generator.
+  buildResources: build-resources
 files:
   - out/**/*
   - package.json
 extraMetadata:
   main: out/main/index.js
+# A stable, space-free artifact name. The default ("${productName} Setup ${version}.exe") contains
+# spaces, which makes checksum files, download URLs and scripted installs needlessly awkward.
+artifactName: MinecraftModpackAssistant-Setup-${version}-${arch}.${ext}
 win:
-  target: nsis
+  target:
+    - target: nsis
+      arch: [x64]
+  icon: build-resources/icon.ico
+  # CODE SIGNING IS INTENTIONALLY ABSENT IN THE ALPHA (spec 0022, FR-8).
+  # There is no Authenticode certificate for this project yet, so the installer is unsigned and
+  # Windows SmartScreen will warn on first run ("Windows protected your PC" -> More info -> Run
+  # anyway). This is documented in docs/RELEASE.md together with the SHA-256 checksum users should
+  # verify instead. Stating it here makes the omission deterministic rather than an accident of a
+  # missing environment variable: electron-builder then does not look for CSC_LINK / WIN_CSC_LINK
+  # and silently produce a differently-signed artifact depending on the machine.
+  #
+  # `signExecutable`, NOT `signAndEditExecutable`: the latter also disables the resource EDIT step,
+  # which is what stamps the icon, product name, version and copyright into the .exe — it would
+  # leave the app with the default Electron icon and blank publisher metadata while still exiting 0.
+  # To sign later: remove this line and provide CSC_LINK + CSC_KEY_PASSWORD in CI.
+  signExecutable: false
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
+  perMachine: false
+  installerIcon: build-resources/icon.ico
+  uninstallerIcon: build-resources/icon.ico
+  installerHeaderIcon: build-resources/icon.ico
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Minecraft Modpack Assistant
+  # Keep the uninstall entry honest: remove what we installed, never touch user data elsewhere
+  # (Constitution P4 - the app must not delete anything a user did not ask it to).
+  deleteAppDataOnUninstall: false

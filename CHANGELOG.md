@@ -31,10 +31,17 @@ package. The section below describes the state of `main`.
   pre-flight over the candidates; `migrate` plans a Minecraft or loader version migration and
   refuses to force a partial one.
 - **Packaging.** `export` projects a pinned pack state into a `.mrpack` or a CurseForge
-  manifest; `release` generates a changelog between two versions and bundles it with the export.
+  manifest, carrying the pack's real non-mod content (configs, KubeJS, quests, resource and
+  shader packs) byte-for-byte under a deny-by-default whitelist that worlds, logs, backups and
+  credential files can never pass; `release` generates a changelog between two versions and
+  bundles it with the export.
+- **Playing the pack.** `launchable` projects a pinned pack into a Prism Launcher instance or
+  walks you through a Modrinth App `.mrpack` import, checking every version against the
+  launcher's own metadata feed. The client download, assets, natives and account authentication
+  stay with the launcher — we never bootstrap Minecraft ourselves.
 - **A desktop application (alpha).** An Electron GUI over the same core, packaged as a Windows
-  NSIS installer. One of fourteen lifecycle screens — Build — is implemented; the rest point
-  back to the CLI.
+  NSIS installer. Twelve of the fourteen capabilities have a real screen; Discover and
+  Assistant have none and are listed with the CLI command that works today.
 - **The opening package for going public:** contributor guide, security policy with a stated
   threat model, support policy, issue and pull-request templates, and this changelog.
 
@@ -58,8 +65,9 @@ package. The section below describes the state of `main`.
 
 - Modrinth is the only implemented mod catalog.
 - Conflict detection is static: it reads declared metadata and does not run the game.
-- `launch` runs the resolved JVM command; it does not download Minecraft assets and does not
-  authenticate an account.
+- We never bootstrap the Minecraft client: no asset download, no account authentication. A pack
+  is played by handing it to Prism Launcher or the Modrinth App, one of which must be installed.
+- The desktop app has no Discover or Assistant screen; both need a conversation and are pending.
 - The desktop installer is unsigned, Windows x64 only, and warns on first run.
 - No npm package — run it from a clone.
 

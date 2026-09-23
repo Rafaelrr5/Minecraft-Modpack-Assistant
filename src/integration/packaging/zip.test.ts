@@ -7,6 +7,7 @@ import * as path from 'node:path';
 import { createStoreZip, readStoreZip, type ZipEntry } from './zip.ts';
 import { PackagingExporter } from './packaging-exporter.ts';
 import type { ExportArtifact } from '../../core/export/index.ts';
+import { NO_OVERRIDES } from '../../core/export/index.ts';
 
 const entries: readonly ZipEntry[] = [
   { path: 'modrinth.index.json', contents: '{\n  "formatVersion": 1\n}\n' },
@@ -38,7 +39,7 @@ function artifact(): ExportArtifact {
     fileName: 'test-0.1.0.mrpack',
     entries: [...entries],
     unmappable: [],
-    summary: { mods: 1, mapped: 1, unmappable: 0 },
+    summary: { mods: 1, mapped: 1, unmappable: 0, overrides: NO_OVERRIDES },
   };
 }
 

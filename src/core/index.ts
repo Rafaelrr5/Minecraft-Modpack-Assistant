@@ -14,6 +14,7 @@ export * from './build/index.ts';
 export * from './install/index.ts';
 export * from './crash-diagnosis/index.ts';
 export * from './launch/index.ts';
+export * from './launchable/index.ts';
 export * from './quests/index.ts';
 export * from './scripts/index.ts';
 export * from './authoring/index.ts';

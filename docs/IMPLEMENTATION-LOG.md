@@ -127,6 +127,21 @@ Phase 0 — toolchain, core domain model, Modrinth provider,
   re-draft** (default 2) then surfaces them. The drafted definition funnels through the **identical**
   guarded write path as the hand-written `--def` (dry-run/backup/force, P4), surfaced as
   `quests`/`kubejs --describe` (needs `NVIDIA_API_KEY`; degrades to a clear "use --def" message); the
-  expert structured `--def` path is **unchanged** through the same validation (P8). Whole-instance/world
+  expert structured `--def` path is **unchanged** through the same validation (P8).
+  **Spec [`0025`](../specs/0025-launchable-handoff/spec.md) (done) makes "launchable" a claim the
+  product can keep:** the `launchable` core (`src/core/launchable/`) projects a pinned `PackState` +
+  its `0008` launch profile into the artifacts an **already-installed launcher** imports — a Prism
+  Launcher instance (`mmc-pack.json` pinning Minecraft + the concrete loader build, `instance.cfg`
+  carrying the computed `-Xmx` behind `OverrideMemory=true`) or the `0015` `.mrpack` for the Modrinth
+  App — closing the gap [ADR 0007](./decisions/0007-local-launch-adapter.md) deferred: `launch`
+  (`0019`) runs a JVM command against an existing game, it never bootstraps a client, and
+  [ADR 0009](./decisions/0009-launcher-handoff-for-client-launch.md) settles that the launcher stays
+  responsible for the game download, assets and account. Every generated document is **parse-checked
+  before it is written** (P3) and every component is **verified against the launcher's own metadata
+  feed** through a `LauncherMetaProvider` port: a version the launcher does not publish **refuses**
+  the handoff, while an unreachable feed stays **unknown** and warns rather than fabricating a
+  verdict (P5). The write is the guarded `InstanceFs` path (dry-run default, backup, `--force`), a
+  set `0023` marked `MPA-UNSUPPORTED.txt` is refused without the same `--allow-unsupported` opt-in,
+  and the report states plainly what the handoff does **not** do. Whole-instance/world
   backups, uploading/publishing, **hosted/sandboxed launch runners + full client bootstrap
   (assets/auth)**, and **Phase 8 (Productization / SaaS)** are next.

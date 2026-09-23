@@ -14,7 +14,7 @@ import * as path from 'node:path';
 import type { ExportArtifact } from '../../core/export/types.ts';
 import type { Logger } from '../../core/ports/logger.ts';
 import { noopLogger } from '../logging/console-logger.ts';
-import { createStoreZip, readStoreZip, type ZipEntry } from './zip.ts';
+import { createStoreZip, readStoreZip, readStoreZipRaw, type RawZipEntry, type ZipEntry } from './zip.ts';
 
 export interface WriteExportOptions {
   /** Overwrite an existing output file (required when it already exists). */
@@ -78,5 +78,10 @@ export class PackagingExporter {
   /** Read an archive back into its entries — used to validate a written export (tests). */
   async readArchive(filePath: string): Promise<ZipEntry[]> {
     return readStoreZip(await readFile(filePath));
+  }
+
+  /** Read an archive back as raw bytes per member — the byte-for-byte override check (spec 0024). */
+  async readArchiveRaw(filePath: string): Promise<RawZipEntry[]> {
+    return readStoreZipRaw(await readFile(filePath));
   }
 }

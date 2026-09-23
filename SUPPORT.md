@@ -34,9 +34,9 @@ real step, not a deflection.
 
 - **The CLI** on **Windows, macOS and Linux** with **Node.js ≥ 22.18**. This is the primary,
   stable surface and gets the most attention.
-- **The desktop app** on **Windows x64**, as an **alpha**. It is genuinely early: one of the
-  fourteen lifecycle screens is implemented and the rest point you back to the CLI. Bug reports
-  are welcome, but "this screen is not built yet" is expected rather than a defect.
+- **The desktop app** on **Windows x64**, as an **alpha**. Twelve of the fourteen capabilities
+  have a real screen; Discover and Assistant have none and point you at the CLI. Bug reports
+  are welcome, but "Discover and Assistant are not built yet" is expected rather than a defect.
 - **Modrinth** as the mod source. It is the only implemented catalog.
 
 ## What is not supported
@@ -47,9 +47,10 @@ real step, not a deflection.
   works fine everywhere.
 - **The published installer's signature.** The alpha build is unsigned; Windows will warn on
   first run. Verify the SHA-256 checksum published with the release.
-- **Full Minecraft client bootstrap.** `launch` runs the resolved JVM command with the pinned
-  Java and heap. It does not download assets and does not authenticate your account — use a
-  launcher (Prism, Modrinth App, the official launcher) for that part.
+- **Full Minecraft client bootstrap.** We never download the client, assets or natives and never
+  hold your account token. `launchable` hands the pinned pack to **Prism Launcher** or the
+  **Modrinth App**, which own that part, so one of them must already be installed. `launch`
+  itself only runs the resolved JVM command with the pinned Java and heap.
 - **Anything about a specific mod's behaviour.** The tool resolves, installs and diagnoses; it
   does not maintain the mods. Ask the mod's author.
 - **Older Node versions.** Below 22.18 the source does not run at all, and no compatibility

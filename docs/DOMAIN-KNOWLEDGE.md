@@ -387,9 +387,51 @@ cannot be serialized honestly into either:
 - Reading back a packwiz metafile with **no** `side` key yields `unknown` internally rather
   than inventing `both`; a present-but-unrecognized value stays a hard parse error.
 
+**The `overrides/` tree is what makes an exported pack *the* pack.** Both `.mrpack` [S19] and
+the CurseForge format [S20] carry non-mod content in an `overrides/` directory that a launcher
+copies into the instance root on install — so mod configs (`config/`), KubeJS scripts
+(`kubejs/`, §7 [S16]), the FTB Quests book (`config/ftbquests/`, §7 [S15]) and resource/shader
+packs (`resourcepacks/`, `shaderpacks/`, §9 [S24]) travel there or not at all. The same
+directory is a **data-exfiltration hazard**: it sits next to `saves/`, `logs/`,
+`crash-reports/`, `backups/` and the launcher's account files ([S12] for `options.txt`, which
+holds the local player's keybinds and video settings). Our export therefore collects content
+under a **deny-by-default whitelist** of top-level folders, refuses world/log/backup/credential
+names at any depth, and never duplicates `mods/` (the index already pins every jar). An export
+that includes nothing is reported as **mods-only** rather than passing for a complete pack (spec
+`0024`).
+
 **Launchers.** **Prism Launcher** and the **Modrinth App** have the broadest interoperability
 (both import `.mrpack`; Prism also imports CurseForge packs) — primary
 targets for "produce an installable instance". [S21]
+
+### 8.1 Prism Launcher instance layout (feeds spec `0025`)
+
+A Prism/MultiMC instance is a **directory** of two documents plus a game root, which is why an
+instance can be generated offline and imported by copying the folder in. [S26]
+
+| Path | Contents |
+| --- | --- |
+| `mmc-pack.json` | `{ "formatVersion": 1, "components": [ { "uid", "version", … } ] }` — the version pins. |
+| `instance.cfg` | INI `key=value`: `InstanceType=OneSix`, `name`, and per-instance overrides. |
+| `minecraft/` | The game root — `mods/`, `config/`, `saves/`. (`.minecraft/` on legacy instances.) |
+
+**Component `uid`s** are the ids Prism's metadata service publishes, not the loader names this
+project uses internally: `net.minecraft`, `net.neoforged`, `net.minecraftforge`,
+`net.fabricmc.fabric-loader`, `org.quiltmc.quilt-loader`. Fabric and Quilt loaders additionally
+require **`net.fabricmc.intermediary` pinned to the Minecraft version** (not to the loader
+build) — omitting it produces an instance that does not resolve. [S26]
+
+- Each component's published versions are listed at
+  `https://meta.prismlauncher.org/v1/<uid>/index.json` as `{ versions: [ { version, … } ] }`,
+  so a generated instance can be **checked before it is written**. [S26]
+- **Memory** is per-instance but **ignored unless `OverrideMemory=true`** is also set —
+  writing `MaxMemAlloc` alone silently loses the sizing. [S26]
+- **Java is not pinned by the pack.** Prism selects a compatible runtime itself from the
+  version metadata (and offers to download one); the generated instance therefore records the
+  required major version as a human note rather than fabricating a path that only exists on the
+  authoring machine.
+- `.mrpack` has **no field for memory or Java**, so the Modrinth App path cannot carry them
+  [S19] — a difference worth stating to the user rather than papering over.
 
 > **Product implication.** Dev in **packwiz** → **export** to `.mrpack` (and later
 > CurseForge) → **install/launch** via Prism / Modrinth App. This chain underpins Phases 4

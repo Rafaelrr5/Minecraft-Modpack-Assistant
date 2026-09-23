@@ -27,3 +27,4 @@ Middle layer of project's three-layer memory:
 | [0006](./0006-native-packwiz-io.md) | Native (in-process) packwiz I/O, no CLI shell-out | accepted |
 | [0007](./0007-local-launch-adapter.md) | Local launch via a `GameLauncher` port; full client bootstrap deferred to Phase 8 | accepted |
 | [0008](./0008-desktop-app-electron.md) | Desktop app (Electron) as a second form factor (amends ADR 0003) | accepted |
+| [0009](./0009-launcher-handoff-for-client-launch.md) | Launcher handoff (Prism / Modrinth App) is the real client-launch path (completes ADR 0007) | accepted |

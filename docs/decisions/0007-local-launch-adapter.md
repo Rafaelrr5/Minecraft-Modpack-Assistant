@@ -2,10 +2,10 @@
 
 | | |
 | --- | --- |
-| **Status** | `accepted` |
+| **Status** | `accepted` — the deferral it records is resolved by [ADR 0009](./0009-launcher-handoff-for-client-launch.md) |
 | **Date** | 2026-06-11 |
 | **Deciders** | Project owner + Claude |
-| **Related** | spec [`0019`](../../specs/0019-launch-diagnose-loop/spec.md); builds on [`0008`](../../specs/0008-build-instance/spec.md) (launch profile), [`0018`](../../specs/0018-runnable-build/spec.md) (runnable jars), [`0010`](../../specs/0010-crash-diagnosis/spec.md) (diagnosis); Constitution P2/P3/P4/P5; [ADR 0003](./0003-cli-first-form-factor.md) |
+| **Related** | spec [`0019`](../../specs/0019-launch-diagnose-loop/spec.md); builds on [`0008`](../../specs/0008-build-instance/spec.md) (launch profile), [`0018`](../../specs/0018-runnable-build/spec.md) (runnable jars), [`0010`](../../specs/0010-crash-diagnosis/spec.md) (diagnosis); Constitution P2/P3/P4/P5; [ADR 0003](./0003-cli-first-form-factor.md). **Superseded in part by [ADR 0009](./0009-launcher-handoff-for-client-launch.md)**: the client bootstrap this ADR deferred is answered by handing the pack to an installed launcher (spec [`0025`](../../specs/0025-launchable-handoff/spec.md)), not by writing one. |
 
 ---
 

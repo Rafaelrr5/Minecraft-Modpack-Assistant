@@ -14,7 +14,8 @@
  * Path checks are not an atomic sandbox against concurrent hostile filesystem replacement
  * or hard-link aliasing (spec 0003 FR-9).
  */
-import { access, copyFile, lstat, mkdir, readFile, realpath, rm, stat, writeFile } from 'node:fs/promises';
+import { access, copyFile, lstat, mkdir, readdir, readFile, realpath, rm, stat, writeFile } from 'node:fs/promises';
+import type { Dirent } from 'node:fs';
 import * as path from 'node:path';
 
 import type {
@@ -142,6 +143,51 @@ export class GuardedInstanceFs implements InstanceFs {
     } catch {
       return null; // absent or unreadable — caller treats as "no data"
     }
+  }
+
+  async listFiles(instanceDir: string, relDir?: string): Promise<string[]> {
+    // Canonicalize the root first: on Windows an 8.3 short path (`RAFAEL~1`) resolves to its long
+    // form, and comparing a resolved child against an unresolved root would reject everything.
+    const root = await canonicalRoot(path.resolve(instanceDir));
+    const start = relDir === undefined ? root : await instancePath(root, relDir);
+    const out: string[] = [];
+
+    const walk = async (dir: string): Promise<void> => {
+      let names: Dirent[];
+      try {
+        names = await readdir(dir, { withFileTypes: true });
+      } catch {
+        return; // unreadable directory — reported as absent, never fatal (read-only probe)
+      }
+      for (const dirent of names) {
+        const child = path.join(dir, dirent.name);
+        let resolved: string;
+        try {
+          // Resolve the entry itself: a symlink/junction escaping the instance is skipped, not
+          // followed (same rule as reads — Constitution P4).
+          resolved = await realpath(child);
+        } catch {
+          continue;
+        }
+        if (!isWithin(root, resolved)) continue;
+
+        let entry;
+        try {
+          entry = await stat(resolved);
+        } catch {
+          continue;
+        }
+        if (entry.isDirectory()) {
+          await walk(resolved);
+        } else if (entry.isFile()) {
+          out.push(path.relative(root, resolved).split(path.sep).join('/'));
+        }
+      }
+    };
+
+    await walk(start);
+    out.sort();
+    return out;
   }
 
   plan(instanceDir: string, changes: readonly FileChange[]): ChangePlan {

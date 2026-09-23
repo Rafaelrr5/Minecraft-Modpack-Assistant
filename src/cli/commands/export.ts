@@ -10,12 +10,16 @@
 import {
   type ExportArtifact,
   type ExportFormat,
+  type InstanceFs,
   type ModSourceProvider,
   type LoaderVersionProvider,
+  type OrchestrationIssue,
+  type OverridesCollection,
   type PackState,
   EXIT_BLOCKED,
   assembleExport,
   blockingIssues,
+  collectOverrides,
   isBlocked,
   renderBlockedReport,
   renderExportPlan,
@@ -25,6 +29,7 @@ import {
 } from '../../core/index.ts';
 import { createModrinthProvider } from '../../integration/modrinth/index.ts';
 import { createOfficialLoaderVersions } from '../../integration/loader-versions/official-loader-versions.ts';
+import { GuardedInstanceFs } from '../../integration/instance-fs/index.ts';
 import { PackagingExporter } from '../../integration/packaging/index.ts';
 import { briefFromOptions, type OrchestrateOptions } from './orchestrate.ts';
 
@@ -46,6 +51,11 @@ export interface ExportOptions extends OrchestrateOptions {
    * archive is stamped UNSUPPORTED and its file name carries `-unsupported`.
    */
   readonly allowUnsupported?: boolean;
+  /**
+   * Collect the pack's non-mod content (configs, KubeJS, quests) from this instance directory and
+   * ship it under `overrides/` (spec 0024). Read-only; omitted → a mods-only artifact.
+   */
+  readonly overrides?: string;
 }
 
 /** The single side-effecting port the export needs — injectable so the command is testable. */
@@ -57,6 +67,48 @@ export interface PackExporter {
   ): Promise<{ readonly written: boolean; readonly outPath: string; readonly bytes?: number; readonly reason?: string }>;
 }
 
+/**
+ * Read the pack's shippable non-mod content when `--overrides <dir>` was given (spec 0024). Shared
+ * by `export` and `release`. Read-only; returns `undefined` when the flag is absent, which is what
+ * makes the artifact honestly mods-only.
+ */
+export async function collectOverridesForCommand(
+  overridesDir: string | undefined,
+  instanceFs: InstanceFs | undefined,
+  write: (text: string) => void,
+): Promise<OverridesCollection | undefined> {
+  if (overridesDir === undefined) return undefined;
+  if (instanceFs === undefined) {
+    write('--overrides needs filesystem access, which is not available here.\n');
+    return undefined;
+  }
+  const collection = await collectOverrides(overridesDir, instanceFs);
+  if (collection.summary.modsOnly) {
+    write(
+      `⚠ No shippable content found in ${overridesDir}; the artifact is mods-only ` +
+        `(configs, scripts and quests are not included).\n`,
+    );
+  }
+  return collection;
+}
+
+/**
+ * The structured outcome behind the rendered text (spec 0022 FR-2/FR-4). A GUI needs to know
+ * whether the distribution gate blocked the set, what the assembled archive would contain, and
+ * whether a write actually happened — facts that cannot be recovered from rendered prose.
+ * Optional observer; the CLI path is unchanged.
+ */
+export interface ExportRunDetail {
+  /** Resolution problems (unresolved mods, unsatisfied dependencies, incompatibilities). */
+  readonly issues: readonly OrchestrationIssue[];
+  /** True when the distribution gate refused the set (spec 0023). */
+  readonly blocked: boolean;
+  /** The assembled archive plan — absent only when the gate refused before assembly. */
+  readonly artifact?: ExportArtifact;
+  /** Present only once the write step ran. */
+  readonly written?: { readonly written: boolean; readonly outPath: string; readonly bytes?: number; readonly reason?: string };
+}
+
 /** Resolve → assemble → render → (optionally) write. Returns a process exit code. */
 export async function runExport(
   options: ExportOptions,
@@ -64,6 +116,8 @@ export async function runExport(
   exporter: PackExporter,
   write: (text: string) => void,
   loaderVersions?: LoaderVersionProvider,
+  instanceFs?: InstanceFs,
+  onDetail?: (detail: ExportRunDetail) => void,
 ): Promise<number> {
   const brief = briefFromOptions(options);
   const result = await resolveModpack(
@@ -83,6 +137,7 @@ export async function runExport(
   // The distribution gate (spec 0023): a broken set is not projected into a shareable archive at
   // all — not even a plan — unless the expert flag is given, and then only as UNSUPPORTED.
   if (blocked && !override) {
+    onDetail?.({ issues: result.issues, blocked: true });
     write(renderBlockedReport(result.issues, { command: 'export', verb: 'exported' }));
     return EXIT_BLOCKED;
   }
@@ -102,23 +157,29 @@ export async function runExport(
     ...(options.packVersion !== undefined ? { packVersion: options.packVersion } : {}),
   };
 
-  const assembled = assembleExport(packState, options.format);
+  // Overrides are read only after the gate: a refused pack collects nothing (spec 0024 FR-8/AC-7).
+  const overrides = await collectOverridesForCommand(options.overrides, instanceFs, write);
+
+  const assembled = assembleExport(packState, options.format, undefined, overrides);
   const artifact = blocked
     ? withUnsupportedMarker(assembled, result.issues, { command: 'export' })
     : assembled;
 
   if (!options.apply) {
-    write(renderExportPlan(artifact)); // dry-run: show the plan, write nothing (AC-7)
+    onDetail?.({ issues: result.issues, blocked, artifact });
+    write(renderExportPlan(artifact, undefined, overrides)); // dry-run: show the plan, write nothing (AC-7)
     return 0;
   }
 
   if (options.out === undefined) {
+    onDetail?.({ issues: result.issues, blocked, artifact });
     write('export: --out <file> is required with --apply (where to write the archive).\n');
     return 2;
   }
 
-  write(renderExportPlan(artifact, options.out));
+  write(renderExportPlan(artifact, options.out, overrides));
   const writeResult = await exporter.writeExport(artifact, options.out, { force: options.force === true });
+  onDetail?.({ issues: result.issues, blocked, artifact, written: writeResult });
   if (!writeResult.written) {
     write(`${writeResult.reason ?? 'Not written.'} Re-run with --force to overwrite.\n`);
     return 1;
@@ -135,5 +196,6 @@ export async function runExportCli(options: ExportOptions): Promise<number> {
     new PackagingExporter(),
     (text) => process.stdout.write(text),
     createOfficialLoaderVersions(),
+    new GuardedInstanceFs(),
   );
 }

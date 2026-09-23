@@ -15,6 +15,9 @@
 
 - Tasks numbered `T-0022-XX`, ordered by dependency.
 - "Done when" must actually be met (Constitution P3); test-first where sensible.
+- `[ ]` not started · `[x]` done · `[~]` partially done — the sub-bullet names exactly which
+  screens landed and which are still only available from the CLI. A partial task is never treated
+  as done, and the UI never offers the part that has not landed.
 
 ## Task list
 
@@ -89,24 +92,75 @@
     the core, and the absence of `require`/`process`/`ipcRenderer` in the renderer. Negative control:
     renaming the built preload back to `index.mjs` makes the smoke run exit 1. `interactive.ts` and
     the remaining screens stay covered by T-0022-10.
+  - **IPC boundary hardening (t_d602e714):** the handlers forwarded renderer payloads straight into
+    the core, and the contract's TypeScript types are erased at build time — nothing checked the
+    values at runtime, and nothing checked *who* was calling. Added the Electron-free
+    `src/desktop/shared/ipc-guard.ts` (per-channel payload schema that rebuilds the payload from
+    known keys only, so unknown keys such as `defPath` are refused rather than forwarded; size
+    bounds; the trusted-renderer rule — own top-level frame only; navigation / window-open /
+    webview / permission policy) plus the thin `main/guard.ts` adapter. `main/ipc.ts` now registers
+    every channel through ONE guarded helper, `main/interactive.ts` guards the reply event, and
+    `main/index.ts` installs the window and session policies (`webviewTag: false`).
+  - **Verification:** `src/desktop/ipc-guard.test.ts` (21 tests in `npm run check`) covers malformed
+    payloads, unknown keys, prototype keys, bounds, sub-frame/foreign senders, navigation and
+    permissions, plus drift guards asserting the Electron-only wiring actually calls the guard. The
+    smoke harness additionally proves it live: two refusals from the real main process and a denied
+    `window.open`; stubbing `validateInvocation` to pass everything makes those checks FAIL.
 
-- [ ] **T-0022-08 — Renderer shell + Build slice (vertical)**
+- [x] **T-0022-08 — Renderer shell + Build slice (vertical)**
   - **Deliverable:** React root + nav; shared components (`PlanView`, `ConfirmDialog`,
     `LogStream`, beginner/expert `Toggle`); **Build** screen end-to-end (plan → Confirm → apply
     via guarded FS → streamed log).
   - **Maps to:** FR-2, FR-4, AC-1, AC-2.
   - **Done when:** a build dry-run shows the plan and writes nothing; Confirm applies with backup.
+  - **Closed by t_20789b41.** The shell now derives navigation from
+    `src/desktop/shared/capabilities.ts`, the single registry of what the GUI implements, and the
+    placeholder screen is gone: `App.tsx`'s `SCREENS` map is the only route, `goTo` refuses an id
+    with no screen, and unimplemented capabilities are listed as plain text with their CLI command.
+    `src/desktop/capabilities.test.ts` fails the build if `SCREENS` and the registry ever disagree
+    (negative controls confirmed: flipping a capability to `implemented`, or adding a screen for a
+    planned one, each turn the suite red). Cross-screen state moved into `renderer/workflow.ts`, so
+    the instance folder and mod list carry forward instead of being retyped per step.
 
 ### Remaining screens
 
-- [ ] **T-0022-09 — Read-only screens:** doctor, orchestrate (+requirements/preflight), diagnose,
+- [x] **T-0022-09 — Read-only screens:** doctor, orchestrate (+requirements/preflight), diagnose,
   updates, migrate. **Maps to:** FR-2, AC-6. **Done when:** each renders the structured report in
   beginner + expert views.
+  - **Started by t_20789b41:** doctor, orchestrate (Resolve — dependencies, requirements and
+    pre-flight in one pass) and diagnose.
+  - **Closed by t_ab9cdfdf:** `updates` and `migrate` now have real screens. Updates leads with the
+    regression verdict rather than a version count — "3 updates available" is not useful if two of
+    them break the pack — and offers no write control at all; taking an accepted update is the
+    guarded Build path (spec 0013 FR-7). Migrate states the single all-or-nothing verdict (spec 0014
+    FR-6), names every mod with nothing to move to, and likewise never writes. The e2e harness
+    asserts both screens expose zero write controls.
 - [ ] **T-0022-10 — Interactive screens:** discover, assistant (via `interactive.ts`). **Maps to:**
   FR-6, FR-7, AC-5. **Done when:** Q/A turns + streaming work; egress disclosed; no-key degrades.
-- [ ] **T-0022-11 — Remaining write screens:** install, launch, quests, kubejs (+ `describe`),
+  - **The only capabilities still `planned`** in `src/desktop/shared/capabilities.ts`. They need the
+    bidirectional prompt/reply channel (`PROMPT_EVENT`/`REPLY_EVENT`), not request/response, so they
+    stay listed with their working CLI command rather than offered as a button that cannot converse.
+- [x] **T-0022-11 — Remaining write screens:** install, launch, quests, kubejs (+ `describe`),
   export, release — each Confirm-gated. **Maps to:** FR-4, FR-5, AC-2, AC-4. **Done when:** each
   writes only after Confirm; NL `describe` validated by the `0011`/`0012` pipeline before write.
+  - **Started by t_20789b41:** install and launch, both Confirm-gated (install additionally requires
+    a second, explicit acknowledgement before overwriting existing jars; launch shows the exact
+    resolved command before it will spawn anything).
+  - **Closed by t_ab9cdfdf:** quests, kubejs (both with the `describe` path), export and release.
+    Each follows the same model — preview first, `ConfirmWrite` second, overwrite a third separate
+    decision — and the authoring screens offer no write control at all until generation produced a
+    plan, so an invalid definition is structurally unwritable rather than merely discouraged. Export
+    and release honour the distribution gate (spec 0023) with no override control in the UI, and
+    release renders the changelog before the archive is cut. The e2e harness asserts all four refuse
+    to offer their write control before a preview, and that assertion was proven to fail when the
+    guard was removed.
+  - **Enabling change:** `runQuests`, `runKubeJs`, `runExport` and `runRelease` gained an optional
+    `onDetail` observer so the GUI receives the structured report/plan/artifact/changelog instead of
+    parsing rendered prose. The CLI path is unchanged; `src/desktop/services.test.ts` covers the new
+    payloads.
+  - **Pasted-JSON shape guard:** the authoring screens validate the *shape* of a pasted definition
+    before handing it over. The core validates content and reports findings, but assumes the shape —
+    an arbitrary object throws from inside the serializer and would reach the user as a stack trace.
 
 ### Packaging, polish, docs
 
@@ -114,14 +168,47 @@
   - **Deliverable:** required `desktop:typecheck` and `desktop:build` steps in the existing
     CI job; lockfile synchronized with the already-declared desktop dependencies. Plus a required
     runtime `desktop:smoke` step (t_683f3196): a green build does not prove the packaged GUI has a
-    working preload bridge, so CI runs the built app headlessly and asserts `window.mpa`.
-  - **Maps to:** FR-9, AC-9, AC-3.
+    working preload bridge, so CI runs the built app headlessly and asserts `window.mpa`. And a
+    required `desktop:e2e` step (t_20789b41): a working bridge does not prove the *flow* works, so
+    CI drives Resolve → Build → Install → Launch → Diagnose through the real UI against a throwaway
+    instance and independently asserts that folder was not modified.
+  - **Maps to:** FR-9, AC-9, AC-3, AC-1.
   - **Done when:** `npm ci`, `npm run check`, `npm run desktop:typecheck`,
-    `npm run desktop:build` and `node scripts/desktop-smoke.mjs` pass; the workflow retains the
-    core/CLI gate without an installer step.
+    `npm run desktop:build`, `node scripts/desktop-smoke.mjs` and `node scripts/desktop-e2e.mjs`
+    pass; the workflow retains the core/CLI gate without an installer step.
 
-- [ ] **T-0022-12 — Packaging:** `desktop:dist` → Windows installer. **Maps to:** FR-8, AC-7.
+- [x] **T-0022-12 — Packaging:** `desktop:dist` → Windows installer. **Maps to:** FR-8, AC-7.
   **Done when:** an installer is produced on the host OS.
+  - **Shipped:** `npm run desktop:dist` builds `release/MinecraftModpackAssistant-Setup-<version>-x64.exe`
+    (NSIS) and then writes `release/SHA256SUMS.txt`. The app icon is generated from code by
+    `scripts/generate-icon.mjs` into `build-resources/icon.ico` (not `build/`, which this repo
+    git-ignores as a compiler output dir, so an icon there would be missing from a clean checkout);
+    `package.json` gained `author`, and `electron-builder.yml` a `copyright`, a space-free
+    `artifactName`, and the icon. Signing is stated explicitly as absent for the alpha via
+    `signExecutable: false` — **not** `signAndEditExecutable: false`, which would also skip the
+    resource-edit pass that stamps the icon and metadata while still exiting 0.
+  - **Verified on Windows 11 build 26200, x64:** `desktop:dist` exit 0 with no "default Electron
+    icon" and no "author is missed" warning; the installed `.exe` reports ProductName / CompanyName
+    / LegalCopyright / FileVersion and carries the generated icon (extracted and inspected, not the
+    Electron atom); `certutil -hashfile` independently reproduced the published SHA-256; silent
+    install → the **installed** app launched with `MPA_SMOKE=1` and all 7 preload-bridge checks
+    passed (the packaged-app counterpart of T-0022-11, which only covered the unpackaged bundle) →
+    silent uninstall removed the program directory, both shortcuts and the HKCU uninstall entry
+    while a sentinel file under `%APPDATA%` survived (`deleteAppDataOnUninstall: false`,
+    Constitution P4).
+  - **Superseded premise:** the card's original evidence (a `winCodeSign` symlink-permission failure)
+    was observed on electron-builder 25. On 26 the unsigned Windows build no longer extracts that
+    bundle and the NSIS stage completes on a normal, non-elevated user session. Documented in
+    `docs/RELEASE.md` as an environment requirement should signing reintroduce it, not as a config
+    bug to patch.
+  - **Guards added inside `npm run check`:** `src/desktop/icon.test.ts` (committed icon is
+    byte-identical to its generator, is a valid multi-size ICO, and is not git-ignored) and
+    `src/desktop/packaging.test.ts` (product metadata, explicit signing posture, checksum step still
+    chained, packaging globs still cover the CommonJS preload). Both proven to fail when their
+    subject breaks.
+  - **CI:** a `windows-installer` job builds the real installer on `windows-latest`, re-checks the
+    icon and the checksums, and uploads the `.exe` + `SHA256SUMS.txt` as artifacts. Not yet exercised
+    on GitHub — nothing was pushed from this run.
 - [ ] **T-0022-13 — Polish:** apply `frontend-design`; cohesive, distinctive UI; dual-audience.
   **Maps to:** NFRs (friendly + P8). **Done when:** UI review passes; expert toggle everywhere.
 - [ ] **T-0022-14 — Docs & sync:** keep spec/plan/roadmap status + doc maps current; note any new

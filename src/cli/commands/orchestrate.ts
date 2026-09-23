@@ -10,6 +10,8 @@ import {
   type ModpackBrief,
   type ModSourceProvider,
   type OrchestrationResult,
+  type PreflightReport,
+  type RequirementsReport,
   type RequirementsTarget,
   type TargetEnvironment,
   parseMinecraftVersion,
@@ -78,12 +80,25 @@ export function briefFromOptions(options: OrchestrateOptions): ModpackBrief {
   };
 }
 
+/**
+ * The structured follow-on reports behind the rendered text (spec 0022 FR-2). `runOrchestrate`
+ * already returns the `OrchestrationResult`; the optional requirements/pre-flight steps were only
+ * rendered to text, which a GUI cannot route on. Optional observer; the CLI path is unchanged.
+ */
+export interface OrchestrateRunDetail {
+  /** Present iff `options.requirements` was requested. */
+  readonly requirements?: RequirementsReport;
+  /** Present iff `options.preflight` was requested. */
+  readonly preflight?: PreflightReport;
+}
+
 /** Resolve and render. The provider is injectable so this is testable without the network. */
 export async function runOrchestrate(
   options: OrchestrateOptions,
   provider: ModSourceProvider,
   write: (text: string) => void,
   deps: OrchestrateDeps = {},
+  onDetail?: (detail: OrchestrateRunDetail) => void,
 ): Promise<OrchestrationResult> {
   const brief = briefFromOptions(options);
   const result = await resolveModpack(
@@ -98,12 +113,15 @@ export async function runOrchestrate(
   );
   write(renderResult(result));
 
+  const detail: { requirements?: RequirementsReport; preflight?: PreflightReport } = {};
+
   // Optional follow-on step: predict requirements for the resolved set (spec 0002).
   if (options.requirements) {
     const report = predictRequirements(result.modpack, {
       ...(options.side ? { target: options.side } : {}),
       flags: { shaders: options.shaders === true, hdTextures: options.hdTextures === true },
     });
+    detail.requirements = report;
     write(`\n${renderRequirements(report)}`);
   }
 
@@ -115,8 +133,10 @@ export async function runOrchestrate(
       environment,
       ...(deps.currentKeybinds ? { currentKeybinds: deps.currentKeybinds } : {}),
     });
+    detail.preflight = report;
     write(`\n${renderPreflight(report)}`);
   }
+  onDetail?.(detail);
   return result;
 }
 

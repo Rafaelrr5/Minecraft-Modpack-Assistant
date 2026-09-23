@@ -68,7 +68,7 @@ if (stderr.includes('preload failed to load') || stdout.includes('preload failed
 }
 
 if (!report.ok) {
-  console.error('[smoke] FAILED — the preload bridge is not intact.');
+  console.error('[smoke] FAILED — the built app did not pass every runtime check above.');
   process.exit(1);
 }
-console.log('[smoke] OK — window.mpa is exposed and a read-only capability round-tripped via preload.');
+console.log('[smoke] OK — the preload bridge is intact and the guided lifecycle renders.');

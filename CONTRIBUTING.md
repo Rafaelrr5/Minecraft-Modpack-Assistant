@@ -143,9 +143,10 @@ change to behaviour with no test.
   provider-agnostic; only the Modrinth adapter is implemented.
 - More entries in the **known-bad mod-combination** table used by the conflict pre-flight.
 - Additional recorded **contract-test fixtures** for the Modrinth adapter.
-- One of the **desktop screens** listed in [spec 0022](./specs/0022-desktop-app/spec.md) —
-  thirteen of fourteen lifecycle capabilities still show a placeholder in the GUI, and each one
-  follows the implemented Build screen's preview → confirm pattern.
+- One of the two remaining **desktop screens** listed in
+  [spec 0022](./specs/0022-desktop-app/spec.md) — Discover and Assistant are the only
+  capabilities with no GUI screen, because both need a back-and-forth conversation rather than
+  a single request. Twelve screens already exist and follow the same preview → confirm pattern.
 
 ## Reporting a security issue
 

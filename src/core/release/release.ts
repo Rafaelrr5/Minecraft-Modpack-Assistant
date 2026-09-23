@@ -8,6 +8,7 @@ import type { PackState } from '../domain/pack-state.ts';
 import type { Logger } from '../ports/logger.ts';
 import { assembleExport } from '../export/export.ts';
 import type { ExportFormat } from '../export/types.ts';
+import type { OverridesCollection } from '../export/overrides.ts';
 import { generateChangelog, renderChangelogMarkdown } from './changelog.ts';
 import type { ReleaseBundle, ReleaseMeta } from './types.ts';
 
@@ -18,6 +19,8 @@ export interface AssembleReleaseOptions {
   /** The prior release to diff against; `null`/omitted → an initial release (everything added). */
   readonly baseline?: PackState | null;
   readonly meta?: ReleaseMeta;
+  /** Collected non-mod content to ship with the archive (spec 0024); omitted → mods-only. */
+  readonly overrides?: OverridesCollection;
 }
 
 /**
@@ -32,7 +35,7 @@ export function assembleRelease(
 ): ReleaseBundle {
   const changelog = generateChangelog(options.baseline ?? null, state, options.meta ?? {});
   const markdown = renderChangelogMarkdown(changelog);
-  const base = assembleExport(state, format, logger);
+  const base = assembleExport(state, format, logger, options.overrides);
   const artifact = {
     ...base,
     entries: [...base.entries, { path: CHANGELOG_FILE, contents: markdown }],

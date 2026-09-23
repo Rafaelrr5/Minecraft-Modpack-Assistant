@@ -12,3 +12,4 @@ export * from './integration/google/index.ts';
 export * from './integration/mclogs/index.ts';
 export * from './integration/packwiz/index.ts';
 export * from './integration/loader-versions/index.ts';
+export * from './integration/launcher-meta/index.ts';

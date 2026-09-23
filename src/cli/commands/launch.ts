@@ -11,7 +11,9 @@
 import {
   type GameLauncher,
   type InstanceFs,
+  type LaunchPlan,
   type LaunchProfile,
+  type LaunchReport,
   LAUNCH_PROFILE_FILE,
   launchInstance,
   parseLaunchProfile,
@@ -37,19 +39,43 @@ export interface LaunchPorts {
   readonly instanceFs: InstanceFs;
 }
 
+/**
+ * The structured outcome behind the rendered text (spec 0022 FR-2). The CLI only needs the exit
+ * code, but a GUI has to *route* on the outcome — a crashed launch opens the diagnosis, a missing
+ * JDK opens guidance — and cannot do that by pattern-matching rendered prose. Emitted through an
+ * optional observer so the CLI path and the rendering are untouched.
+ */
+export interface LaunchRunDetail {
+  /**
+   * Absent when the run never got as far as planning: there is no launch profile in the instance,
+   * or the one that is there is invalid. The CLI says so in prose and returns 1; a GUI needs the
+   * fact itself, otherwise it renders an empty screen after the user pressed a button.
+   */
+  readonly plan?: LaunchPlan;
+  /** Why no plan exists, when `plan` is absent. */
+  readonly problem?: {
+    readonly kind: 'no-profile' | 'invalid-profile';
+    readonly message: string;
+  };
+  /** Present once the launch step ran — i.e. with `apply` (absent for a dry-run). */
+  readonly report?: LaunchReport;
+}
+
 /** Read + validate the profile → plan → render → (only with --apply) launch + auto-diagnose. */
 export async function runLaunch(
   options: LaunchCommandOptions,
   launcher: GameLauncher,
   ports: LaunchPorts,
   write: (text: string) => void,
+  onDetail?: (detail: LaunchRunDetail) => void,
 ): Promise<number> {
   const profileJson = await ports.instanceFs.readText(options.instancePath, LAUNCH_PROFILE_FILE);
   if (profileJson === null) {
-    write(
+    const message =
       `No ${LAUNCH_PROFILE_FILE} found under ${options.instancePath}.\n` +
-        '  Run `mpa build --instance <dir> …` first to produce the launch profile.\n',
-    );
+      '  Run `mpa build --instance <dir> …` first to produce the launch profile.\n';
+    onDetail?.({ problem: { kind: 'no-profile', message } });
+    write(message);
     return 1;
   }
 
@@ -57,7 +83,9 @@ export async function runLaunch(
   try {
     profile = parseLaunchProfile(profileJson);
   } catch (error) {
-    write(`${error instanceof Error ? error.message : String(error)}\n`);
+    const message = `${error instanceof Error ? error.message : String(error)}\n`;
+    onDetail?.({ problem: { kind: 'invalid-profile', message } });
+    write(message);
     return 1;
   }
 
@@ -67,11 +95,13 @@ export async function runLaunch(
 
   // Dry-run by default (FR-3): show the exact resolved command (or guidance), spawn nothing.
   if (!options.apply) {
+    onDetail?.({ plan });
     write(renderLaunchPlan(plan, { json: options.json === true }));
     return plan.command ? 0 : 1; // no compatible JDK is a soft failure
   }
 
   const report = await launchInstance(plan, launcher, { confirm: true });
+  onDetail?.({ plan, report });
   write(renderLaunchReport(report, { json: options.json === true }));
   return report.status === 'launched-clean' ? 0 : 1;
 }

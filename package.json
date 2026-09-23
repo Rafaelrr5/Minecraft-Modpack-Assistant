@@ -43,22 +43,22 @@
     "assistant"
   ],
   "dependencies": {
-    "smol-toml": "^1.3.1"
+    "smol-toml": "^1.9.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.18.0",
     "@types/node": "^22.10.7",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
-    "@vitejs/plugin-react": "^4.3.4",
-    "electron": "^33.2.0",
-    "electron-builder": "^25.1.8",
-    "electron-vite": "^2.3.0",
+    "@vitejs/plugin-react": "^5.2.0",
+    "electron": "^44.4.4",
+    "electron-builder": "^26.16.1",
+    "electron-vite": "^5.0.0",
     "eslint": "^9.18.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "typescript": "^5.8.2",
     "typescript-eslint": "^8.21.0",
-    "vite": "^5.4.11"
+    "vite": "^7.3.6"
   }
 }

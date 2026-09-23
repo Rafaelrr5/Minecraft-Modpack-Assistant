@@ -73,6 +73,9 @@ src/desktop/
     components/          PlanView, ReportView, ConfirmDialog, LogStream, ChatPanel, Toggle
                          (beginner/expert), KeyStatus (LLM egress disclosure).
 electron.vite.config.ts  electron-vite: Vite (renderer) + esbuild (main/preload), TS + HMR.
+                         The preload target is pinned to CommonJS output (`out/preload/index.cjs`):
+                         Electron loads the preload of a `sandbox:true` renderer as CJS, and this
+                         package is `"type": "module"`, so the ESM default would break the bridge.
 electron-builder.yml     Packaging → installers.
 ```
 
@@ -119,6 +122,16 @@ All via existing ports/adapters (Constitution P6): Modrinth (`ModSourceProvider`
 New **tooling** dependencies (desktop-scoped, dev): `electron`, `electron-vite`,
 `electron-builder`, `react`, `react-dom`, `@types/react`, `@types/react-dom`. These never enter
 the core/CLI dependency surface.
+
+**Security posture of the toolchain.** The distributed runtime graph must carry no known high or
+critical advisory: `npm audit --omit=dev` is the gate, and the single runtime dependency
+(`smol-toml`) is kept current. Build-only tooling is held to the same bar rather than being
+waived, because `npm audit` (no `--omit`) is what CI and contributors see: as of the 0022
+remediation the whole graph audits clean on `electron` 44, `electron-builder` 26, `electron-vite`
+5, `vite` 7 and `@vitejs/plugin-react` 5. Bumping this toolchain is a packaging change, not a
+dependency chore: re-run `npm ci`, `npm run check`, `desktop:typecheck`, `desktop:build` **and**
+an `electron-builder --dir` pack before accepting it, since the emitted preload format is a
+toolchain default that a major bump can move underneath a sandboxed renderer.
 
 ## 6. Safety & side effects
 

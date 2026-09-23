@@ -34,7 +34,7 @@
     "cli": "node src/cli/main.ts",
     "desktop:dev": "electron-vite dev",
     "desktop:build": "electron-vite build",
-    "desktop:dist": "electron-vite build && electron-builder && node scripts/checksum-release.mjs",
+    "desktop:dist": "electron-vite build && electron-builder --publish never && node scripts/checksum-release.mjs",
     "desktop:typecheck": "tsc -p src/desktop/tsconfig.json",
     "desktop:smoke": "electron-vite build && node scripts/desktop-smoke.mjs",
     "desktop:icon": "node scripts/generate-icon.mjs"

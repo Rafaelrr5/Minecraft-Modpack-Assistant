@@ -65,7 +65,13 @@ provider is a vulnerability.
 flag, and a backup is taken first. A path that mutates your instance without that sequence is a
 vulnerability.
 
-**6. The desktop renderer is untrusted.** The Electron GUI runs with context isolation on,
+**6. The launcher handoff.** `launchable` writes a Prism instance directory (or prepares a
+`.mrpack` for the Modrinth App) through the same guarded `InstanceFs`, with the same dry-run →
+backup → confirm sequence, and never handles your Microsoft or Mojang credentials — the launcher
+owns account authentication. A handoff that writes outside the directory you named, or that
+claims to have verified a loader build it did not, is a vulnerability.
+
+**7. The desktop renderer is untrusted.** The Electron GUI runs with context isolation on,
 node integration off, and sandbox on; the renderer reaches the core only through a narrow,
 validated preload bridge. A renderer escape — reaching `require`, `process`, `ipcRenderer`, or
 an unvalidated IPC channel — is a vulnerability.

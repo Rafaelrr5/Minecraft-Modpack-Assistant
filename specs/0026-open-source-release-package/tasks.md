@@ -43,6 +43,25 @@ deletion of tracked files or a change outside this card's scope.
    conhecidas antes de abrir o código`), in an otherwise English history. Cosmetic; rewriting
    history to fix it is not worth it.
 
+## Re-verification after merging `main` (2026-09-23)
+
+The card's completion gate — a recorded decision for the launchable path — is satisfied by
+[ADR 0009](../../docs/decisions/0009-launcher-handoff-for-client-launch.md) and
+[spec 0025](../0025-launchable-handoff/spec.md), both on `main`. Merging `main` in also brought
+the GUI consolidation, which invalidated a claim this package made. Every affected sentence was
+re-checked against the tree, not against the earlier draft:
+
+| Claim | Was | Now, verified against | Where |
+| --- | --- | --- | --- |
+| Desktop screen count | "one of fourteen; the rest are placeholders" | `src/desktop/shared/capabilities.ts`: 12 `implemented`, 2 `planned` (`discover`, `assistant`); `renderer/screens/` holds exactly 12 files | README table + limitations, CONTRIBUTING, SUPPORT, CHANGELOG |
+| How a pack is played | "`launch` does not bootstrap a client; use a launcher" | ADR 0009 + `src/core/launchable/`: `launchable` generates a Prism instance or a Modrinth App `.mrpack` import, verified against the launcher's metadata feed | README table + limitations, SUPPORT, CHANGELOG |
+| Desktop gate commands | three | `ci.yml` also runs `scripts/desktop-e2e.mjs`; `package.json` exposes `desktop:e2e` | CONTRIBUTING |
+| Threat model surface | six boundaries | `launchable` writes through the same `GuardedInstanceFs` with dry-run → backup → confirm and never touches account credentials | SECURITY, boundary 6 |
+| Spec number | `0024` | `main` had already taken `0024` for Export Overrides; this spec is renumbered `0026` | spec/plan/tasks, `specs/README.md` |
+
+Code signing was re-read rather than assumed: `electron-builder.yml` sets `signExecutable: false`
+with a comment saying no certificate exists, which is what the documents claim.
+
 ## Pending
 
 - **`CLAUDE.md` doc-map sync.** The four new root documents and the two new `.github/` template
@@ -63,7 +82,8 @@ deletion of tracked files or a change outside this card's scope.
 
 ### History credential scan (T-0026-02)
 
-Scope: every blob in `git rev-list --all` (40 commits), matched against provider-key shapes
+Scope: every blob in `git rev-list --all` (49 commits, 1567 objects after merging `main`),
+matched against provider-key shapes
 (NVIDIA `nvapi-`, Google `AIza`, OpenAI `sk-`, GitHub `gh[pousr]_`, Slack `xox[baprs]-`,
 Modrinth `mrp_`), AWS access keys, and PEM private-key headers.
 

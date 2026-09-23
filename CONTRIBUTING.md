@@ -54,12 +54,14 @@ The desktop app has its own toolchain and is deliberately **outside** `npm run c
 npm run desktop:typecheck   # typecheck the Electron shell
 npm run desktop:build       # bundle main + preload + renderer into out/
 npm run desktop:smoke       # build, launch the real app, assert the preload bridge is live
+npm run desktop:e2e         # build, then drive the real screens end to end
 ```
 
-If you touched anything under `src/desktop/`, run all three. `desktop:smoke` is the one that
+If you touched anything under `src/desktop/`, run all four. `desktop:smoke` is the one that
 catches what a green build cannot: it starts the built application under Electron and asserts
 the renderer really can reach the core through the preload bridge, and really cannot reach
-`require`, `process` or `ipcRenderer`. CI runs the same three steps.
+`require`, `process` or `ipcRenderer`. `desktop:e2e` goes further and exercises the screens
+themselves. CI runs the same four steps.
 
 Running the CLI while you work:
 

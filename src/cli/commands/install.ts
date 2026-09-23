@@ -10,6 +10,8 @@
  * jar whose bytes differ).
  */
 import {
+  type InstallPlan,
+  type InstallResult,
   type InstanceFs,
   type JarTransport,
   type PackFormat,
@@ -39,21 +41,39 @@ export interface InstallPorts {
   readonly instanceFs: InstanceFs;
 }
 
+/**
+ * The structured outcome behind the rendered text (spec 0022 FR-2/FR-4). A GUI must know whether
+ * the plan is destructive (so it can require the force confirmation) and what actually got written
+ * — facts it cannot recover from rendered prose. Optional observer; the CLI path is unchanged.
+ */
+export interface InstallRunDetail {
+  readonly plan: InstallPlan;
+  /** Present only once the apply step ran (absent for a dry-run or a force refusal). */
+  readonly result?: InstallResult;
+  /** True when apply was refused because the plan overwrites files and `force` was not given. */
+  readonly refusedForce?: boolean;
+}
+
 /** Read pinned state → plan (fetch + verify) → render → (optionally) apply. Returns an exit code. */
 export async function runInstall(
   options: InstallOptions,
   transport: JarTransport,
   ports: InstallPorts,
   write: (text: string) => void,
+  onDetail?: (detail: InstallRunDetail) => void,
 ): Promise<number> {
   const state = await ports.packFormat.readPack(options.from ?? options.instancePath);
 
   const plan = await planDownload(state, options.instancePath, transport, ports.instanceFs);
   write(renderInstallPlan(plan));
 
-  if (!options.apply) return plan.hasFailures ? 1 : 0; // dry-run by default (AC-4)
+  if (!options.apply) {
+    onDetail?.({ plan });
+    return plan.hasFailures ? 1 : 0; // dry-run by default (AC-4)
+  }
 
   if (plan.destructive && options.force !== true) {
+    onDetail?.({ plan, refusedForce: true });
     write(
       'Refusing to overwrite existing jar(s) without --force. ' +
         'Review the plan above, then re-run with --apply --force.\n',
@@ -62,6 +82,7 @@ export async function runInstall(
   }
 
   const result = await applyDownload(plan, ports.instanceFs, { confirm: true });
+  onDetail?.({ plan, result });
   write(renderInstallResult(result));
   return result.applied && !plan.hasFailures ? 0 : 1;
 }

@@ -48,6 +48,13 @@ jobs:
       - name: Desktop preload smoke test
         run: node scripts/desktop-smoke.mjs
 
+      # Runtime proof of the guided lifecycle (spec 0022 AC-1): a working preload bridge does not
+      # prove the flow works. This drives Resolve → Build → Install → Launch → Diagnose through the
+      # real UI against a throwaway instance, using only read-only/dry-run paths, and independently
+      # verifies afterwards that the instance folder was not modified (Constitution P4).
+      - name: Desktop lifecycle end-to-end test
+        run: node scripts/desktop-e2e.mjs
+
   # The Windows installer can only be built on Windows, and "the config is valid" is not the same
   # claim as "the installer exists" (spec 0022, T-0022-12). This job produces the real NSIS artifact
   # and its checksum, and uploads both so a release can be cut from a CI build rather than from

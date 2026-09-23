@@ -135,6 +135,27 @@ void app.whenReady().then(() => {
       })();
     });
   }
+  if (process.env.MPA_E2E === '1') {
+    // Opt-in end-to-end walkthrough of the guided lifecycle (see ./e2e.ts). Read-only/dry-run only.
+    first.webContents.once('did-finish-load', () => {
+      void (async () => {
+        const { runE2E } = await import('./e2e.ts');
+        const report = await runE2E(first, process.env.MPA_E2E_INSTANCE ?? '');
+        app.exit(report.ok ? 0 : 1);
+      })();
+    });
+  }
+  if (process.env.MPA_SHOT === '1') {
+    // Opt-in screenshot pass for visual review (see scripts/desktop-screenshot.mjs). Same shape as
+    // the smoke hook: dynamically imported, never part of a normal boot.
+    first.webContents.once('did-finish-load', () => {
+      void (async () => {
+        const { captureScreens } = await import('./screenshot.ts');
+        const ok = await captureScreens(first, process.env.MPA_SHOT_DIR ?? 'out/screenshots');
+        app.exit(ok ? 0 : 1);
+      })();
+    });
+  }
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow(trust);
   });

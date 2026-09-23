@@ -38,11 +38,11 @@ import { PackagingExporter } from '../integration/packaging/index.ts';
 import { createMcLogsAnalysisProvider } from '../integration/mclogs/index.ts';
 
 import { renderDoctor, runDoctor } from '../cli/commands/doctor.ts';
-import { type OrchestrateDeps, runOrchestrate } from '../cli/commands/orchestrate.ts';
+import { type OrchestrateDeps, type OrchestrateRunDetail, runOrchestrate } from '../cli/commands/orchestrate.ts';
 import { runBuild } from '../cli/commands/build.ts';
-import { runInstall } from '../cli/commands/install.ts';
-import { runLaunch } from '../cli/commands/launch.ts';
-import { runDiagnose } from '../cli/commands/diagnose.ts';
+import { type InstallRunDetail, runInstall } from '../cli/commands/install.ts';
+import { type LaunchRunDetail, runLaunch } from '../cli/commands/launch.ts';
+import { type DiagnoseRunDetail, runDiagnose } from '../cli/commands/diagnose.ts';
 import { runUpdates } from '../cli/commands/updates.ts';
 import { runMigrate } from '../cli/commands/migrate.ts';
 import { type PackExporter, runExport } from '../cli/commands/export.ts';
@@ -62,7 +62,7 @@ import type {
   MigrateOptions,
   MigrationReport,
   OrchestrateOptions,
-  OrchestrationResult,
+  OrchestrateResultData,
   QuestsCallOptions,
   ReleaseOptions,
   UpdateReport,
@@ -90,11 +90,11 @@ export interface DesktopPorts {
 /** The capability surface the Electron main process drives over IPC; mirrors `DesktopApi`. */
 export interface DesktopServices {
   doctor(options?: { readonly instancePath?: string }, onLog?: LogSink): Promise<CapabilityResult<DoctorReport>>;
-  orchestrate(options: OrchestrateOptions, onLog?: LogSink): Promise<CapabilityResult<OrchestrationResult>>;
+  orchestrate(options: OrchestrateOptions, onLog?: LogSink): Promise<CapabilityResult<OrchestrateResultData>>;
   build(options: BuildOptions, onLog?: LogSink): Promise<CapabilityResult>;
-  install(options: InstallOptions, onLog?: LogSink): Promise<CapabilityResult>;
-  launch(options: LaunchCommandOptions, onLog?: LogSink): Promise<CapabilityResult>;
-  diagnose(options: DiagnoseOptions, onLog?: LogSink): Promise<CapabilityResult>;
+  install(options: InstallOptions, onLog?: LogSink): Promise<CapabilityResult<InstallRunDetail>>;
+  launch(options: LaunchCommandOptions, onLog?: LogSink): Promise<CapabilityResult<LaunchRunDetail>>;
+  diagnose(options: DiagnoseOptions, onLog?: LogSink): Promise<CapabilityResult<DiagnoseRunDetail>>;
   updates(options: UpdatesOptions, onLog?: LogSink): Promise<CapabilityResult<UpdateReport>>;
   migrate(options: MigrateOptions, onLog?: LogSink): Promise<CapabilityResult<MigrationReport>>;
   export(options: ExportOptions, onLog?: LogSink): Promise<CapabilityResult>;
@@ -158,8 +158,15 @@ export function createDesktopServices(overrides: Partial<DesktopPorts> = {}): De
         const optionsTxt = await ports.instanceFs.readText(options.instancePath, 'options.txt');
         if (optionsTxt) Object.assign(deps, { currentKeybinds: parseOptionsKeybinds(optionsTxt) });
       }
-      const result = await runOrchestrate(options, ports.provider, write, deps);
-      return { exitCode: result.issues.length > 0 ? 1 : 0, output: output(), data: result };
+      let detail: OrchestrateRunDetail = {};
+      const result = await runOrchestrate(options, ports.provider, write, deps, (d) => {
+        detail = d;
+      });
+      return {
+        exitCode: result.issues.length > 0 ? 1 : 0,
+        output: output(),
+        data: { ...result, ...detail },
+      };
     },
 
     async build(options, onLog) {
@@ -175,30 +182,47 @@ export function createDesktopServices(overrides: Partial<DesktopPorts> = {}): De
 
     async install(options, onLog) {
       const { write, output } = collector(onLog);
+      let detail: InstallRunDetail | undefined;
       const exitCode = await runInstall(
         options,
         ports.transport,
         { packFormat: ports.packFormat, instanceFs: ports.instanceFs },
         write,
+        (d) => {
+          detail = d;
+        },
       );
-      return { exitCode, output: output() };
+      return { exitCode, output: output(), ...(detail ? { data: detail } : {}) };
     },
 
     async launch(options, onLog) {
       const { write, output } = collector(onLog);
-      const exitCode = await runLaunch(options, ports.launcher, { instanceFs: ports.instanceFs }, write);
-      return { exitCode, output: output() };
+      let detail: LaunchRunDetail | undefined;
+      const exitCode = await runLaunch(
+        options,
+        ports.launcher,
+        { instanceFs: ports.instanceFs },
+        write,
+        (d) => {
+          detail = d;
+        },
+      );
+      return { exitCode, output: output(), ...(detail ? { data: detail } : {}) };
     },
 
     async diagnose(options, onLog) {
       const { write, output } = collector(onLog);
+      let detail: DiagnoseRunDetail | undefined;
       const exitCode = await runDiagnose(
         options,
         ports.instanceFs,
         write,
         options.mclogs ? ports.analyser : undefined,
+        (d) => {
+          detail = d;
+        },
       );
-      return { exitCode, output: output() };
+      return { exitCode, output: output(), ...(detail ? { data: detail } : {}) };
     },
 
     async updates(options, onLog) {

@@ -15,6 +15,9 @@
 
 - Tasks numbered `T-0022-XX`, ordered by dependency.
 - "Done when" must actually be met (Constitution P3); test-first where sensible.
+- `[ ]` not started · `[x]` done · `[~]` partially done — the sub-bullet names exactly which
+  screens landed and which are still only available from the CLI. A partial task is never treated
+  as done, and the UI never offers the part that has not landed.
 
 ## Task list
 
@@ -104,23 +107,38 @@
     smoke harness additionally proves it live: two refusals from the real main process and a denied
     `window.open`; stubbing `validateInvocation` to pass everything makes those checks FAIL.
 
-- [ ] **T-0022-08 — Renderer shell + Build slice (vertical)**
+- [x] **T-0022-08 — Renderer shell + Build slice (vertical)**
   - **Deliverable:** React root + nav; shared components (`PlanView`, `ConfirmDialog`,
     `LogStream`, beginner/expert `Toggle`); **Build** screen end-to-end (plan → Confirm → apply
     via guarded FS → streamed log).
   - **Maps to:** FR-2, FR-4, AC-1, AC-2.
   - **Done when:** a build dry-run shows the plan and writes nothing; Confirm applies with backup.
+  - **Closed by t_20789b41.** The shell now derives navigation from
+    `src/desktop/shared/capabilities.ts`, the single registry of what the GUI implements, and the
+    placeholder screen is gone: `App.tsx`'s `SCREENS` map is the only route, `goTo` refuses an id
+    with no screen, and unimplemented capabilities are listed as plain text with their CLI command.
+    `src/desktop/capabilities.test.ts` fails the build if `SCREENS` and the registry ever disagree
+    (negative controls confirmed: flipping a capability to `implemented`, or adding a screen for a
+    planned one, each turn the suite red). Cross-screen state moved into `renderer/workflow.ts`, so
+    the instance folder and mod list carry forward instead of being retyped per step.
 
 ### Remaining screens
 
-- [ ] **T-0022-09 — Read-only screens:** doctor, orchestrate (+requirements/preflight), diagnose,
+- [~] **T-0022-09 — Read-only screens:** doctor, orchestrate (+requirements/preflight), diagnose,
   updates, migrate. **Maps to:** FR-2, AC-6. **Done when:** each renders the structured report in
   beginner + expert views.
+  - **Partially closed by t_20789b41:** doctor, orchestrate (Resolve — dependencies, requirements
+    and pre-flight in one pass) and diagnose are implemented. `updates` and `migrate` are *not*, and
+    are therefore listed as planned in the capability registry rather than offered as dead buttons.
 - [ ] **T-0022-10 — Interactive screens:** discover, assistant (via `interactive.ts`). **Maps to:**
   FR-6, FR-7, AC-5. **Done when:** Q/A turns + streaming work; egress disclosed; no-key degrades.
-- [ ] **T-0022-11 — Remaining write screens:** install, launch, quests, kubejs (+ `describe`),
+- [~] **T-0022-11 — Remaining write screens:** install, launch, quests, kubejs (+ `describe`),
   export, release — each Confirm-gated. **Maps to:** FR-4, FR-5, AC-2, AC-4. **Done when:** each
   writes only after Confirm; NL `describe` validated by the `0011`/`0012` pipeline before write.
+  - **Partially closed by t_20789b41:** install and launch are implemented, both Confirm-gated
+    (install additionally requires a second, explicit acknowledgement before overwriting existing
+    jars; launch shows the exact resolved command before it will spawn anything). `quests`,
+    `kubejs`, `export` and `release` remain planned and are not offered in the UI.
 
 ### Packaging, polish, docs
 
@@ -128,11 +146,14 @@
   - **Deliverable:** required `desktop:typecheck` and `desktop:build` steps in the existing
     CI job; lockfile synchronized with the already-declared desktop dependencies. Plus a required
     runtime `desktop:smoke` step (t_683f3196): a green build does not prove the packaged GUI has a
-    working preload bridge, so CI runs the built app headlessly and asserts `window.mpa`.
-  - **Maps to:** FR-9, AC-9, AC-3.
+    working preload bridge, so CI runs the built app headlessly and asserts `window.mpa`. And a
+    required `desktop:e2e` step (t_20789b41): a working bridge does not prove the *flow* works, so
+    CI drives Resolve → Build → Install → Launch → Diagnose through the real UI against a throwaway
+    instance and independently asserts that folder was not modified.
+  - **Maps to:** FR-9, AC-9, AC-3, AC-1.
   - **Done when:** `npm ci`, `npm run check`, `npm run desktop:typecheck`,
-    `npm run desktop:build` and `node scripts/desktop-smoke.mjs` pass; the workflow retains the
-    core/CLI gate without an installer step.
+    `npm run desktop:build`, `node scripts/desktop-smoke.mjs` and `node scripts/desktop-e2e.mjs`
+    pass; the workflow retains the core/CLI gate without an installer step.
 
 - [x] **T-0022-12 — Packaging:** `desktop:dist` → Windows installer. **Maps to:** FR-8, AC-7.
   **Done when:** an installer is produced on the host OS.

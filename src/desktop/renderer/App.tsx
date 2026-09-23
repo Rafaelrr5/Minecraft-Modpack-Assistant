@@ -1,96 +1,140 @@
 /**
- * App shell (spec 0022, T-0022-08) — a sidebar of the full modpack lifecycle plus the active screen.
- * The Build screen is the implemented vertical slice; the remaining capabilities are listed (so the
- * whole lifecycle is visible) and land screen-by-screen per tasks T-0022-09…11, each following the
- * Build screen's preview→confirm pattern. A beginner/expert toggle mirrors the CLI's `--expert` (P8).
+ * App shell (spec 0022, T-0022-08) — the sidebar and the active screen.
+ *
+ * The shell's job here is honesty about what the app can do. It renders navigation **only** for
+ * capabilities the registry marks `implemented`, and lists the rest as plain, non-interactive text
+ * with the CLI command that works today. There is deliberately no placeholder screen and no route
+ * to one: `SCREENS` is the only way to reach a screen, and a `npm run check` test asserts that its
+ * keys are exactly the registry's implemented ids, so adding a nav entry without a screen (or the
+ * reverse) fails the gate instead of shipping a dead button.
+ *
+ * Cross-screen state (instance folder, mod list, which steps completed) lives in the workflow
+ * context so the guided path carries context forward instead of asking the user to retype it.
  */
-import { useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import {
+  CAPABILITY_GROUPS,
+  IMPLEMENTED_CAPABILITIES,
+  PLANNED_CAPABILITIES,
+  capabilityById,
+} from '../shared/capabilities.ts';
 import { BuildScreen } from './screens/BuildScreen.tsx';
+import { DiagnoseScreen } from './screens/DiagnoseScreen.tsx';
+import { DoctorScreen } from './screens/DoctorScreen.tsx';
+import { InstallScreen } from './screens/InstallScreen.tsx';
+import { LaunchScreen } from './screens/LaunchScreen.tsx';
+import { ResolveScreen } from './screens/ResolveScreen.tsx';
+import {
+  INITIAL_WORKFLOW,
+  type StepId,
+  type WorkflowApi,
+  WorkflowContext,
+  type WorkflowState,
+} from './workflow.ts';
 
-interface Capability {
-  readonly id: string;
-  readonly label: string;
-  readonly group: string;
-  readonly cli: string;
-  readonly ready?: boolean;
-}
-
-const CAPABILITIES: readonly Capability[] = [
-  { id: 'discover', label: 'Discover', group: 'Plan', cli: 'mpa discover' },
-  { id: 'orchestrate', label: 'Resolve mods', group: 'Plan', cli: 'mpa orchestrate' },
-  { id: 'build', label: 'Build instance', group: 'Build', cli: 'mpa build', ready: true },
-  { id: 'install', label: 'Install jars', group: 'Build', cli: 'mpa install' },
-  { id: 'launch', label: 'Launch', group: 'Build', cli: 'mpa launch' },
-  { id: 'diagnose', label: 'Diagnose crash', group: 'Build', cli: 'mpa diagnose' },
-  { id: 'quests', label: 'Quests', group: 'Author', cli: 'mpa quests' },
-  { id: 'kubejs', label: 'KubeJS scripts', group: 'Author', cli: 'mpa kubejs' },
-  { id: 'assistant', label: 'Assistant', group: 'Author', cli: 'mpa assistant' },
-  { id: 'updates', label: 'Updates', group: 'Maintain', cli: 'mpa updates' },
-  { id: 'migrate', label: 'Migrate version', group: 'Maintain', cli: 'mpa migrate' },
-  { id: 'export', label: 'Export pack', group: 'Ship', cli: 'mpa export' },
-  { id: 'release', label: 'Release', group: 'Ship', cli: 'mpa release' },
-  { id: 'doctor', label: 'Doctor', group: 'Maintain', cli: 'mpa doctor' },
-];
-
-const GROUPS = ['Plan', 'Build', 'Author', 'Maintain', 'Ship'] as const;
-
-function Placeholder({ cap }: { cap: Capability }): JSX.Element {
-  return (
-    <div className="screen">
-      <header className="screen-head">
-        <h1>{cap.label}</h1>
-        <p className="muted">
-          This screen is on the way. It will wrap the same engine the CLI uses, with the same
-          dry-run → confirm safety as Build.
-        </p>
-      </header>
-      <p className="muted">
-        For now, run it from the terminal: <code>{cap.cli}</code>
-      </p>
-    </div>
-  );
-}
+/** Screen components, keyed by capability id. The ONLY routing table (see the module note). */
+export const SCREENS: Readonly<Record<string, (props: { expert: boolean }) => JSX.Element>> = {
+  resolve: ResolveScreen,
+  build: BuildScreen,
+  install: InstallScreen,
+  launch: LaunchScreen,
+  diagnose: DiagnoseScreen,
+  doctor: DoctorScreen,
+};
 
 export function App(): JSX.Element {
-  const [active, setActive] = useState('build');
+  const [active, setActive] = useState('resolve');
   const [expert, setExpert] = useState(false);
-  const current = CAPABILITIES.find((c) => c.id === active);
+  const [state, setState] = useState<WorkflowState>(INITIAL_WORKFLOW);
+
+  const set = useCallback((patch: Partial<Omit<WorkflowState, 'completed'>>) => {
+    setState((prev) => ({ ...prev, ...patch }));
+  }, []);
+
+  const complete = useCallback((step: StepId) => {
+    setState((prev) =>
+      prev.completed.includes(step) ? prev : { ...prev, completed: [...prev.completed, step] },
+    );
+  }, []);
+
+  const uncomplete = useCallback((step: StepId) => {
+    setState((prev) => ({ ...prev, completed: prev.completed.filter((s) => s !== step) }));
+  }, []);
+
+  const goTo = useCallback((capabilityId: string) => {
+    // Refuse to navigate anywhere without a real screen — the invariant this shell exists to keep.
+    if (SCREENS[capabilityId] !== undefined) setActive(capabilityId);
+  }, []);
+
+  const workflow: WorkflowApi = useMemo(
+    () => ({ ...state, set, complete, uncomplete, goTo }),
+    [state, set, complete, uncomplete, goTo],
+  );
+
+  const current = capabilityById(active);
+  const Screen = SCREENS[active];
 
   return (
-    <div className={`app ${expert ? 'expert' : 'beginner'}`}>
-      <aside className="sidebar">
-        <div className="brand">
-          <span className="logo">⛏</span>
-          <span>Modpack Assistant</span>
-        </div>
-        <nav>
-          {GROUPS.map((group) => (
-            <div key={group} className="nav-group">
-              <div className="nav-group-title">{group}</div>
-              {CAPABILITIES.filter((c) => c.group === group).map((c) => (
-                <button
-                  key={c.id}
-                  className={`nav-item ${active === c.id ? 'active' : ''}`}
-                  onClick={() => setActive(c.id)}
-                >
-                  {c.label}
-                  {c.ready ? <span className="dot" title="Available" /> : null}
-                </button>
-              ))}
-            </div>
-          ))}
-        </nav>
-      </aside>
+    <WorkflowContext.Provider value={workflow}>
+      <div className={`app ${expert ? 'expert' : 'beginner'}`}>
+        <aside className="sidebar">
+          <div className="brand">
+            <span className="logo">⛏</span>
+            <span>Modpack Assistant</span>
+          </div>
+          <nav>
+            {CAPABILITY_GROUPS.map((group) => {
+              const items = IMPLEMENTED_CAPABILITIES.filter((c) => c.group === group);
+              if (items.length === 0) return null;
+              return (
+                <div key={group} className="nav-group">
+                  <div className="nav-group-title">{group}</div>
+                  {items.map((c) => (
+                    <button
+                      key={c.id}
+                      className={`nav-item ${active === c.id ? 'active' : ''}`}
+                      onClick={() => goTo(c.id)}
+                    >
+                      {c.label}
+                      {state.completed.includes(c.id as StepId) && (
+                        <span className="dot" title="Done in this session" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              );
+            })}
+          </nav>
 
-      <main className="main">
-        <div className="topbar">
-          <label className="inline">
-            <input type="checkbox" checked={expert} onChange={(e) => setExpert(e.target.checked)} />
-            Expert view
-          </label>
-        </div>
-        {current?.id === 'build' ? <BuildScreen /> : current ? <Placeholder cap={current} /> : null}
-      </main>
-    </div>
+          <div className="nav-group planned">
+            <div className="nav-group-title">Not in the app yet</div>
+            <p className="planned-note">
+              These work today from the terminal. They get their own screens in a later step.
+            </p>
+            <ul className="planned-list">
+              {PLANNED_CAPABILITIES.map((c) => (
+                <li key={c.id}>
+                  {c.label} <code>{c.cli}</code>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </aside>
+
+        <main className="main">
+          <div className="topbar">
+            <label className="inline">
+              <input
+                type="checkbox"
+                checked={expert}
+                onChange={(e) => setExpert(e.target.checked)}
+              />
+              Show technical detail
+            </label>
+          </div>
+          {Screen !== undefined && current !== undefined ? <Screen expert={expert} /> : null}
+        </main>
+      </div>
+    </WorkflowContext.Provider>
   );
 }

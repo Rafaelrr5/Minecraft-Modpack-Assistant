@@ -78,6 +78,26 @@ const RENDERER_PROBE = `(async () => {
     add('window.open is denied', true, error?.message ?? error);
   }
 
+  // The guided lifecycle actually mounted (spec 0022 AC-1). A build that compiles can still render
+  // an error boundary or a blank root, and the placeholder regression this app is closing was
+  // itself a rendering fact — so assert on the live DOM, not on the bundle.
+  const navLabels = [...document.querySelectorAll('.nav-item')].map((b) => b.textContent.trim());
+  add('the app mounted', document.querySelector('.app') !== null, navLabels.length + ' nav items');
+  for (const label of ['Resolve mods', 'Build instance', 'Install jars', 'Launch', 'Diagnose crash']) {
+    add('nav offers: ' + label, navLabels.includes(label), navLabels.join(' | ') || '(none)');
+  }
+
+  // No dead controls: every nav button must reach a screen, and the placeholder copy must be gone.
+  add('no placeholder screen is reachable',
+    !document.body.textContent.includes('This screen is on the way'),
+    'searched the rendered document');
+  const planned = [...document.querySelectorAll('.planned-list button')];
+  add('unimplemented capabilities are not clickable', planned.length === 0, planned.length + ' buttons');
+
+  // The first step of the loop rendered its own content, not an empty shell.
+  add('the first step renders', (document.querySelector('.screen h1')?.textContent ?? '') !== '',
+    document.querySelector('.screen h1')?.textContent ?? '(no heading)');
+
   return { ok: checks.every((c) => c.ok), checks };
 })()`;
 

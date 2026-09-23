@@ -5,11 +5,11 @@
  * here; the renderer reaches them only through the preload (`window.mpa`).
  */
 import type { DoctorReport } from '../../cli/commands/doctor.ts';
-import type { OrchestrateOptions } from '../../cli/commands/orchestrate.ts';
+import type { OrchestrateOptions, OrchestrateRunDetail } from '../../cli/commands/orchestrate.ts';
 import type { BuildOptions } from '../../cli/commands/build.ts';
-import type { InstallOptions } from '../../cli/commands/install.ts';
-import type { LaunchCommandOptions } from '../../cli/commands/launch.ts';
-import type { DiagnoseOptions } from '../../cli/commands/diagnose.ts';
+import type { InstallOptions, InstallRunDetail } from '../../cli/commands/install.ts';
+import type { LaunchCommandOptions, LaunchRunDetail } from '../../cli/commands/launch.ts';
+import type { DiagnoseOptions, DiagnoseRunDetail } from '../../cli/commands/diagnose.ts';
 import type { UpdatesOptions } from '../../cli/commands/updates.ts';
 import type { MigrateOptions } from '../../cli/commands/migrate.ts';
 import type { ExportOptions } from '../../cli/commands/export.ts';
@@ -40,6 +40,15 @@ export type QuestsCallOptions = Omit<QuestsOptions, 'defPath' | 'describe'>;
 export type KubeJsCallOptions = Omit<KubeJsOptions, 'defPath' | 'describe' | 'questsPath'> & {
   readonly questDefinition?: QuestDefinition;
 };
+
+/**
+ * The resolved set plus the optional requirements/pre-flight reports, in ONE payload (FR-2). The
+ * Resolve screen shows dependencies, requirements and pre-flight together, so it must receive them
+ * together rather than re-running the resolve three times.
+ */
+export type OrchestrateResultData = OrchestrationResult & OrchestrateRunDetail;
+
+export type { DiagnoseRunDetail, InstallRunDetail, LaunchRunDetail, OrchestrateRunDetail };
 
 /** `ipcRenderer.invoke(<channel>)` channel names — one per capability. */
 export const IPC = {
@@ -100,11 +109,11 @@ export type {
  */
 export interface DesktopApi {
   doctor(options?: { readonly instancePath?: string }): Promise<CapabilityResult<DoctorReport>>;
-  orchestrate(options: OrchestrateOptions): Promise<CapabilityResult<OrchestrationResult>>;
+  orchestrate(options: OrchestrateOptions): Promise<CapabilityResult<OrchestrateResultData>>;
   build(options: BuildOptions): Promise<CapabilityResult>;
-  install(options: InstallOptions): Promise<CapabilityResult>;
-  launch(options: LaunchCommandOptions): Promise<CapabilityResult>;
-  diagnose(options: DiagnoseOptions): Promise<CapabilityResult>;
+  install(options: InstallOptions): Promise<CapabilityResult<InstallRunDetail>>;
+  launch(options: LaunchCommandOptions): Promise<CapabilityResult<LaunchRunDetail>>;
+  diagnose(options: DiagnoseOptions): Promise<CapabilityResult<DiagnoseRunDetail>>;
   updates(options: UpdatesOptions): Promise<CapabilityResult<UpdateReport>>;
   migrate(options: MigrateOptions): Promise<CapabilityResult<MigrationReport>>;
   export(options: ExportOptions): Promise<CapabilityResult>;

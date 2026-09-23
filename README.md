@@ -210,12 +210,20 @@ npm run desktop:build      # bundle main + preload + renderer into out/
 npm run desktop:dist       # package the Windows installer + SHA256SUMS.txt (electron-builder → release/)
 npm run desktop:icon       # regenerate the app icon from code (build-resources/icon.ico)
 npm run desktop:smoke      # build, then run the app and assert the preload bridge is live
+npm run desktop:e2e        # build, then walk Resolve → Build → Install → Launch → Diagnose
+npm run desktop:screenshot # build, then capture a PNG of each screen into out/screenshots/
 ```
 
 `desktop:smoke` is the runtime gate a green build cannot give you: it launches the built bundle
 under Electron, asserts the renderer sees `window.mpa`, round-trips a read-only capability through
 the preload into the core, and asserts the renderer got no `require`/`process`/`ipcRenderer`
 escape hatch (spec 0022 FR-3 / AC-3). CI runs it after `desktop:build`.
+
+`desktop:e2e` goes one step further, because a live bridge still does not prove the *flow* works:
+it drives the whole guided lifecycle through the real UI against a throwaway instance folder, using
+only read-only and dry-run paths, then independently checks that the folder was not modified — so a
+regression that starts writing without a confirmation fails CI rather than a user's world
+(Constitution P4). CI runs it after the smoke test.
 
 `desktop:dist` produces an NSIS installer with the app icon and product metadata, plus a
 `SHA256SUMS.txt` users can check with `certutil -hashfile <file> SHA256`. The alpha installer is

@@ -8,6 +8,7 @@
 import {
   type DiagnosisContext,
   type DiagnosisInput,
+  type DiagnosisReport,
   type InstanceFs,
   type LoaderFamily,
   type LogAnalysis,
@@ -34,6 +35,18 @@ export interface DiagnoseOptions {
 const DEFAULT_LOG_PATH = 'logs/latest.log';
 
 /**
+ * The structured outcome behind the rendered text (spec 0022 FR-2). A GUI renders the ranked
+ * findings itself; `evidence: null` distinguishes "no crash report or log was found" from "found
+ * evidence, nothing matched". Optional observer; the CLI path is unchanged.
+ */
+export interface DiagnoseRunDetail {
+  /** `null` when neither a crash report nor a log could be read (nothing was diagnosed). */
+  readonly report: DiagnosisReport | null;
+  /** Which sources were actually read, for an honest "what this is based on" line. */
+  readonly sources: { readonly crashReport: boolean; readonly log: boolean };
+}
+
+/**
  * Read the evidence, optionally fetch a second opinion, diagnose, and render. The `InstanceFs` and
  * the analyser are injected so this is testable without a real instance or the network.
  */
@@ -42,6 +55,7 @@ export async function runDiagnose(
   fs: InstanceFs,
   write: (text: string) => void,
   analyser?: LogAnalysisProvider,
+  onDetail?: (detail: DiagnoseRunDetail) => void,
 ): Promise<number> {
   const logPath = options.logPath ?? DEFAULT_LOG_PATH;
   const crashReportText = options.crashPath
@@ -50,6 +64,7 @@ export async function runDiagnose(
   const logText = await fs.readText(options.instancePath, logPath);
 
   if (!crashReportText && !logText) {
+    onDetail?.({ report: null, sources: { crashReport: false, log: false } });
     write(
       `No crash report or log found under ${options.instancePath}.\n` +
         `  Looked for: ${options.crashPath ?? '(no --crash given)'} and ${logPath}.\n` +
@@ -78,6 +93,10 @@ export async function runDiagnose(
   };
 
   const report = runDiagnosis(input);
+  onDetail?.({
+    report,
+    sources: { crashReport: crashReportText !== null, log: logText !== null },
+  });
   write(renderDiagnosis(report, { json: options.json === true }));
   return 0; // diagnosis is informational; usage errors are signalled by the arg parser.
 }

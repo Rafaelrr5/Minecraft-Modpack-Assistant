@@ -48,9 +48,16 @@ src/desktop/
   shared/
     ipc-contract.ts      Channel names + request/result payload types, imported by main,
                          preload, and renderer. No runtime Electron/React import.
+    preload-path.ts      The built preload's directory + filename. Imported by BOTH
+                         electron.vite.config.ts (what it emits) and main/index.ts (what it
+                         loads) so the two can never drift. Electron-free, so
+                         `npm run check` covers it (see preload-path.test.ts).
   main/
     index.ts             Electron app lifecycle; BrowserWindow {contextIsolation:true,
-                         nodeIntegration:false, sandbox:true}; loads the renderer.
+                         nodeIntegration:false, sandbox:true}; loads the renderer. Logs
+                         'preload-error' instead of booting silently without a bridge.
+    smoke.ts             Opt-in (MPA_SMOKE=1) runtime probe of the live bridge, driven by
+                         scripts/desktop-smoke.mjs; never runs in the shipped app.
     ipc.ts               Registers ipcMain.handle(<channel>) → DesktopServices methods;
                          injects write = (t)=> sender.send('log', sessionId, t) for streaming.
     interactive.ts       IPC-backed DiscoverIo / AssistantIo: question(prompt) sends a
@@ -139,10 +146,17 @@ and the *plan* phase of writes) touch nothing.
   tests still guarantee P3; the desktop calls those same generators.
 - **Desktop CI gate:** the existing `.github/workflows/ci.yml` job runs
   `desktop:typecheck` (tsc over the desktop tsconfig) and `desktop:build` (electron-vite)
-  after the core/CLI steps, with no display or GUI launch. Keep the lockfile synchronized
+  after the core/CLI steps, then `node scripts/desktop-smoke.mjs`. Keep the lockfile synchronized
   with the declared desktop dependencies so `npm ci` works on a clean checkout (AC-9).
   These scripts remain separate from `npm run check` (FR-9). Installer packaging
-  (`desktop:dist`) stays on demand; GUI e2e (Playwright) remains a flagged follow-up.
+  (`desktop:dist`) stays on demand; full GUI e2e (Playwright) remains a flagged follow-up.
+- **Preload runtime smoke (AC-3):** a green `desktop:build` does NOT prove the bridge works — the
+  app shipped with `window.mpa === undefined` for two build-invisible reasons (a preload filename
+  mismatch, and an ESM preload under `sandbox: true`, which Electron refuses to load). The harness
+  launches the built `out/main/index.js` with `MPA_SMOKE=1`, and `main/smoke.ts` asserts in the
+  real renderer: `window.mpa` exists, a read-only `doctor` call round-trips through preload → IPC →
+  core, and no `require`/`process`/`ipcRenderer` leaked in. Cheap static half of the same guard
+  (`src/desktop/preload-path.test.ts`) runs inside `npm run check` with no Electron.
 
 Maps to AC: AC-7/AC-8 (check green + delegation), AC-2/AC-4 (dry-run + validators), AC-3 (guard).
 

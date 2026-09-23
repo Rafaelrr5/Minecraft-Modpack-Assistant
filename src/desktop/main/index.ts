@@ -8,10 +8,12 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { app, BrowserWindow } from 'electron';
 import { registerIpc } from './ipc.ts';
+import { PRELOAD_PATH_FROM_MAIN } from '../shared/preload-path.ts';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
 function createWindow(): BrowserWindow {
+  const preload = join(here, PRELOAD_PATH_FROM_MAIN);
   const win = new BrowserWindow({
     width: 1180,
     height: 800,
@@ -20,11 +22,17 @@ function createWindow(): BrowserWindow {
     show: false,
     backgroundColor: '#0f1117',
     webPreferences: {
-      preload: join(here, '../preload/index.js'),
+      preload,
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
     },
+  });
+
+  // A preload that fails to load leaves the renderer with no `window.mpa` and no visible error —
+  // the exact silent failure this window guards against. Surface it loudly instead.
+  win.webContents.on('preload-error', (_event, preloadPath, error) => {
+    console.error(`[mpa] preload failed to load: ${preloadPath}\n${error.stack ?? error.message}`);
   });
 
   win.once('ready-to-show', () => win.show());
@@ -41,7 +49,18 @@ function createWindow(): BrowserWindow {
 
 void app.whenReady().then(() => {
   registerIpc();
-  createWindow();
+  const first = createWindow();
+  if (process.env.MPA_SMOKE === '1') {
+    // Opt-in runtime verification of the preload bridge (see ./smoke.ts). Dynamically imported so
+    // the smoke module stays out of the normal boot path.
+    first.webContents.once('did-finish-load', () => {
+      void (async () => {
+        const { runSmoke } = await import('./smoke.ts');
+        const report = await runSmoke(first);
+        app.exit(report.ok ? 0 : 1);
+      })();
+    });
+  }
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });

@@ -11,13 +11,22 @@
 import { resolve } from 'node:path';
 import { defineConfig } from 'electron-vite';
 import react from '@vitejs/plugin-react';
+import { PRELOAD_FILENAME } from './src/desktop/shared/preload-path.ts';
 
 export default defineConfig({
   main: {
     build: { lib: { entry: resolve('src/desktop/main/index.ts') } },
   },
   preload: {
-    build: { lib: { entry: resolve('src/desktop/preload/index.ts') } },
+    build: {
+      // A SANDBOXED preload cannot be an ES module (Electron only supports ESM preloads with
+      // `sandbox: false`). This package is `"type": "module"`, so the default output would be
+      // `index.mjs` and the sandboxed bridge would never execute — `window.mpa` stays undefined.
+      // Force CommonJS with an explicit `.cjs` name, shared with the main process via
+      // `src/desktop/shared/preload-path.ts` so the emitted name and the loaded path cannot drift.
+      lib: { entry: resolve('src/desktop/preload/index.ts'), formats: ['cjs'], fileName: () => PRELOAD_FILENAME },
+      rollupOptions: { output: { format: 'cjs' } },
+    },
   },
   renderer: {
     root: resolve('src/desktop/renderer'),

@@ -31,7 +31,8 @@
     "desktop:dev": "electron-vite dev",
     "desktop:build": "electron-vite build",
     "desktop:dist": "electron-vite build && electron-builder",
-    "desktop:typecheck": "tsc -p src/desktop/tsconfig.json"
+    "desktop:typecheck": "tsc -p src/desktop/tsconfig.json",
+    "desktop:smoke": "electron-vite build && node scripts/desktop-smoke.mjs"
   },
   "keywords": [
     "minecraft",

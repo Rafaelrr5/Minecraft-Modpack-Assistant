@@ -119,6 +119,7 @@ code. *No capability without a spec.* → [why](./docs/decisions/0001-spec-drive
 | **Templates** | [`templates/`](./templates/) | Standardized spec/plan/tasks/ADR templates. |
 | **Roadmap** | [`roadmap/`](./roadmap/README.md) | Phased delivery plan (Phase 0 → 8). |
 | **Source** | [`src/`](./src/) | The implementation: `core/` (UI-agnostic domain + ports), `integration/` (adapters), `cli/`, `desktop/` (Electron GUI — spec 0022). |
+| **Build/verify scripts** | [`scripts/`](./scripts/) | Node scripts the gates call — `desktop-smoke.mjs` runs the built desktop app and asserts the preload bridge is live. |
 | **Loader pinning** | [`loader-version-provider.ts`](./src/core/ports/loader-version-provider.ts), [`loader-resolution.ts`](./src/core/orchestration/loader-resolution.ts), [`loader-versions/`](./src/integration/loader-versions/) | Official metadata adapter, offline fixtures/contracts and cross-format roundtrip tests; concrete-version rejection tests also live in `src/core/export/loader-pinning.test.ts`. |
 
 ## The roadmap at a glance
@@ -206,7 +207,13 @@ npm run desktop:dev        # launch the desktop app with hot reload (electron-vi
 npm run desktop:typecheck  # typecheck the Electron shell (src/desktop/tsconfig.json)
 npm run desktop:build      # bundle main + preload + renderer into out/
 npm run desktop:dist       # package an installer (electron-builder → release/)
+npm run desktop:smoke      # build, then run the app and assert the preload bridge is live
 ```
+
+`desktop:smoke` is the runtime gate a green build cannot give you: it launches the built bundle
+under Electron, asserts the renderer sees `window.mpa`, round-trips a read-only capability through
+the preload into the core, and asserts the renderer got no `require`/`process`/`ipcRenderer`
+escape hatch (spec 0022 FR-3 / AC-3). CI runs it after `desktop:build`.
 
 Optional API credentials (e.g. a Modrinth token for higher rate limits) are read **only**
 from the environment — copy [`.env.example`](./.env.example) to `.env` (git-ignored) and fill

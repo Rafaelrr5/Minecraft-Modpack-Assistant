@@ -70,12 +70,25 @@
     and build passed. No GUI runtime or installer claim. The task remains open pending an
     authorized commit and clean-checkout/remote CI verification on the CI Node 22 environment.
 
-- [ ] **T-0022-07 — Main process + preload**
+- [x] **T-0022-07 — Main process + preload**
   - **Deliverable:** `main/index.ts` (BrowserWindow w/ contextIsolation, no nodeIntegration,
     sandbox), `main/ipc.ts` (handlers → services, streaming write), `main/interactive.ts`
     (IPC-backed `DiscoverIo`/`AssistantIo`), `preload/index.ts` (typed `window.mpa`).
   - **Maps to:** FR-3, FR-6, AC-3.
   - **Done when:** app boots; renderer reaches a capability through the preload only.
+  - **Preload runtime fix (t_683f3196):** the bridge never executed. Two independent causes, both
+    invisible to `desktop:build`: (a) `main/index.ts` loaded `../preload/index.js` while the build
+    emitted `index.mjs`; (b) a **sandboxed** preload cannot be an ES module, so even the correct
+    `.mjs` path would not have run. Fixed by building the preload as CommonJS (`index.cjs`) and
+    deriving the filename in both the build config and the main process from the new Electron-free
+    `src/desktop/shared/preload-path.ts`. A `preload-error` listener now logs instead of failing
+    silently.
+  - **Verification:** `src/desktop/preload-path.test.ts` (5 tests, in `npm run check`) guards the
+    drift and the hardened posture; `npm run desktop:smoke` (`scripts/desktop-smoke.mjs`) launches
+    the built app and asserts `window.mpa`, a read-only `doctor` round-trip through the preload into
+    the core, and the absence of `require`/`process`/`ipcRenderer` in the renderer. Negative control:
+    renaming the built preload back to `index.mjs` makes the smoke run exit 1. `interactive.ts` and
+    the remaining screens stay covered by T-0022-10.
 
 - [ ] **T-0022-08 — Renderer shell + Build slice (vertical)**
   - **Deliverable:** React root + nav; shared components (`PlanView`, `ConfirmDialog`,
@@ -99,10 +112,13 @@
 
 - [ ] **T-0022-15 — Desktop CI gate**
   - **Deliverable:** required `desktop:typecheck` and `desktop:build` steps in the existing
-    CI job; lockfile synchronized with the already-declared desktop dependencies.
-  - **Maps to:** FR-9, AC-9.
-  - **Done when:** `npm ci`, `npm run check`, `npm run desktop:typecheck` and
-    `npm run desktop:build` pass; workflow retains the core/CLI gate without a GUI or installer step.
+    CI job; lockfile synchronized with the already-declared desktop dependencies. Plus a required
+    runtime `desktop:smoke` step (t_683f3196): a green build does not prove the packaged GUI has a
+    working preload bridge, so CI runs the built app headlessly and asserts `window.mpa`.
+  - **Maps to:** FR-9, AC-9, AC-3.
+  - **Done when:** `npm ci`, `npm run check`, `npm run desktop:typecheck`,
+    `npm run desktop:build` and `node scripts/desktop-smoke.mjs` pass; the workflow retains the
+    core/CLI gate without an installer step.
 
 - [ ] **T-0022-12 — Packaging:** `desktop:dist` → Windows installer. **Maps to:** FR-8, AC-7.
   **Done when:** an installer is produced on the host OS.

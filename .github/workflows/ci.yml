@@ -41,3 +41,9 @@ jobs:
 
       - name: Desktop build
         run: npm run desktop:build
+
+      # Runtime proof of the preload bridge (spec 0022 FR-3 / AC-3): a green desktop build does not
+      # prove the packaged GUI exposes `window.mpa`. The harness re-runs itself under `xvfb-run`
+      # when no DISPLAY is present, so it works headlessly here and windowed on a developer machine.
+      - name: Desktop preload smoke test
+        run: node scripts/desktop-smoke.mjs

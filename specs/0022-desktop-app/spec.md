@@ -68,7 +68,12 @@ game ([ADR 0008](../../docs/decisions/0008-desktop-app-electron.md), amending
   updates, migration, export, release, the conversational assistant, and doctor.
 - **FR-3** — Every capability MUST be invoked through a **typed IPC contract** between renderer
   and main; the renderer MUST run with `contextIsolation: true`, `nodeIntegration: false`, and a
-  **minimal preload surface** — it MUST NOT import the core or `node:*`.
+  **minimal preload surface** — it MUST NOT import the core or `node:*`. Because those types are
+  erased at build time, the **main process MUST re-validate at runtime**: every payload is checked
+  against a per-channel schema and rebuilt from known keys only (unknown keys are refused, never
+  forwarded), and only the app's own **top-level renderer frame** may call. The window MUST also
+  refuse navigation away from the app's own renderer, refuse to open child windows, refuse a
+  `webview` attach, and grant no web permission.
 - **FR-4** — Every **write** capability (build, install, quests, kubejs, export, release, launch
   `--apply`) MUST be **dry-run by default**: the UI MUST show the planned change set and require an
   **explicit user confirmation** before applying; overwriting existing files MUST require a
@@ -130,6 +135,12 @@ game ([ADR 0008](../../docs/decisions/0008-desktop-app-electron.md), amending
   `nodeIntegration:false` and imports neither the core nor `node:*`; all core access goes through
   the typed preload/IPC surface (FR-3) — and `src/architecture.test.ts` confirms the core imports
   no `desktop` module.
+- **AC-3b** — Given the running main process, When the renderer sends a payload that does not match
+  the channel's contract (wrong type, missing required field, an unknown key, an oversized value),
+  or when the caller is not the app's own top-level renderer frame, Then the call is **refused
+  before the core is reached** and the renderer's promise rejects; And a navigation away from the
+  app's own renderer, a `window.open`, a `webview` attach and any web-permission request are all
+  denied (FR-3).
 - **AC-4** — Given an NL `describe` quest/recipe, When submitted, Then the drafted definition is
   validated by the **existing** `0011`/`0012` pipeline (namespace/dependency/cycle/type +
   SNBT/JS parse-back) before any write, and validation failures are surfaced (FR-5).

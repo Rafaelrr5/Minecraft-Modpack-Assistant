@@ -52,6 +52,30 @@ const RENDERER_PROBE = `(async () => {
     } catch (error) {
       add('doctor round-trip returns a structured report', false, error?.message ?? error);
     }
+
+    // The boundary guard must be WIRED, not merely unit-tested: a malformed payload and an option
+    // the UI never offers must both be refused in the real main process before the core runs.
+    for (const [name, payload] of [
+      ['wrong type', { instancePath: 42 }],
+      ['unknown key', { instancePath: '.', defPath: 'C:/evil.json' }],
+    ]) {
+      try {
+        await api.doctor(payload);
+        add('main refuses a malformed payload (' + name + ')', false, 'the call resolved');
+      } catch (error) {
+        const message = String(error?.message ?? error);
+        add('main refuses a malformed payload (' + name + ')', message.includes('refused IPC'), message);
+      }
+    }
+  }
+
+  // Window policy is main-process state, not renderer state: prove it is actually installed by
+  // asking the renderer to open a window. A file: URL is used so a PASS never launches a browser.
+  try {
+    const opened = globalThis.open('file:///C:/Windows/System32/drivers/etc/hosts', '_blank');
+    add('window.open is denied', opened === null, String(opened));
+  } catch (error) {
+    add('window.open is denied', true, error?.message ?? error);
   }
 
   return { ok: checks.every((c) => c.ok), checks };

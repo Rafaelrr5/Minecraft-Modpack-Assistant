@@ -52,16 +52,29 @@ src/desktop/
                          electron.vite.config.ts (what it emits) and main/index.ts (what it
                          loads) so the two can never drift. Electron-free, so
                          `npm run check` covers it (see preload-path.test.ts).
+    ipc-guard.ts         Electron-FREE trust + runtime-validation policy for the boundary:
+                         a per-channel payload schema (types, bounds, NO unknown keys), the
+                         trusted-renderer rule (own top-level frame: dev server origin or the
+                         built index.html), the navigation/window-open/permission policy.
+                         Covered by `npm run check` (see ipc-guard.test.ts).
   main/
     index.ts             Electron app lifecycle; BrowserWindow {contextIsolation:true,
-                         nodeIntegration:false, sandbox:true}; loads the renderer. Logs
+                         nodeIntegration:false, sandbox:true, webviewTag:false}; loads the
+                         renderer. Applies the window policy from shared/ipc-guard.ts
+                         (navigation confined to the app's own renderer, window.open denied,
+                         webview attach blocked, every web permission refused). Logs
                          'preload-error' instead of booting silently without a bridge.
+    guard.ts             Thin Electron adapter over shared/ipc-guard.ts: maps IpcMainEvent onto
+                         the pure policy and turns a refusal into a thrown IpcRefusedError
+                         (which rejects the renderer's invoke).
     smoke.ts             Opt-in (MPA_SMOKE=1) runtime probe of the live bridge, driven by
                          scripts/desktop-smoke.mjs; never runs in the shipped app.
-    ipc.ts               Registers ipcMain.handle(<channel>) → DesktopServices methods;
-                         injects write = (t)=> sender.send('log', sessionId, t) for streaming.
+    ipc.ts               Registers ipcMain.handle(<channel>) → DesktopServices methods through
+                         ONE guarded helper: sender + payload are validated before the core is
+                         reached, and the handler receives REBUILT arguments, never the
+                         renderer's objects; injects write = (t)=> sender.send('log', id, t).
     interactive.ts       IPC-backed DiscoverIo / AssistantIo: question(prompt) sends a
-                         'prompt' event and awaits a 'reply' event; write(text) streams.
+                         'prompt' event and awaits a guarded 'reply' event; write(text) streams.
   preload/
     index.ts             contextBridge.exposeInMainWorld('mpa', {...}) — typed invoke +
                          event subscription helpers; the ONLY renderer↔main surface.
@@ -182,6 +195,18 @@ and the *plan* phase of writes) touch nothing.
   real renderer: `window.mpa` exists, a read-only `doctor` call round-trips through preload → IPC →
   core, and no `require`/`process`/`ipcRenderer` leaked in. Cheap static half of the same guard
   (`src/desktop/preload-path.test.ts`) runs inside `npm run check` with no Electron.
+- **IPC boundary hardening (AC-3, t_d602e714):** the contract is types only, and types are erased at
+  build time — a compromised or buggy renderer can hand the main process any value, and the main
+  process is where the core has full local file access. `src/desktop/shared/ipc-guard.ts` therefore
+  re-validates every crossing at runtime: a per-channel schema (types, required fields, size bounds)
+  that **rebuilds** the payload from known keys only, so unknown keys (e.g. a `defPath` that would
+  read an arbitrary file) are refused instead of forwarded; a trust rule that only accepts the app's
+  own **top-level** frame (dev server origin, or the built `index.html`), so an iframe or a
+  navigated-away window cannot call; and a window policy that confines navigation to the app's own
+  renderer, denies `window.open`, blocks `webview` attach, and grants no web permission at all.
+  Covered by `src/desktop/ipc-guard.test.ts` (21 tests, incl. drift guards over the Electron-only
+  wiring) inside `npm run check`, and by two live refusals plus a denied `window.open` in the
+  runtime smoke harness.
 
 Maps to AC: AC-7/AC-8 (check green + delegation), AC-2/AC-4 (dry-run + validators), AC-3 (guard).
 
@@ -195,7 +220,10 @@ throws.
 ## 9. Risks & mitigations
 
 - **Renderer security** → strict `contextIsolation`/`nodeIntegration:false`/sandbox + a minimal
-  preload; renderer never imports core/`node:*` (guarded by review + AC-3 posture).
+  preload; renderer never imports core/`node:*` (guarded by review + AC-3 posture). Because types
+  are erased at build time, the main process additionally re-validates every IPC payload and only
+  serves its own top-level renderer frame (`shared/ipc-guard.ts`), and the window refuses
+  navigation, `window.open`, `webview` attach and every web permission.
 - **Heavy install / large binaries** → confine Electron deps to the desktop toolchain; keep them
   out of the core/CLI surface and out of `npm run check`.
 - **Cannot run the GUI in CI / this environment** → make the *backbone* fully testable

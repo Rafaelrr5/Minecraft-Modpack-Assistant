@@ -89,6 +89,20 @@
     the core, and the absence of `require`/`process`/`ipcRenderer` in the renderer. Negative control:
     renaming the built preload back to `index.mjs` makes the smoke run exit 1. `interactive.ts` and
     the remaining screens stay covered by T-0022-10.
+  - **IPC boundary hardening (t_d602e714):** the handlers forwarded renderer payloads straight into
+    the core, and the contract's TypeScript types are erased at build time — nothing checked the
+    values at runtime, and nothing checked *who* was calling. Added the Electron-free
+    `src/desktop/shared/ipc-guard.ts` (per-channel payload schema that rebuilds the payload from
+    known keys only, so unknown keys such as `defPath` are refused rather than forwarded; size
+    bounds; the trusted-renderer rule — own top-level frame only; navigation / window-open /
+    webview / permission policy) plus the thin `main/guard.ts` adapter. `main/ipc.ts` now registers
+    every channel through ONE guarded helper, `main/interactive.ts` guards the reply event, and
+    `main/index.ts` installs the window and session policies (`webviewTag: false`).
+  - **Verification:** `src/desktop/ipc-guard.test.ts` (21 tests in `npm run check`) covers malformed
+    payloads, unknown keys, prototype keys, bounds, sub-frame/foreign senders, navigation and
+    permissions, plus drift guards asserting the Electron-only wiring actually calls the guard. The
+    smoke harness additionally proves it live: two refusals from the real main process and a denied
+    `window.open`; stubbing `validateInvocation` to pass everything makes those checks FAIL.
 
 - [ ] **T-0022-08 — Renderer shell + Build slice (vertical)**
   - **Deliverable:** React root + nav; shared components (`PlanView`, `ConfirmDialog`,

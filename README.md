@@ -222,6 +222,12 @@ escape hatch (spec 0022 FR-3 / AC-3). CI runs it after `desktop:build`.
 **unsigned**, so Windows SmartScreen warns on first run — that decision, the verification steps and
 the manual install/launch/uninstall checklist live in **[`docs/RELEASE.md`](./docs/RELEASE.md)**.
 
+The desktop UI is a *guest*, not a trusted caller: the main process re-validates every IPC payload
+against the channel's contract at runtime (types are erased at build time, so the contract alone
+proves nothing), rebuilds it from known keys only, and serves the app's own top-level window only.
+Navigation away from the app, child windows, embedded browsers and web permissions are all refused.
+The smoke run shows those refusals happening in the real app.
+
 Optional API credentials (e.g. a Modrinth token for higher rate limits) are read **only**
 from the environment — copy [`.env.example`](./.env.example) to `.env` (git-ignored) and fill
 it in. Secrets are never hard-coded or committed.

@@ -1,0 +1,84 @@
+name: Feature request
+description: Propose a capability or an improvement.
+labels: ['enhancement', 'needs-triage']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A note on how this project works, so the answer is not a surprise: a new **capability**
+        is specified before it is implemented — `spec.md` (what and why) → `plan.md` (how) →
+        `tasks.md`, checked against the
+        [constitution](https://github.com/Rafaelrr5/Minecraft-Modpack-Assistant/blob/main/memory/constitution.md).
+
+        So a good outcome for this issue may be *an agreed spec* rather than immediate code.
+        That is progress, not a brush-off. See
+        [CONTRIBUTING.md](https://github.com/Rafaelrr5/Minecraft-Modpack-Assistant/blob/main/CONTRIBUTING.md).
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Before you file
+      options:
+        - label: I searched existing issues and specs and this is not already proposed.
+          required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: >
+        What is painful today? Describe the situation you hit, not the solution you have in
+        mind — the problem outlives any particular fix.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you would like to happen
+    validations:
+      required: true
+
+  - type: dropdown
+    id: stage
+    attributes:
+      label: Which part of the lifecycle?
+      options:
+        - Discover (idea → brief)
+        - Orchestrate (mods, dependencies, requirements)
+        - Conflicts (pre-flight)
+        - Build / install / launch
+        - Diagnose (crashes and logs)
+        - Author (quests, KubeJS, assistant)
+        - Maintain (updates, migration)
+        - Ship (export, release)
+        - Desktop app
+        - Project infrastructure (CI, docs, tooling)
+        - Something else
+    validations:
+      required: true
+
+  - type: dropdown
+    id: size
+    attributes:
+      label: Is this a new capability or a change to an existing one?
+      description: New capabilities need a spec first; changes to existing behaviour usually do not.
+      options:
+        - 'A change to something that already exists'
+        - 'A new capability'
+        - 'Not sure'
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you considered
+      description: Including doing nothing, or doing it outside this tool.
+
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Would you like to work on it?
+      options:
+        - label: I am willing to author the spec and/or implement this.

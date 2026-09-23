@@ -4,6 +4,25 @@
 > from idea to a polished, shareable pack — while staying _one step ahead_ of the
 > conflicts, crashes, and compatibility traps that normally make modpack building painful.**
 
+## Project maturity — read this first
+
+This is a **pre-1.0 alpha**. Nothing has been released and nothing is published to npm. The
+three things worth knowing before you try it:
+
+| What | State | What that means in practice |
+| --- | --- | --- |
+| **The CLI** | **Usable, and the surface we stand behind** | The whole lifecycle runs from the terminal: discover → resolve → pre-flight → build → install → launch → diagnose, plus quests, KubeJS, updates, migration, export and release. Run it from a clone (`npm run cli -- …`). |
+| **The desktop app** | **Alpha — genuinely early** | An Electron GUI over the same core. **One** of the fourteen lifecycle screens (Build) is implemented; the other thirteen show a placeholder that points you back to the CLI ([spec 0022](./specs/0022-desktop-app/spec.md)). It packages as a Windows NSIS installer, which is **not code-signed** — no certificate exists — so Windows SmartScreen warns on first run. Verify the SHA-256 checksum published with a release instead. |
+| **`launch`** | **Runs a JVM, does not bootstrap a client** | It starts the pack with the **pinned Java and `-Xmx`** and routes a crash straight into diagnosis. It does **not** download Minecraft assets and does **not** authenticate your account — that is launcher-app territory and is deliberately deferred ([ADR 0007](./docs/decisions/0007-local-launch-adapter.md)). Use Prism, the Modrinth App, or the official launcher for a full client session. |
+
+What *is* solid regardless of maturity: **your game instance is never modified without a backup
+and an explicit confirmation**, and every operation is dry-run by default. That guarantee is
+enforced in code, not by convention — see the [constitution](./memory/constitution.md).
+
+Full list of what the project does not do: [Known limitations](#known-limitations).
+
+---
+
 **Status:** ✅ **Phases 0–7 implemented.** Phase 0 — toolchain, core domain
 model, a provider-agnostic **Modrinth** adapter (contract-tested), **packwiz**-backed pack state,
 logging, the guarded `InstanceFs`. Phase 1 — **Discovery** (`0001`): `discover` turns an idea
@@ -108,6 +127,10 @@ code. *No capability without a spec.* → [why](./docs/decisions/0001-spec-drive
 | Area | File | Purpose |
 | --- | --- | --- |
 | **Vision** | [`docs/VISION.md`](./docs/VISION.md) | The general objective (single source of truth). |
+| **Contributing** | [`CONTRIBUTING.md`](./CONTRIBUTING.md) | Toolchain, the `npm run check` gate, the SDD workflow, PR conventions. |
+| **Security** | [`SECURITY.md`](./SECURITY.md) | Private reporting route + the threat model of a local-first tool. |
+| **Support** | [`SUPPORT.md`](./SUPPORT.md) | What is supported, what is not, and what response to expect. |
+| **Changelog** | [`CHANGELOG.md`](./CHANGELOG.md) | Notable changes (Keep a Changelog; nothing released yet). |
 | **Operating guide** | [`CLAUDE.md`](./CLAUDE.md) | SDD workflow, repo map, stack, project memory, guardrails. |
 | **Implementation log** | [`docs/IMPLEMENTATION-LOG.md`](./docs/IMPLEMENTATION-LOG.md) | What each spec actually shipped (history; not auto-loaded). |
 | **Glossary** | [`docs/GLOSSARY.md`](./docs/GLOSSARY.md) | Domain & project terms. |
@@ -221,11 +244,15 @@ it in. Secrets are never hard-coded or committed.
 
 ## Contributing / working on this repo
 
-Whether you're a person or an AI agent: start with [`CLAUDE.md`](./CLAUDE.md), follow the
-**SDD workflow** (no capability without a spec), and respect the
+**Start with [`CONTRIBUTING.md`](./CONTRIBUTING.md)** — it has the toolchain, the one command
+that reproduces CI (`npm run check`), and the workflow. In short: whether you're a person or an
+AI agent, follow the **SDD workflow** (no capability without a spec) and respect the
 [constitution](./memory/constitution.md) — especially the **safety guardrails** (backup +
 consent + dry-run before touching any game instance). Pick up work via the
 [roadmap](./roadmap/README.md).
+
+Found a security flaw? Report it privately — see [`SECURITY.md`](./SECURITY.md). Need help using
+it, or wondering what's supported? [`SUPPORT.md`](./SUPPORT.md).
 
 ## Known limitations
 
@@ -238,9 +265,18 @@ Honest state of the project, so nothing here is a surprise:
   ranges, sides, known-bad combos); it does not run the game. It separates
   *certain* from *suspected* and never claims more than the evidence supports.
 - **No published npm package yet.** Run it from a clone (`npm run cli -- …`).
-- **The desktop app (Electron, spec 0022) is outside `npm run check`** — it has
-  its own `desktop:typecheck`/`desktop:build` gates in CI, so a green `check`
-  does not cover the GUI.
+- **The desktop app (Electron, spec 0022) is an early alpha.** One of its
+  fourteen lifecycle screens (Build) is implemented; the rest are placeholders
+  that point back to the CLI. It is also **outside `npm run check`** — it has
+  its own `desktop:typecheck`/`desktop:build`/`desktop:smoke` gates in CI, so a
+  green `check` does not cover the GUI. The Windows installer is **unsigned**
+  (no certificate exists), so Windows warns on first run; verify the published
+  SHA-256 checksum instead.
+- **`launch` does not bootstrap the Minecraft client.** It resolves and runs the
+  JVM command with the pinned Java and heap, and auto-routes a crash into
+  diagnosis, but it downloads no assets and authenticates no account
+  ([ADR 0007](./docs/decisions/0007-local-launch-adapter.md)). A full client
+  session needs a launcher app.
 - **NL features need an API key.** Without `NVIDIA_API_KEY` or `GEMINI_API_KEY`,
   `assistant` and `--describe` fall back to the deterministic flow.
 - **Windows-developed, cross-platform by construction.** Nothing is

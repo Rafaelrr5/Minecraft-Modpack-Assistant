@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or idea
+    url: https://github.com/Rafaelrr5/Minecraft-Modpack-Assistant/discussions
+    about: Ask how something works, or float an idea before it becomes a proposal.
+  - name: Security vulnerability
+    url: https://github.com/Rafaelrr5/Minecraft-Modpack-Assistant/security/advisories/new
+    about: Report privately. Never open a public issue for a security flaw.
+  - name: Support policy
+    url: https://github.com/Rafaelrr5/Minecraft-Modpack-Assistant/blob/main/SUPPORT.md
+    about: What is supported, what is not, and what response to expect.

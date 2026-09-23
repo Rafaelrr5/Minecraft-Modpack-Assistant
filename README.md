@@ -120,7 +120,7 @@ code. *No capability without a spec.* → [why](./docs/decisions/0001-spec-drive
 | **Templates** | [`templates/`](./templates/) | Standardized spec/plan/tasks/ADR templates. |
 | **Roadmap** | [`roadmap/`](./roadmap/README.md) | Phased delivery plan (Phase 0 → 8). |
 | **Source** | [`src/`](./src/) | The implementation: `core/` (UI-agnostic domain + ports), `integration/` (adapters), `cli/`, `desktop/` (Electron GUI — spec 0022). |
-| **Build/verify scripts** | [`scripts/`](./scripts/) | Node scripts the gates call — `desktop-smoke.mjs` runs the built desktop app and asserts the preload bridge is live; `generate-icon.mjs` derives the installer icon deterministically; `checksum-release.mjs` writes/verifies `SHA256SUMS.txt`. |
+| **Build/verify scripts** | [`scripts/`](./scripts/) | Node scripts the gates call — a green build proves none of them: `desktop-smoke.mjs` (preload bridge live), `desktop-e2e.mjs` (the guided lifecycle end to end, dry-run only), `desktop-screenshot.mjs` (visual review), `generate-icon.mjs` (derives the installer icon deterministically), `checksum-release.mjs` (writes/verifies `SHA256SUMS.txt`). |
 | **Loader pinning** | [`loader-version-provider.ts`](./src/core/ports/loader-version-provider.ts), [`loader-resolution.ts`](./src/core/orchestration/loader-resolution.ts), [`loader-versions/`](./src/integration/loader-versions/) | Official metadata adapter, offline fixtures/contracts and cross-format roundtrip tests; concrete-version rejection tests also live in `src/core/export/loader-pinning.test.ts`. |
 
 ## The roadmap at a glance

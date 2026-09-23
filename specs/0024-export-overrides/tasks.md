@@ -80,10 +80,11 @@
 
 - [x] **T-0024-09 — Desktop surface**
   - **Deliverable:** `src/desktop/services.ts` passes its `instanceFs` to export/release; the option
-    travels over `shared/ipc-contract.ts`.
+    travels over `shared/ipc-contract.ts`; proven by a case in `src/desktop/services.test.ts`.
   - **Maps to:** FR-1, FR-8
-  - **Done when:** `npm run desktop:typecheck` and `desktop:build` pass and no renderer imports
-    `core/` directly (architecture test unchanged).
+  - **Done when:** `npm run desktop:typecheck` and `desktop:build` pass, no renderer imports
+    `core/` directly (architecture test unchanged), and a desktop-level test shows `services.export`
+    collecting through the injected port only — denied content absent, `plan`/`apply` never called.
 
 ### Verification
 

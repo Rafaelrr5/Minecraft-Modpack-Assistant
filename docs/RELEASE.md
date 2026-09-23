@@ -113,6 +113,21 @@ electron-builder also writes a `latest.yml` containing a base64 SHA-512 for its 
 project does not ship auto-update, and that format is not something a person can check by hand, so
 `SHA256SUMS.txt` is the published checksum.
 
+### What "reproducible" does and does not mean here
+
+The **inputs** are reproducible: the icon is re-derivable byte-for-byte from its generator, the
+dependency tree is locked, and the packaging decisions (icon, metadata, signing posture, artifact
+name) are pinned in `electron-builder.yml` and guarded by tests rather than left to the machine's
+environment. Any maintainer running `npm ci && npm run desktop:dist` gets an installer with the
+same contents and the same properties.
+
+The **output bytes are not** identical between runs: NSIS and the PE resource editor embed
+timestamps, so two builds of the same commit produce different SHA-256 values. That is why
+`SHA256SUMS.txt` is generated per build and published *alongside* the artifact it describes — it
+proves the file you downloaded is the file that was built, not that two independent builds agree.
+Bit-for-bit reproducible builds would need `SOURCE_DATE_EPOCH`-style determinism throughout the
+toolchain and are out of scope for the alpha.
+
 ---
 
 ## Release checklist

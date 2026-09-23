@@ -40,6 +40,10 @@ coverage/
 /.modpack-assistant/
 *.mrpack
 
+# Generated knowledge-graph dump of this repository's own documentation. Nothing
+# in the code or docs reads it, and its manifest embeds absolute local paths.
+/graphify-out/
+
 # ─── OS ───────────────────────────────────────────────────────────────────────
 .DS_Store
 .DS_Store?

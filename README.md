@@ -21,7 +21,7 @@ pinned **Java + `-Xmx`** behind an injectable `GameLauncher` (CI needs no JRE) t
 compatible JDK is present, gives actionable install guidance (never a guessed path), and on a crash
 **auto-routes the captured log into the `0010` diagnosis** — closing the build→launch→diagnose loop.
 `launch` runs a JVM command against a game you already have; to actually **play** the pack,
-`launchable` (`0024`) hands it to a launcher you already use — generating a **Prism Launcher**
+`launchable` (`0025`) hands it to a launcher you already use — generating a **Prism Launcher**
 instance (pinned loader build + the computed memory) or walking you through the **Modrinth App**
 `.mrpack` import, after checking every version against the launcher's own metadata.
 Phase 4 also added **Crash

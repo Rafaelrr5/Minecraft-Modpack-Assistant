@@ -1,4 +1,4 @@
-# Spec 0024 — Plan
+# Spec 0025 — Plan
 
 > **Artifact:** `plan.md` — **HOW**. The technical approach behind [`spec.md`](./spec.md).
 

@@ -128,7 +128,7 @@ Phase 0 — toolchain, core domain model, Modrinth provider,
   guarded write path as the hand-written `--def` (dry-run/backup/force, P4), surfaced as
   `quests`/`kubejs --describe` (needs `NVIDIA_API_KEY`; degrades to a clear "use --def" message); the
   expert structured `--def` path is **unchanged** through the same validation (P8).
-  **Spec [`0024`](../specs/0024-launchable-handoff/spec.md) (done) makes "launchable" a claim the
+  **Spec [`0025`](../specs/0025-launchable-handoff/spec.md) (done) makes "launchable" a claim the
   product can keep:** the `launchable` core (`src/core/launchable/`) projects a pinned `PackState` +
   its `0008` launch profile into the artifacts an **already-installed launcher** imports — a Prism
   Launcher instance (`mmc-pack.json` pinning Minecraft + the concrete loader build, `instance.cfg`

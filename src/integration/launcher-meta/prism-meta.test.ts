@@ -1,5 +1,5 @@
 /**
- * Contract tests for the Prism metadata adapter (spec 0024 T-0024-09). Every case runs against
+ * Contract tests for the Prism metadata adapter (spec 0025 T-0025-09). Every case runs against
  * **captured fixtures** through an injected `fetch` — no network (Constitution P3).
  *
  * The load-bearing assertion is the three-valued answer: only a successfully parsed version list

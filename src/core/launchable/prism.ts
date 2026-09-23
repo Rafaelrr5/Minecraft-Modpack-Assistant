@@ -1,5 +1,5 @@
 /**
- * Prism Launcher instance assembly (spec 0024 FR-1) — pure, deterministic, validated by parse-back.
+ * Prism Launcher instance assembly (spec 0025 FR-1) — pure, deterministic, validated by parse-back.
  *
  * A Prism instance directory is two documents plus a game root:
  *

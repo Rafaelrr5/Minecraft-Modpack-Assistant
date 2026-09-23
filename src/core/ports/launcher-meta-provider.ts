@@ -1,5 +1,5 @@
 /**
- * The metadata feed a launcher publishes about the components it can resolve (spec 0024 FR-3).
+ * The metadata feed a launcher publishes about the components it can resolve (spec 0025 FR-3).
  *
  * Generating a launcher instance means naming components — a Minecraft version, a loader build — that
  * the launcher must be able to resolve on import. Claiming "Prism will resolve this" without asking

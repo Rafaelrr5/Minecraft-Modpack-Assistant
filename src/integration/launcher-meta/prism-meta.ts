@@ -1,5 +1,5 @@
 /**
- * The Prism Launcher metadata adapter for {@link LauncherMetaProvider} (spec 0024 FR-3).
+ * The Prism Launcher metadata adapter for {@link LauncherMetaProvider} (spec 0025 FR-3).
  *
  * Prism resolves an instance's components against its own metadata service
  * (`https://meta.prismlauncher.org/v1/`): `index.json` lists the packages it knows, and

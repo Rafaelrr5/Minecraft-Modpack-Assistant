@@ -404,7 +404,7 @@ that includes nothing is reported as **mods-only** rather than passing for a com
 (both import `.mrpack`; Prism also imports CurseForge packs) — primary
 targets for "produce an installable instance". [S21]
 
-### 8.1 Prism Launcher instance layout (feeds spec `0024`)
+### 8.1 Prism Launcher instance layout (feeds spec `0025`)
 
 A Prism/MultiMC instance is a **directory** of two documents plus a game root, which is why an
 instance can be generated offline and imported by copying the folder in. [S26]
@@ -518,4 +518,3 @@ When these numbers change, update `weights.ts` and this note together (doc-map d
 - **[S23]** Single-thread-bound nature of MC ticks/worldgen — performance-mod docs (Lithium/Sodium) and community profiling write-ups.
 - **[S24]** Iris/OptiFine shaders & HD textures GPU/VRAM impact — <https://irisshaders.dev/> and texture-pack resolution guidance.
 - **[S25]** Performance mods — Sodium <https://modrinth.com/mod/sodium>, Lithium <https://modrinth.com/mod/lithium>, FerriteCore <https://modrinth.com/mod/ferrite-core>, ModernFix <https://modrinth.com/mod/modernfix>, Embeddium <https://modrinth.com/mod/embeddium>.
-- **[S26]** Prism Launcher instance format — source of truth read from the launcher itself: `PackProfile` (`mmc-pack.json`, `formatVersion`/`components`/`uid`), `BaseInstance` + `INIFile` (`instance.cfg`, `InstanceType=OneSix`, `MaxMemAlloc`/`MinMemAlloc` behind `OverrideMemory`), `MinecraftInstance::gameRoot` (`minecraft/`, legacy `.minecraft/`) and `ModrinthInstanceCreationTask` (the uids its `.mrpack` importer writes, incl. `net.fabricmc.intermediary` pinned to the Minecraft version) — <https://github.com/PrismLauncher/PrismLauncher>. Metadata feed: <https://meta.prismlauncher.org/v1/> (read 2026-09-23).

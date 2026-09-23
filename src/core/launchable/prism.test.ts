@@ -1,5 +1,5 @@
 /**
- * Prism instance assembly (spec 0024 T-0024-04) — pure, so every assertion here is about the exact
+ * Prism instance assembly (spec 0025 T-0025-04) — pure, so every assertion here is about the exact
  * bytes a launcher will read. No I/O, no network.
  */
 import { test } from 'node:test';

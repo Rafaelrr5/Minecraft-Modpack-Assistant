@@ -1,5 +1,5 @@
 /**
- * The `launchable` command (spec 0024) — hand a built instance to an installed launcher so the pack
+ * The `launchable` command (spec 0025) — hand a built instance to an installed launcher so the pack
  * becomes something a person can actually play (ADR 0009).
  *
  * A **thin adapter** (Constitution P2): it reads the pinned pack and its launch profile from the

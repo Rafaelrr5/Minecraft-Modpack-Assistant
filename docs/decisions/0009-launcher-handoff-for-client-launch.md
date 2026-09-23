@@ -5,7 +5,7 @@
 | **Status** | `accepted` |
 | **Date** | 2026-09-23 |
 | **Deciders** | Project owner + Claude |
-| **Related** | Extends (does not supersede) [ADR 0007](./0007-local-launch-adapter.md); spec [`0024`](../../specs/0024-launchable-handoff/spec.md); builds on [`0008`](../../specs/0008-build-instance/spec.md) (launch profile), [`0015`](../../specs/0015-pack-export/spec.md) (`.mrpack`), [`0018`](../../specs/0018-runnable-build/spec.md) (verified jars), [`0019`](../../specs/0019-launch-diagnose-loop/spec.md) (launch/diagnose loop); Constitution P2/P3/P4/P5; DOMAIN-KNOWLEDGE [§8](../DOMAIN-KNOWLEDGE.md#8-packaging--distribution-formats) |
+| **Related** | Extends (does not supersede) [ADR 0007](./0007-local-launch-adapter.md); spec [`0025`](../../specs/0025-launchable-handoff/spec.md); builds on [`0008`](../../specs/0008-build-instance/spec.md) (launch profile), [`0015`](../../specs/0015-pack-export/spec.md) (`.mrpack`), [`0018`](../../specs/0018-runnable-build/spec.md) (verified jars), [`0019`](../../specs/0019-launch-diagnose-loop/spec.md) (launch/diagnose loop); Constitution P2/P3/P4/P5; DOMAIN-KNOWLEDGE [§8](../DOMAIN-KNOWLEDGE.md#8-packaging--distribution-formats) |
 
 ---
 
@@ -35,7 +35,7 @@ Modrinth App — never by bootstrapping Minecraft ourselves. The assistant gener
 own instance artifacts from the pinned `PackState` + launch profile, and states plainly which
 responsibilities (client download, assets, natives, account auth) belong to the launcher.**
 
-Concretely, a new `launchable` capability (spec `0024`) produces, per target:
+Concretely, a new `launchable` capability (spec `0025`) produces, per target:
 
 - **Prism Launcher** (`--target prism`) — a real MultiMC/Prism instance directory: `mmc-pack.json`
   with the components Prism resolves against its own metadata (`net.minecraft` plus the loader's

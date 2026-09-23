@@ -1,5 +1,5 @@
 /**
- * The launchable-handoff pipeline (spec 0024): turn a pinned pack into something an installed
+ * The launchable-handoff pipeline (spec 0025): turn a pinned pack into something an installed
  * launcher can open, and say plainly what the launcher — not this assistant — is responsible for.
  *
  * Four steps, mirroring `build`/`install` (specs 0008/0018):

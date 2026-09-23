@@ -1,5 +1,5 @@
 /**
- * Launchable-handoff types (spec 0024) — projecting a pinned `PackState` + its `LaunchProfile` into
+ * Launchable-handoff types (spec 0025) — projecting a pinned `PackState` + its `LaunchProfile` into
  * the artifacts an installed launcher imports, so the pack becomes something a person can actually
  * play (ADR 0009).
  *

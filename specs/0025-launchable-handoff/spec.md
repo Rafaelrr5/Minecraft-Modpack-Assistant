@@ -1,10 +1,10 @@
-# Spec 0024 — Launchable Handoff (Prism Launcher / Modrinth App)
+# Spec 0025 — Launchable Handoff (Prism Launcher / Modrinth App)
 
 > **Artifact:** `spec.md` — **WHAT & WHY**. No implementation detail (that is `plan.md`).
 
 | | |
 | --- | --- |
-| **Spec ID** | `0024` |
+| **Spec ID** | `0025` |
 | **Status** | `done` |
 | **Roadmap phase** | [Phase 4 — Build, Launch & Crash Diagnosis](../../roadmap/phase-4-build-launch-crash-diagnosis.md) — makes the built instance genuinely playable |
 | **Author / date** | Project owner + Claude · 2026-09-23 |

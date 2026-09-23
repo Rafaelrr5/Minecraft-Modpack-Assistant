@@ -1,5 +1,5 @@
 /**
- * The Modrinth App target (spec 0024 FR-2) — the `.mrpack` handoff.
+ * The Modrinth App target (spec 0025 FR-2) — the `.mrpack` handoff.
  *
  * There is deliberately **no second projection** here: `.mrpack` already exists as spec 0015's pure
  * export, and the archive bytes already have one writer (the packaging adapter). This module calls

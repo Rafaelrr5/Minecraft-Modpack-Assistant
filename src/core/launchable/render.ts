@@ -1,5 +1,5 @@
 /**
- * Human-readable rendering of a {@link LaunchablePlan} / {@link LaunchableResult} (spec 0024) —
+ * Human-readable rendering of a {@link LaunchablePlan} / {@link LaunchableResult} (spec 0025) —
  * dual-audience (Constitution P8): the beginner reads numbered steps and a plain statement of what
  * the launcher does; the expert sees the exact components, their verification verdicts and the files
  * that would be written. Pure string building; the adapter owns where this is printed.

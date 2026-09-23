@@ -1,5 +1,5 @@
 /**
- * The launchable-handoff pipeline (spec 0024) — assemble → verify → plan → apply, exercised with a
+ * The launchable-handoff pipeline (spec 0025) — assemble → verify → plan → apply, exercised with a
  * fake `LauncherMetaProvider` and the real guarded `InstanceFs` contract, so the whole decision path
  * is covered with no network and no launcher installed (Constitution P3).
  */

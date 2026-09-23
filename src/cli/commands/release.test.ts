@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, stat } from 'node:fs/promises';
+import { mkdtemp, readdir, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import * as path from 'node:path';
 
@@ -10,6 +10,7 @@ import { FakeProvider } from '../../core/orchestration/__fixtures__/fake-provide
 import { PackwizFormat } from '../../integration/packwiz/index.ts';
 import { PackagingExporter } from '../../integration/packaging/index.ts';
 import { parseMinecraftVersion, type PackState } from '../../core/index.ts';
+import { EXIT_BLOCKED, UNSUPPORTED_MARKER_FILE } from '../../core/index.ts';
 
 function provider(): FakeProvider {
   return new FakeProvider([{ slug: 'sodium', projectId: 'pS', categories: ['optimization'] }]);
@@ -100,4 +101,68 @@ test('release --from a baseline packwiz tree diffs against it', async () => {
   assert.equal(code, 0);
   // current = sodium; baseline = oldmod → sodium added, oldmod removed.
   assert.match(out, /1 added · 0 updated · 1 removed/);
+});
+
+// ── The distribution gate (spec 0023) ─────────────────────────────────────────────────────────
+
+/** A set with a blocking issue: the mod has no build for this loader (spec 0006 `unresolved`). */
+function blockedProvider(): FakeProvider {
+  return new FakeProvider([
+    { slug: 'sodium', projectId: 'pS', categories: ['optimization'] },
+    { slug: 'fabric-only', projectId: 'pF', loaders: ['fabric'] },
+  ]);
+}
+
+function blockedOptions(over: Partial<ReleaseOptions> = {}): ReleaseOptions {
+  return baseOptions({ include: ['sodium', 'fabric-only'], ...over });
+}
+
+test('release refuses a pack with a blocking issue and writes nothing, even with --apply (AC-1)', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'mpa-release-blocked-'));
+  const out = path.join(dir, 'pack.mrpack');
+  let text = '';
+  const code = await runRelease(
+    blockedOptions({ apply: true, out }),
+    blockedProvider(),
+    ports(),
+    (t) => {
+      text += t;
+    },
+  );
+
+  assert.equal(code, EXIT_BLOCKED);
+  assert.match(text, /Blocked/);
+  assert.match(text, /fabric-only/);
+  assert.doesNotMatch(text, /Release plan/, 'no plan is produced for a blocked pack');
+  assert.deepEqual(await readdir(dir), [], 'nothing was written');
+});
+
+test('release refuses a blocked pack on a dry-run too (AC-1)', async () => {
+  let text = '';
+  const code = await runRelease(blockedOptions(), blockedProvider(), ports(), (t) => {
+    text += t;
+  });
+  assert.equal(code, EXIT_BLOCKED);
+  assert.match(text, /--allow-unsupported/);
+});
+
+test('--allow-unsupported releases anyway, marking the bundle UNSUPPORTED (AC-2)', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'mpa-release-override-'));
+  const out = path.join(dir, 'pack.mrpack');
+  const exporter = new PackagingExporter();
+  let text = '';
+  const code = await runRelease(
+    blockedOptions({ apply: true, out, allowUnsupported: true, releaseDate: '2026-06-07' }),
+    blockedProvider(),
+    ports(exporter),
+    (t) => {
+      text += t;
+    },
+  );
+
+  assert.equal(code, 0);
+  assert.match(text, /UNSUPPORTED/);
+  const paths = (await exporter.readArchive(out)).map((e) => e.path);
+  assert.ok(paths.includes(UNSUPPORTED_MARKER_FILE), 'the bundle carries the marker');
+  assert.ok(paths.includes('CHANGELOG.md'), 'still a real release bundle');
 });

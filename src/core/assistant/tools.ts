@@ -35,6 +35,7 @@ import {
 } from '../requirements/index.ts';
 import { type TargetEnvironment, runPreflight } from '../conflicts/index.ts';
 import { applyInstall, assembleBuild, planInstall } from '../build/index.ts';
+import { blockingIssues, isBlocked } from '../distribution/index.ts';
 import type { AssistantDeps, ToolDefinition, ToolRegistry, ToolResult } from './types.ts';
 
 // --- Minimal JSON-Schema argument validation (FR-3) -------------------------
@@ -275,12 +276,16 @@ function resolveModsTool(deps: AssistantDeps): ToolDefinition {
         return { ok: false, summary: `Resolution failed: ${error instanceof Error ? error.message : String(error)} Nothing was written.` };
       }
       ctx.state.resolved = result;
+      const blocking = blockingIssues(result.issues);
       const issues = result.issues.length
         ? ` ${result.issues.length} issue(s): ${result.issues.map((i) => i.message).join('; ')}`
         : '';
+      const gate = blocking.length
+        ? ` BLOCKED: ${blocking.length} of those are unresolved/incompatible, so this pack cannot be built or exported until they are fixed.`
+        : '';
       return {
         ok: true,
-        summary: `Resolved and pinned ${result.packState.mods.length} mod(s).${issues}`,
+        summary: `Resolved and pinned ${result.packState.mods.length} mod(s).${issues}${gate}`,
         data: result,
       };
     },
@@ -389,6 +394,18 @@ function planBuildTool(deps: AssistantDeps): ToolDefinition {
         return Promise.resolve({
           ok: false,
           summary: 'No requirements yet — call predict_requirements before planning a build.',
+        });
+      }
+      // The distribution gate (spec 0023): the assistant has no expert override — a blocked set
+      // never reaches a plan, so the session cannot offer a normal confirmation for it.
+      if (isBlocked(ctx.state.resolved.issues)) {
+        const blocking = blockingIssues(ctx.state.resolved.issues);
+        return Promise.resolve({
+          ok: false,
+          summary:
+            `Blocked: the resolved set has ${blocking.length} unresolved/incompatible issue(s), so no build ` +
+            `plan was produced and nothing can be written: ${blocking.map((i) => `${i.projectRef} — ${i.message}`).join('; ')} ` +
+            'Remove or replace those mods and call resolve_mods again.',
         });
       }
       const instanceDir = (a.instancePath as string | undefined) ?? ctx.options.instancePath;

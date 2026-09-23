@@ -240,3 +240,38 @@ test('show_artifact reports a not-yet-produced artifact instead of inventing one
   const res = await reg.get('show_artifact')!.handler({ artifact: 'buildPlan' }, ctx(freshState()));
   assert.equal(res.ok, false);
 });
+
+// --- the distribution gate in the guided flow (spec 0023) -------------------
+
+test('plan_build refuses a blocked set: no plan, no confirmation to offer (AC-3)', async () => {
+  // `fabric-only` has no neoforge build → an `unresolved` blocking issue.
+  const provider = new FakeProvider([
+    { slug: 'mod-a', projectId: 'pA' },
+    { slug: 'fabric-only', projectId: 'pF', loaders: ['fabric'] },
+  ]);
+  const reg = createToolRegistry(deps(provider));
+  const state = freshState();
+  await reg.get('build_brief')!.handler(
+    { theme: 'tech', minecraftVersion: '1.21.1', loader: 'neoforge', distribution: 'singleplayer' },
+    ctx(state),
+  );
+
+  const resolved = await reg
+    .get('resolve_mods')!
+    .handler({ include: ['mod-a', 'fabric-only'] }, ctx(state));
+  assert.equal(resolved.ok, true);
+  assert.match(resolved.summary, /BLOCKED/, 'the model is told the set cannot be built');
+
+  await reg.get('predict_requirements')!.handler({ target: 'client' }, ctx(state));
+  const planned = await reg.get('plan_build')!.handler({}, ctx(state));
+
+  assert.equal(planned.ok, false);
+  assert.match(planned.summary, /Blocked/);
+  assert.match(planned.summary, /fabric-only/);
+  assert.equal(state.buildPlan, undefined, 'no plan exists, so apply_build has nothing to write');
+
+  // Defense in depth: even a confirmed user cannot write, because there is no plan.
+  state.userConfirmedApply = true;
+  const applied = await reg.get('apply_build')!.handler({}, ctx(state));
+  assert.equal(applied.ok, false);
+});

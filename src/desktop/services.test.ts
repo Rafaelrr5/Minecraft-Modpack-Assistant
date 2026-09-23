@@ -16,6 +16,7 @@ import {
   type JarTransport,
   type PackFormat,
   type PackState,
+  EXIT_BLOCKED,
   parseMinecraftVersion,
 } from '../core/index.ts';
 import { createDesktopServices } from './services.ts';
@@ -128,4 +129,55 @@ test('createDesktopServices exposes every capability as a function', () => {
   ] as const) {
     assert.equal(typeof services[name], 'function', `missing service method: ${name}`);
   }
+});
+
+// ── The distribution gate reaches the desktop adapter too (spec 0023) ─────────────────────────
+
+test('desktop build refuses a blocked pack: EXIT_BLOCKED, and the guarded FS is never touched', async () => {
+  const fs = new FakeInstanceFs();
+  const services = createDesktopServices({
+    instanceFs: fs,
+    // `fabric-only` has no neoforge build → an `unresolved` blocking issue.
+    provider: new FakeProvider([{ slug: 'fabric-only', projectId: 'pF', loaders: ['fabric'] }]),
+    loaderVersions: fakeLoaderVersions({ versions: { 'neoforge@1.21.1': '21.1.62' } }),
+  });
+
+  const result = await services.build({
+    minecraft: '1.21.1',
+    loader: 'neoforge',
+    include: ['fabric-only'],
+    instancePath: '/tmp/mc',
+    apply: true,
+    force: true,
+  });
+
+  assert.equal(result.exitCode, EXIT_BLOCKED);
+  assert.match(result.output, /Blocked/);
+  assert.equal(fs.applyCalled, false, 'nothing was written');
+});
+
+test('desktop export refuses a blocked pack and never calls the exporter', async () => {
+  let exportCalled = false;
+  const services = createDesktopServices({
+    provider: new FakeProvider([{ slug: 'fabric-only', projectId: 'pF', loaders: ['fabric'] }]),
+    loaderVersions: fakeLoaderVersions({ versions: { 'neoforge@1.21.1': '21.1.62' } }),
+    exporter: {
+      writeExport: () => {
+        exportCalled = true;
+        return Promise.reject(new Error('the exporter must not run for a blocked pack'));
+      },
+    },
+  });
+
+  const result = await services.export({
+    minecraft: '1.21.1',
+    loader: 'neoforge',
+    include: ['fabric-only'],
+    format: 'mrpack',
+    apply: true,
+    out: '/tmp/pack.mrpack',
+  });
+
+  assert.equal(result.exitCode, EXIT_BLOCKED);
+  assert.equal(exportCalled, false);
 });

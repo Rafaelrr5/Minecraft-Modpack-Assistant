@@ -80,6 +80,9 @@ Options for 'build':
   --instance <dir>  Where to build the instance (required).
   --apply           Write the plan (otherwise dry-run, the default).
   --force           Required with --apply when the plan overwrites existing files.
+  --allow-unsupported  Experts only: build anyway when the set has unresolved mods,
+                    unresolved required dependencies or declared incompatibilities.
+                    The instance is marked UNSUPPORTED and may not launch.
 
 Options for 'install':
   --instance <dir>  The built instance to download mod jars into (required). Also the
@@ -164,6 +167,9 @@ Options for 'export':
   --out <file>      Where to write the archive (required with --apply).
   --apply           Write the archive (otherwise dry-run, the default).
   --force           Required with --apply when the output file already exists.
+  --allow-unsupported  Experts only: export anyway when the set has unresolved mods,
+                    unresolved required dependencies or declared incompatibilities.
+                    The archive is marked UNSUPPORTED — do not distribute it.
 
 Options for 'release':
   --loader-version <v>  Optional concrete build; preserved in the release archive.
@@ -178,6 +184,9 @@ Options for 'release':
   --out <file>      Where to write the bundle archive (required with --apply).
   --apply           Write the bundle (otherwise dry-run, the default).
   --force           Required with --apply when the output file already exists.
+  --allow-unsupported  Experts only: release anyway when the set has unresolved mods,
+                    unresolved required dependencies or declared incompatibilities.
+                    The bundle is marked UNSUPPORTED — do not distribute it.
 
 Options for 'doctor':
   --instance <dir>  Path to a Minecraft instance / .minecraft folder to inspect.

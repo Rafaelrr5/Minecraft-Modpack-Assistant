@@ -138,6 +138,7 @@ export async function run(argv: readonly string[]): Promise<number> {
         instance: { type: 'string' },
         apply: { type: 'boolean', default: false },
         force: { type: 'boolean', default: false },
+        'allow-unsupported': { type: 'boolean', default: false },
       },
       allowPositionals: false,
     });
@@ -176,6 +177,7 @@ export async function run(argv: readonly string[]): Promise<number> {
       instancePath: values.instance,
       apply: values.apply === true,
       force: values.force === true,
+      allowUnsupported: values['allow-unsupported'] === true,
     };
     return runBuildCli(options);
   }
@@ -253,6 +255,7 @@ export async function run(argv: readonly string[]): Promise<number> {
         out: { type: 'string' },
         apply: { type: 'boolean', default: false },
         force: { type: 'boolean', default: false },
+        'allow-unsupported': { type: 'boolean', default: false },
       },
       allowPositionals: false,
     });
@@ -291,6 +294,7 @@ export async function run(argv: readonly string[]): Promise<number> {
       ...(values.out !== undefined ? { out: values.out } : {}),
       apply: values.apply === true,
       force: values.force === true,
+      allowUnsupported: values['allow-unsupported'] === true,
     };
     return runExportCli(options);
   }
@@ -315,6 +319,7 @@ export async function run(argv: readonly string[]): Promise<number> {
         out: { type: 'string' },
         apply: { type: 'boolean', default: false },
         force: { type: 'boolean', default: false },
+        'allow-unsupported': { type: 'boolean', default: false },
       },
       allowPositionals: false,
     });
@@ -355,6 +360,7 @@ export async function run(argv: readonly string[]): Promise<number> {
       ...(values.out !== undefined ? { out: values.out } : {}),
       apply: values.apply === true,
       force: values.force === true,
+      allowUnsupported: values['allow-unsupported'] === true,
     };
     return runReleaseCli(options);
   }

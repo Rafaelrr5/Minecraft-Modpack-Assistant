@@ -13,13 +13,19 @@ import {
   type ModSourceProvider,
   type PackFormat,
   type RequirementsTarget,
+  EXIT_BLOCKED,
   assembleBuild,
   applyInstall,
+  blockingIssues,
+  isBlocked,
   planInstall,
   predictRequirements,
+  renderBlockedReport,
   renderBuildPlan,
   renderBuildResult,
+  renderOverrideNotice,
   resolveModpack,
+  withUnsupportedInstanceMarker,
 } from '../../core/index.ts';
 import { createModrinthProvider } from '../../integration/modrinth/index.ts';
 import { createOfficialLoaderVersions } from '../../integration/loader-versions/official-loader-versions.ts';
@@ -34,6 +40,11 @@ export interface BuildOptions extends OrchestrateOptions {
   readonly apply?: boolean;
   /** Required in addition to --apply when the plan overwrites existing files. */
   readonly force?: boolean;
+  /**
+   * Expert escape hatch (spec 0023 FR-3): build a pack with known-blocking issues anyway. The
+   * instance is stamped UNSUPPORTED and may not launch.
+   */
+  readonly allowUnsupported?: boolean;
 }
 
 /** Ports the build needs; injectable so the command is testable without real disk/network. */
@@ -62,10 +73,22 @@ export async function runBuild(
     ports.loaderVersions ? { loaderVersions: ports.loaderVersions } : {},
   );
 
-  if (result.issues.length > 0) {
+  const blocked = isBlocked(result.issues);
+  const override = options.allowUnsupported === true;
+
+  // The distribution gate (spec 0023): a set with unresolved/incompatible issues is not
+  // materialized at all unless the expert flag is given, and then only as UNSUPPORTED.
+  if (blocked && !override) {
+    write(renderBlockedReport(result.issues, { command: 'build', verb: 'built' }));
+    return EXIT_BLOCKED;
+  }
+  if (blocked) write(renderOverrideNotice(result.issues, { verb: 'building' }));
+
+  const nonBlocking = result.issues.length - blockingIssues(result.issues).length;
+  if (nonBlocking > 0) {
     write(
-      `⚠ The resolved set has ${result.issues.length} unresolved/incompatible issue(s); ` +
-        `building anyway (the instance may not launch cleanly). Run 'orchestrate' to inspect.\n`,
+      `⚠ ${nonBlocking} mod(s) could not be checked (catalog lookup failed); ` +
+        `building anyway. Run 'orchestrate' to inspect.\n`,
     );
   }
 
@@ -75,7 +98,10 @@ export async function runBuild(
     flags: { shaders: options.shaders === true, hdTextures: options.hdTextures === true },
   });
 
-  const artifacts = assembleBuild(result.packState, report, ports.packFormat);
+  const assembled = assembleBuild(result.packState, report, ports.packFormat);
+  const artifacts = blocked
+    ? withUnsupportedInstanceMarker(assembled, result.issues, { command: 'build' })
+    : assembled;
 
   // Read-only probe: which target files already exist (drives destructive classification, FR-6).
   const existing: string[] = [];

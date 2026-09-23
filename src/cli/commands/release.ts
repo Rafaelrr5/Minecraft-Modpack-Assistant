@@ -14,9 +14,15 @@ import {
   type PackFormat,
   type PackState,
   type ReleaseMeta,
+  EXIT_BLOCKED,
   assembleRelease,
+  blockingIssues,
+  isBlocked,
+  renderBlockedReport,
+  renderOverrideNotice,
   renderReleasePlan,
   resolveModpack,
+  withUnsupportedMarker,
 } from '../../core/index.ts';
 import { createModrinthProvider } from '../../integration/modrinth/index.ts';
 import { createOfficialLoaderVersions } from '../../integration/loader-versions/official-loader-versions.ts';
@@ -58,9 +64,21 @@ export async function runRelease(
     ports.loaderVersions ? { loaderVersions: ports.loaderVersions } : {},
   );
 
-  if (result.issues.length > 0) {
+  const blocked = isBlocked(result.issues);
+  const override = options.allowUnsupported === true;
+
+  // The distribution gate (spec 0023): a release is the most public artifact of all — refuse it
+  // outright for a broken set unless the expert flag is given, and then mark it UNSUPPORTED.
+  if (blocked && !override) {
+    write(renderBlockedReport(result.issues, { command: 'release', verb: 'released' }));
+    return EXIT_BLOCKED;
+  }
+  if (blocked) write(renderOverrideNotice(result.issues, { verb: 'releasing' }));
+
+  const nonBlocking = result.issues.length - blockingIssues(result.issues).length;
+  if (nonBlocking > 0) {
     write(
-      `⚠ The resolved set has ${result.issues.length} unresolved/incompatible issue(s); ` +
+      `⚠ ${nonBlocking} mod(s) could not be checked (catalog lookup failed); ` +
         `releasing anyway. Run 'orchestrate' to inspect.\n`,
     );
   }
@@ -78,7 +96,13 @@ export async function runRelease(
   }
 
   const meta: ReleaseMeta = options.releaseDate !== undefined ? { date: options.releaseDate } : {};
-  const bundle = assembleRelease(packState, options.format, { baseline, meta });
+  const assembled = assembleRelease(packState, options.format, { baseline, meta });
+  const bundle = blocked
+    ? {
+        ...assembled,
+        artifact: withUnsupportedMarker(assembled.artifact, result.issues, { command: 'release' }),
+      }
+    : assembled;
 
   if (!options.apply) {
     write(renderReleasePlan(bundle)); // dry-run: show the plan, write nothing (AC-5)

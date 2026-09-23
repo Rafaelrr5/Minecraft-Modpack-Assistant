@@ -66,6 +66,13 @@ export const PROMPT_EVENT = 'mpa:prompt';
 /** renderer → main: the user's answer to a {@link PROMPT_EVENT}. */
 export const REPLY_EVENT = 'mpa:reply';
 
+/**
+ * Exit code a capability returns when the distribution gate refused the pack (spec 0023). The
+ * renderer uses it to show the refusal and withhold the normal confirmation; re-exported here so
+ * no UI layer reaches into `core/` directly.
+ */
+export { EXIT_BLOCKED } from '../../core/distribution/gate.ts';
+
 export type {
   BuildOptions,
   DiagnoseOptions,

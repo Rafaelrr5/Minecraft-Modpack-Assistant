@@ -21,4 +21,5 @@ export * from './updates/index.ts';
 export * from './migration/index.ts';
 export * from './export/index.ts';
 export * from './release/index.ts';
+export * from './distribution/index.ts';
 export * from './assistant/index.ts';

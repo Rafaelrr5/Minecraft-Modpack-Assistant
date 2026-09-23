@@ -6,6 +6,7 @@
  */
 import { useState } from 'react';
 import type { BuildOptions, CapabilityResult } from '../../shared/ipc-contract.ts';
+import { EXIT_BLOCKED } from '../../shared/ipc-contract.ts';
 import { LogStream } from '../components/LogStream.tsx';
 
 const LOADERS = ['neoforge', 'forge', 'fabric', 'quilt'] as const;
@@ -44,6 +45,9 @@ export function BuildScreen(): JSX.Element {
     }
   };
 
+  // The distribution gate (spec 0023): the core refused this set. Until it is re-previewed clean,
+  // the UI offers no normal confirmation — there is no "apply anyway" button here (FR-5).
+  const blocked = result?.exitCode === EXIT_BLOCKED;
   const canRun = instancePath.trim().length > 0 && !busy;
 
   return (
@@ -93,12 +97,25 @@ export function BuildScreen(): JSX.Element {
         <button className="btn" disabled={!canRun} onClick={() => void run(false)}>
           {busy ? 'Working…' : 'Preview (dry-run)'}
         </button>
-        <button className="btn ghost" disabled={!canRun} onClick={() => setConfirming(true)}>
+        <button
+          className="btn ghost"
+          disabled={!canRun || blocked}
+          title={blocked ? 'This pack is blocked — fix the issues below before building.' : undefined}
+          onClick={() => setConfirming(true)}
+        >
           Apply…
         </button>
       </div>
 
-      {confirming && (
+      {blocked && (
+        <p className="blocked" role="alert">
+          <strong>Blocked.</strong> This pack has unresolved mods, unresolved required dependencies
+          or declared incompatibilities, so it cannot be built. Nothing was written. Fix the issues
+          listed below and preview again.
+        </p>
+      )}
+
+      {confirming && !blocked && (
         <div className="confirm" role="dialog" aria-label="Confirm apply">
           <p>
             <strong>Write changes to your instance?</strong> A backup is taken before anything is
